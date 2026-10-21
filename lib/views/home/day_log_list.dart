@@ -1,9 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/date_key.dart';
 import '../../core/metrics.dart';
 import '../../data/database/app_database.dart';
 import '../../providers/infrastructure_providers.dart';
+import '../../providers/log_providers.dart';
 import 'entry_sheets.dart';
 
 /// The day's entries as a sliver. Swipe left to delete; tap a food entry to
@@ -117,12 +119,18 @@ class _DeleteBackground extends StatelessWidget {
   }
 }
 
-/// Shown when nothing is logged for the selected day.
-class EmptyLogState extends StatelessWidget {
-  const EmptyLogState({super.key});
+/// Shown for a day with no entries. Offers to copy the day before when that
+/// day has entries.
+class EmptyLogState extends ConsumerWidget {
+  const EmptyLogState({super.key, required this.date});
+
+  final String date;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final previous = addDays(date, -1);
+    final hasPrevious =
+        (ref.watch(dayEntriesProvider(previous)).value ?? const []).isNotEmpty;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -146,6 +154,20 @@ class EmptyLogState extends StatelessWidget {
                 color: CupertinoColors.secondaryLabel.resolveFrom(context),
               ),
             ),
+            if (hasPrevious) ...[
+              const SizedBox(height: 16),
+              CupertinoButton.filled(
+                key: const Key('copy-previous-day'),
+                onPressed: () => ref
+                    .read(logRepositoryProvider)
+                    .copyDay(fromDate: previous, toDate: date),
+                child: Text(
+                  previous == addDays(todayKey(), -1)
+                      ? 'Copy yesterday'
+                      : 'Copy previous day',
+                ),
+              ),
+            ],
           ],
         ),
       ),

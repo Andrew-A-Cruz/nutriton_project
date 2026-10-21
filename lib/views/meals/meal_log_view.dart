@@ -11,6 +11,7 @@ import '../common/form_widgets.dart';
 import '../home/date_header.dart';
 import 'food_picker_page.dart';
 import 'meal_items_editor.dart';
+import 'schedule_meal_view.dart';
 
 /// Logs a meal for [logDate]. The foods start as the template's, and can be
 /// added, removed or re-weighed for this one entry. The template only changes
@@ -164,6 +165,23 @@ class _MealLogViewState extends ConsumerState<MealLogView> {
                           value: _updateTemplate,
                           onChanged: (on) =>
                               setState(() => _updateTemplate = on),
+                        ),
+                      ),
+                    ],
+                  ),
+                  CupertinoFormSection.insetGrouped(
+                    children: [
+                      CupertinoListTile(
+                        key: const Key('meal-log-schedule'),
+                        title: const Text('Schedule this meal...'),
+                        trailing: const CupertinoListTileChevron(),
+                        onTap: () => Navigator.of(context).push(
+                          CupertinoPageRoute<void>(
+                            builder: (_) => ScheduleMealView(
+                              meal: widget.meal,
+                              initialDate: widget.logDate,
+                            ),
+                          ),
                         ),
                       ),
                     ],

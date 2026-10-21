@@ -128,7 +128,7 @@ Displays nutritional averages over selectable time intervals.
 
 ## Future Ideas
 
-- [ ] Scheduling — allow users to plan meals for future days (e.g. same lunch Mon–Fri)
+- [x] Scheduling — allow users to plan meals for future days (e.g. same lunch Mon–Fri)
 
 ---
 

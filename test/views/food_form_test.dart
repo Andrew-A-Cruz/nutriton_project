@@ -25,6 +25,10 @@ void main() {
 
   /// The form opened from a page, so a save can pop back to it.
   Future<void> openForm(WidgetTester tester) async {
+    // Tall enough that the lookup block above does not push fields off-screen.
+    tester.view.physicalSize = const Size(800, 3000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(
       testScreen(
         db: db,

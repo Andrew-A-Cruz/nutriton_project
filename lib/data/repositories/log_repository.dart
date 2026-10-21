@@ -20,6 +20,64 @@ class LogRepository {
   Stream<List<FoodLogEntryItem>> watchEntryItems(String entryId) =>
       _db.logDao.watchEntryItems(entryId);
 
+  /// Active catalog foods logged before, most recent first.
+  Stream<List<FoodItem>> watchRecentFoods({int limit = 8}) =>
+      _db.logDao.watchRecentFoods(limit: limit);
+
+  /// Copies every entry of [fromDate] onto [toDate] ('yyyy-MM-dd') as new
+  /// entries, with their stored snapshots and meal breakdowns (not recomputed
+  /// from the catalog). Existing entries on [toDate] are kept. Returns how
+  /// many entries were copied.
+  Future<int> copyDay({required String fromDate, required String toDate}) {
+    if (fromDate == toDate) {
+      throw ArgumentError('cannot copy a day onto itself');
+    }
+    return _db.transaction(() async {
+      final entries = await _db.logDao.findEntriesForDate(fromDate);
+      if (entries.isEmpty) return 0;
+      final items = await _db.logDao.findItemsForEntries([
+        for (final e in entries) e.id,
+      ]);
+      final now = DateTime.now();
+      for (final e in entries) {
+        final newId = _uuid.v4();
+        await _db.logDao.insertEntry(
+          FoodLogEntriesCompanion.insert(
+            id: newId,
+            logDate: toDate,
+            createdAt: now,
+            entryType: e.entryType,
+            name: e.name,
+            calories: e.calories,
+            protein: e.protein,
+            carbs: e.carbs,
+            fat: e.fat,
+            foodItemId: Value(e.foodItemId),
+            mealId: Value(e.mealId),
+            servings: Value(e.servings),
+          ),
+        );
+        final breakdown = [
+          for (final i in items)
+            if (i.entryId == e.id)
+              FoodLogEntryItemsCompanion.insert(
+                id: _uuid.v4(),
+                entryId: newId,
+                foodItemId: Value(i.foodItemId),
+                name: i.name,
+                weightG: i.weightG,
+                calories: i.calories,
+                protein: i.protein,
+                carbs: i.carbs,
+                fat: i.fat,
+              ),
+        ];
+        if (breakdown.isNotEmpty) await _db.logDao.insertEntryItems(breakdown);
+      }
+      return entries.length;
+    });
+  }
+
   /// Logs [servings] of a catalog food for [logDate] ('yyyy-MM-dd').
   Future<String> logFood({
     required String logDate,

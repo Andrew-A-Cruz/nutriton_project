@@ -35,3 +35,8 @@ final entryItemsProvider =
       (ref, entryId) =>
           ref.watch(logRepositoryProvider).watchEntryItems(entryId),
     );
+
+/// Active catalog foods logged before, most recent first. Re-emits on writes.
+final recentFoodsProvider = StreamProvider<List<FoodItem>>(
+  (ref) => ref.watch(logRepositoryProvider).watchRecentFoods(),
+);

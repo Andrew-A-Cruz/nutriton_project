@@ -27,7 +27,7 @@ React Native would work, but nothing about this app needs it, and switching woul
 | Area | State |
 |---|---|
 | `lib/main.dart`, `lib/app.dart` | `CupertinoApp` with three real tabs: Today (Home), Catalog and Summary |
-| `lib/data/database/` | drift tables (split into `tables/`), four DAOs, repositories; database file `food_log`; generated code current |
+| `lib/data/database/` | drift tables (split into `tables/`), five DAOs, repositories; database file `food_log`; generated code current |
 | `lib/core/` | Pure Dart: `nutrition_math`, `date_key`, `metrics` (formatting), `validation`, `summary_math` (ranges, bucketing, averages) |
 | `lib/views/` | Onboarding, Home (date header, totals, log list), Catalog (foods and meals, search, archive), Add Food sheet (catalog by servings or grams, one-off, new food with save & log), meal builder and meal log, Summary (range picker, averages, bar chart), Settings (the onboarding form) |
 | `lib/providers/` | Riverpod providers for the database, repositories, preferences, the selected Home date, log entries, catalog lists and the Summary range and report |
@@ -37,6 +37,10 @@ React Native would work, but nothing about this app needs it, and switching woul
 | State management, preferences | Riverpod (no codegen) and `shared_preferences`, in place |
 | Summary view | Done (M7) |
 | Settings | Done (M8). Gear on Home opens it; saving applies at once |
+| Quick re-log | Done. Copy yesterday on an empty Home day; Recent foods strip in Add Food |
+| Scheduling | Done. Schema v2 (`scheduled_meals`, `scheduled_meal_outcomes`) with migration and test; schedule from Catalog or Add Food; Planned suggestions on Home (confirm / dismiss) |
+| Food lookup | Done. `OpenFoodFactsClient` (`lib/data/remote/`) -> `FoodLookupRepository` -> `foodLookupRepositoryProvider` -> "Look up" block on the New Food form (barcode digits or name search, tap a result to prefill). No schema change; no camera scanning |
+| Backup | Done. `BackupCodec` (`lib/data/backup/`, pure Dart, versioned JSON) -> `BackupRepository` (export and replace-all import, one transaction each) -> `backupRepositoryProvider` / `backupFileIoProvider`; "Backup" section in Settings with Export and Import (confirm dialog). No schema change |
 
 ---
 
@@ -151,6 +155,8 @@ DATA_MODEL.md has been updated to match these changes.
 | IDs | `uuid` | Installed |
 | Date formatting | `intl` | Installed |
 | Summary charts | `fl_chart` | Installed (Milestone 7, `^1.2.0`) |
+| Food lookup (Open Food Facts) | `http` | Installed (injected through `httpClientProvider`; tests use `MockClient`) |
+| Backup (save / open JSON) | `file_picker` | Installed (`^13.1.0`; system dialogs only, no storage permissions. Behind the injectable `BackupFileIo`; tests use a fake) |
 
 **Why Riverpod:** drift's `watch()` queries return `Stream`s, and a Riverpod `StreamProvider` turns each one into a widget that rebuilds when the data changes. Logging a food on the Add sheet updates the Home list and totals with no manual refresh. Start without Riverpod code generation to keep `build_runner` limited to drift.
 
@@ -295,7 +301,7 @@ All five are decided. The reasoning is recorded so it isn't reopened by accident
 
 ## After v1
 
-- **Scheduling.** Planned meals for future days, as described in GAME_PLAN.md (`scheduled_meals` table, suggestions on Home that the user confirms)
-- **Barcode / food lookup.** Open Food Facts API to prefill the food item form
-- **Backup.** Export/import the SQLite file or JSON; later, Supabase sync (the schema maps directly to Postgres)
-- **Quick re-log.** "Copy yesterday" and recent/frequent items at the top of the Add sheet
+- **Scheduling.** Done. `scheduled_meals` (one-off date or repeating weekday bitmask from a start date) and `scheduled_meal_outcomes` (per-day logged/dismissed), schema v2 with a real `onUpgrade` migration. `ScheduleRepository` (confirm logs through `LogRepository.logMeal` from the meal template, then marks the day done), `scheduleRepositoryProvider`/`pendingScheduledProvider`. UI: "Schedule meal" in the Catalog meal action sheet and "Schedule this meal..." on the meal log screen (Add Food) open `ScheduleMealView`; Home shows a "Planned" section for the selected day with Log / Dismiss (repeating plans offer Skip this day / Stop repeating). Not done: a screen to browse or edit existing plans, editing a plan, and a plan end date
+- **Barcode / food lookup.** Done (manual entry). `OpenFoodFactsClient` calls the v2 product endpoint (by barcode) and `cgi/search.pl` (by name) with a descriptive User-Agent; the `http.Client` is injected (`httpClientProvider`), so tests use `MockClient`. Per-100g nutriments are scaled to `serving_quantity` grams (else 100 g); missing nutrients become 0 and kJ is used when kcal is absent. `FoodLookupSection` on the New Food form shows loading, error and not-found states; a tapped result prefills the editable fields. Not shown when editing an existing food. Not done: camera barcode scanning (needs native permissions), unit-aware serving sizes (ml), result paging
+- **Backup.** Done (JSON). File layout: `{app: "nutriton", version: 1, exportedAt, food_items, meals, meal_food_items, food_log_entries, food_log_entry_items, scheduled_meals, scheduled_meal_outcomes, preferences}`; rows use drift's generated JSON. Import validates first (not JSON, wrong app, missing or newer `version`, missing tables, wrong types, bad preferences all raise `BackupException` with a user-facing message), then deletes and re-inserts every table in one transaction, so foreign-key and CHECK failures roll back and leave existing data and preferences untouched. Preferences are written only after the commit. Export and import use `file_picker` (save dialog / file open) behind `BackupFileIo`. Not done: Supabase sync, SQLite-file backup, automatic or scheduled backups, merge import
+- **Quick re-log.** Done. "Copy yesterday" (button on an empty Home day when the day before has entries; `LogRepository.copyDay` copies snapshots and meal breakdowns) and a "Recent" strip of recently logged catalog foods at the top of the Add Food sheet (`LogDao.watchRecentFoods`; recency only, no frequency ranking). No schema change

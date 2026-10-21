@@ -6,7 +6,7 @@
 
 | Property | Decision |
 |---|---|
-| Storage | Local SQLite via `drift`, database file `food_log` |
+| Storage | Local SQLite via `drift`, database file `food_log`, schema version 2 |
 | User preferences | `shared_preferences` (separate from SQLite) |
 | ID format | UUID v4 via `uuid` (`TEXT` primary keys) |
 | Weights | Stored in grams (`*_g`). Users pick g or oz for display only; 1 oz = 28.3495 g |
@@ -110,6 +110,38 @@ The breakdown of a logged meal, as it was actually eaten. This can differ from t
 
 ---
 
+### `scheduled_meals`
+
+Planned meals (schema v2). A plan is only a suggestion on Home; it never logs by itself. With `weekdays` null it is a one-off on `start_date`; otherwise it repeats on those weekdays from `start_date` on.
+
+| Column | Type | Nullable | Constraints / Notes |
+|---|---|---|---|
+| `id` | TEXT | No | Primary key (UUID) |
+| `meal_id` | TEXT | No | FK → `meals.id`, `ON DELETE CASCADE` |
+| `start_date` | TEXT | No | `yyyy-MM-dd`. The day of a one-off, or the first day of a repeating plan. Indexed (`scheduled_meals_start_date`) |
+| `weekdays` | INT | Yes | Bitmask, bit 0 = Monday ... bit 6 = Sunday, `1..127`. Null = one-off. Mon–Fri = `31` |
+| `created_at` | DATETIME | No | Set on insert; orders suggestions |
+
+---
+
+### `scheduled_meal_outcomes`
+
+What happened to a plan on one day. A plan with no row for a day is still a pending suggestion that day. Confirming a suggestion logs the meal through the normal meal-logging path (a snapshot entry with a breakdown, from the meal's current template) and writes a `logged` row; dismissing writes a `dismissed` row.
+
+| Column | Type | Nullable | Constraints / Notes |
+|---|---|---|---|
+| `id` | TEXT | No | Primary key (UUID) |
+| `scheduled_meal_id` | TEXT | No | FK → `scheduled_meals.id`, `ON DELETE CASCADE` |
+| `date` | TEXT | No | `yyyy-MM-dd` the suggestion was for. Unique together with `scheduled_meal_id` |
+| `status` | TEXT | No | `'logged'` or `'dismissed'` |
+| `entry_id` | TEXT | Yes | FK → `food_log_entries.id`, `ON DELETE SET NULL` (provenance, set when `logged`) |
+
+**Pending on date D:** the plan is due (one-off: `start_date = D`; repeating: `start_date <= D` and the weekday bit of D is set in `weekdays`) and has no outcome row for D. "Stop repeating" deletes the plan, which cascades its outcomes.
+
+**Migration:** `schemaVersion` 1 → 2 creates both tables and the index (`onUpgrade` in `app_database.dart`; covered by `test/data/migrations/schema_migration_test.dart`).
+
+---
+
 ### `user_preferences`
 
 Stored via `shared_preferences`, not in SQLite. Read on app launch to configure the UI and determine which macros to display.
@@ -133,6 +165,9 @@ meals           ||--o{  food_log_entries     : "provenance of"
 food_items      ||--o{  food_log_entries     : "provenance of"
 food_log_entries||--o{  food_log_entry_items : "breakdown of"
 food_items      ||--o{  food_log_entry_items : "provenance of"
+meals           ||--o{  scheduled_meals      : "planned as"
+scheduled_meals ||--o{  scheduled_meal_outcomes : "resolved by"
+food_log_entries||--o{  scheduled_meal_outcomes : "provenance of"
 ```
 
 Catalog rows are archived, not deleted, so provenance links normally stay valid. `SET NULL` covers the rare hard delete.
@@ -219,6 +254,7 @@ FROM (
 | State management | `flutter_riverpod` |
 | User settings | `shared_preferences` |
 | Unique IDs | `uuid` |
+| Backup file picking | `file_picker` |
 | Date formatting | `intl` |
 
 ---
@@ -230,6 +266,7 @@ lib/
 ├── core/
 │   ├── nutrition_math.dart          # pure functions: scaling, sums, g <-> oz
 │   ├── date_key.dart                # DateTime <-> 'yyyy-MM-dd'
+│   ├── weekdays.dart                # weekday bitmasks for scheduled meals
 │   └── metrics.dart                 # enum Metric { calories, protein, carbs, fat }
 ├── data/
 │   ├── database/
@@ -239,17 +276,20 @@ lib/
 │   │   │   ├── meals.dart
 │   │   │   ├── meal_food_items.dart
 │   │   │   ├── food_log_entries.dart
-│   │   │   └── food_log_entry_items.dart
+│   │   │   ├── food_log_entry_items.dart
+│   │   │   └── scheduled_meals.dart       # scheduled_meals + scheduled_meal_outcomes
 │   │   └── daos/
 │   │       ├── food_dao.dart
 │   │       ├── meal_dao.dart
 │   │       ├── log_dao.dart
+│   │       ├── scheduled_meal_dao.dart
 │   │       └── summary_dao.dart
 │   ├── preferences/
 │   │   └── user_preferences.dart
 │   └── repositories/
 │       ├── catalog_repository.dart
 │       ├── log_repository.dart
+│       ├── schedule_repository.dart
 │       └── summary_repository.dart
 ├── providers/
 └── views/
@@ -265,5 +305,4 @@ lib/
 
 ## Future Considerations
 
-- **Scheduling**: a `scheduled_meals` table linking a `meal_id` to a recurring day pattern (e.g. Mon–Fri). Scheduled items would appear as suggestions on the Home View for the user to confirm, not auto-log.
 - **Cloud sync**: the SQLite schema maps cleanly to PostgreSQL (e.g. Supabase) if remote backup or multi-device support is added later.

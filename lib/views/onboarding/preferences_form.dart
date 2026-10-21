@@ -13,6 +13,7 @@ class PreferencesForm extends StatefulWidget {
     required this.initial,
     required this.submitLabel,
     required this.onSubmit,
+    this.extraSections = const [],
   });
 
   final UserSettings initial;
@@ -21,6 +22,10 @@ class PreferencesForm extends StatefulWidget {
   /// Called with the validated settings. `onboardingComplete` is copied from
   /// [initial]; the caller decides whether to change it.
   final ValueChanged<UserSettings> onSubmit;
+
+  /// Extra sections shown between the units and the submit button (Settings
+  /// puts Backup here).
+  final List<Widget> extraSections;
 
   @override
   State<PreferencesForm> createState() => _PreferencesFormState();
@@ -186,6 +191,7 @@ class _PreferencesFormState extends State<PreferencesForm> {
             ),
           ],
         ),
+        ...widget.extraSections,
         Padding(
           padding: const EdgeInsets.all(16),
           child: CupertinoButton.filled(
