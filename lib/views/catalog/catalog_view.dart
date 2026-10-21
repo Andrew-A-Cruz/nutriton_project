@@ -5,6 +5,7 @@ import '../../data/database/app_database.dart';
 import '../../providers/log_providers.dart';
 import '../meals/meal_builder_view.dart';
 import '../meals/meal_log_view.dart';
+import '../meals/schedule_meal_view.dart';
 import 'catalog_browser.dart';
 import 'food_form_view.dart';
 
@@ -95,6 +96,21 @@ class CatalogView extends ConsumerWidget {
               );
             },
             child: const Text('Log meal'),
+          ),
+          CupertinoActionSheetAction(
+            key: const Key('meal-action-schedule'),
+            onPressed: () {
+              Navigator.of(sheet).pop();
+              Navigator.of(context).push(
+                CupertinoPageRoute<void>(
+                  builder: (_) => ScheduleMealView(
+                    meal: meal,
+                    initialDate: ref.read(selectedDateProvider),
+                  ),
+                ),
+              );
+            },
+            child: const Text('Schedule meal'),
           ),
           CupertinoActionSheetAction(
             onPressed: () {

@@ -91,6 +91,7 @@ class _AddFoodViewState extends State<AddFoodView> {
             Expanded(
               child: switch (_mode) {
                 _AddMode.catalog => CatalogBrowser(
+                  showRecent: true,
                   onFoodTap: _logFood,
                   onMealTap: _logMeal,
                 ),

@@ -75,10 +75,9 @@ void main() {
         (await db.foodDao.findActive(search: 'snack_b')).map((f) => f.id),
         ['f3'],
       );
-      expect(
-        (await db.foodDao.findActive(search: r'\')).map((f) => f.id),
-        ['f5'],
-      );
+      expect((await db.foodDao.findActive(search: r'\')).map((f) => f.id), [
+        'f5',
+      ]);
       expect(await db.foodDao.findActive(search: '%%'), isEmpty);
     });
 

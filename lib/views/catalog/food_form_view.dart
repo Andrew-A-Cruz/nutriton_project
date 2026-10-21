@@ -5,9 +5,11 @@ import '../../core/metrics.dart';
 import '../../core/nutrition_math.dart';
 import '../../core/validation.dart';
 import '../../data/database/app_database.dart';
+import '../../providers/food_lookup_providers.dart';
 import '../../providers/infrastructure_providers.dart';
 import '../../providers/preferences_providers.dart';
 import '../common/form_widgets.dart';
+import 'food_lookup_section.dart';
 
 /// Creates or edits a catalog food. Pops with the saved [FoodItem], or with
 /// null when cancelled, so the caller can act on it (Add Food logs it).
@@ -91,6 +93,19 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
         );
       }
       _unit = unit;
+    });
+  }
+
+  /// Prefills the fields from a lookup result. The user can still edit them.
+  void _applyLookup(FoodLookupResult result) {
+    setState(() {
+      _name.text = result.name;
+      _calories.text = _macroText(result.perServing.calories);
+      _protein.text = _macroText(result.perServing.protein);
+      _carbs.text = _macroText(result.perServing.carbs);
+      _fat.text = _macroText(result.perServing.fat);
+      _weight.text = _weightText(result.servingWeightG, _unit);
+      _errors = const {};
     });
   }
 
@@ -186,6 +201,7 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.only(bottom: 32),
           children: [
+            if (existing == null) FoodLookupSection(onPick: _applyLookup),
             CupertinoFormSection.insetGrouped(
               header: const Text('FOOD'),
               children: [

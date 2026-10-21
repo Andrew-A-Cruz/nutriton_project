@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/database/app_database.dart';
+import '../../providers/log_providers.dart';
 import 'food_list.dart';
 import 'meal_list.dart';
 
@@ -14,11 +16,15 @@ class CatalogBrowser extends StatefulWidget {
     required this.onFoodTap,
     required this.onMealTap,
     this.archivable = false,
+    this.showRecent = false,
   });
 
   final ValueChanged<FoodItem> onFoodTap;
   final ValueChanged<Meal> onMealTap;
   final bool archivable;
+
+  /// Shows recently logged foods above the Foods list (when not searching).
+  final bool showRecent;
 
   @override
   State<CatalogBrowser> createState() => _CatalogBrowserState();
@@ -54,6 +60,10 @@ class _CatalogBrowserState extends State<CatalogBrowser> {
             onChanged: (value) => setState(() => _search = value),
           ),
         ),
+        if (widget.showRecent &&
+            _section == CatalogSection.foods &&
+            _search.trim().isEmpty)
+          RecentFoods(onTap: widget.onFoodTap),
         Expanded(
           child: switch (_section) {
             CatalogSection.foods => FoodList(
@@ -67,6 +77,54 @@ class _CatalogBrowserState extends State<CatalogBrowser> {
               archivable: widget.archivable,
             ),
           },
+        ),
+      ],
+    );
+  }
+}
+
+/// A horizontal strip of the foods logged most recently. Hidden when there
+/// are none.
+class RecentFoods extends ConsumerWidget {
+  const RecentFoods({super.key, required this.onTap});
+
+  final ValueChanged<FoodItem> onTap;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final foods = ref.watch(recentFoodsProvider).value ?? const <FoodItem>[];
+    if (foods.isEmpty) return const SizedBox.shrink();
+    return Column(
+      key: const Key('recent-foods'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+          child: Text(
+            'Recent',
+            style: TextStyle(
+              fontSize: 13,
+              color: CupertinoColors.secondaryLabel.resolveFrom(context),
+            ),
+          ),
+        ),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            children: [
+              for (final food in foods)
+                CupertinoButton(
+                  key: Key('recent-food-${food.id}'),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  onPressed: () => onTap(food),
+                  child: Text(food.name),
+                ),
+            ],
+          ),
         ),
       ],
     );
