@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/metrics.dart';
 import '../../providers/food_lookup_providers.dart';
+import 'barcode_scanner_page.dart';
 
 /// "Look up" block for the new-food form: a barcode field and a name search
 /// that list Open Food Facts products. Tapping a result calls [onPick] so the
@@ -70,6 +71,15 @@ class _FoodLookupSectionState extends ConsumerState<FoodLookupSection> {
     return product == null ? const [] : [product];
   });
 
+  /// Opens the camera, then fills the barcode field and looks it up. A null
+  /// result (cancelled) leaves everything as it was.
+  Future<void> _scan() async {
+    final code = await ref.read(barcodeScannerProvider)(context);
+    if (!mounted || code == null || code.isEmpty) return;
+    _barcode.text = code;
+    _lookupBarcode();
+  }
+
   void _search() => _run(
     () => ref.read(foodLookupRepositoryProvider).searchByName(_query.text),
   );
@@ -90,6 +100,7 @@ class _FoodLookupSectionState extends ConsumerState<FoodLookupSection> {
           buttonKey: const Key('lookup-barcode-go'),
           buttonLabel: 'Find',
           onGo: _lookupBarcode,
+          onScan: ref.watch(barcodeScanSupportedProvider) ? _scan : null,
         ),
         _field(
           fieldKey: const Key('lookup-query'),
@@ -113,6 +124,7 @@ class _FoodLookupSectionState extends ConsumerState<FoodLookupSection> {
     required Key buttonKey,
     required String buttonLabel,
     required VoidCallback onGo,
+    VoidCallback? onScan,
   }) {
     final busy = _status == _Status.loading;
     return CupertinoFormRow(
@@ -128,6 +140,13 @@ class _FoodLookupSectionState extends ConsumerState<FoodLookupSection> {
               onSubmitted: busy ? null : (_) => onGo(),
             ),
           ),
+          if (onScan != null)
+            CupertinoButton(
+              key: const Key('lookup-barcode-scan'),
+              padding: const EdgeInsets.only(left: 12),
+              onPressed: busy ? null : onScan,
+              child: const Icon(CupertinoIcons.barcode_viewfinder),
+            ),
           CupertinoButton(
             key: buttonKey,
             padding: const EdgeInsets.only(left: 12),
