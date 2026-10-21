@@ -296,6 +296,8 @@ All five are decided. The reasoning is recorded so it isn't reopened by accident
 
 ## After v1
 
+> Superseded by [`FEATURE_PLAN.md`](./FEATURE_PLAN.md), which orders these and other features into milestones M9–M20.
+
 - **Scheduling.** Planned meals for future days, as described in GAME_PLAN.md (`scheduled_meals` table, suggestions on Home that the user confirms)
 - **Barcode / food lookup.** Open Food Facts API to prefill the food item form
 - **Backup.** Export/import the SQLite file or JSON; later, Supabase sync (the schema maps directly to Postgres)
