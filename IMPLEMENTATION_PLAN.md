@@ -37,6 +37,7 @@ React Native would work, but nothing about this app needs it, and switching woul
 | State management, preferences | Riverpod (no codegen) and `shared_preferences`, in place |
 | Summary view | Done (M7) |
 | Settings | Done (M8). Gear on Home opens it; saving applies at once |
+| Device build | Done (M8). Release build installed and running on a physical iPhone |
 
 ---
 
@@ -264,7 +265,7 @@ Logic lives in `core/summary_math.dart` (window, bucketing, averaging), with uni
 - [x] Number formatting and rounding rules: whole calories, one decimal for macros, applied through `Metric.format` and the shared `formatMacroLine`. Values that round to zero never show as `-0`.
 - [x] Dark mode and 2x text checked in widget tests (`test/views/large_text_dark_mode_test.dart`), covering Home, Summary, Settings and onboarding. Keyboard: every form list (preferences, food, adhoc, meal builder and log, entry edit sheet) dismisses the keyboard on drag. Fixed layout overflows at 2x text on Home's macro summary and the Summary averages.
 - [x] App icon and name: `Nutriton` is the display name on Android, iOS, web (`manifest.json`, page title) and the desktop binaries (macOS `PRODUCT_NAME`, Windows and Linux `BINARY_NAME` and window titles); the icon is generated from `assets/icon/app_icon.png` with `flutter_launcher_icons`.
-- [ ] Release build on a physical device. **Left open:** needs a physical device and release signing, which are not available in the development environment.
+- [x] Release build on a physical device: `flutter run --release` installed and ran on an iPhone, signed with a free Apple ID (Apple Development certificate, personal team). Free-account builds expire after 7 days; reinstalling renews them. The device needs Developer Mode on and the developer certificate trusted under Settings > General > VPN & Device Management.
 
 ---
 
