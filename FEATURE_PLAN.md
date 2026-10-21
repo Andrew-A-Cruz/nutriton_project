@@ -2,7 +2,7 @@
 
 The features after v1, ordered by value for effort: the most daily benefit for the least work comes first. v1 (M0–M8) is in [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md).
 
-> Related docs: [`GAME_PLAN.md`](./GAME_PLAN.md) · [`DATA_MODEL.md`](./DATA_MODEL.md) · [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md)
+> Related docs: [`GAME_PLAN.md`](./GAME_PLAN.md) · [`DATA_MODEL.md`](./DATA_MODEL.md) · [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md) · [`MONETIZATION_PLAN.md`](./MONETIZATION_PLAN.md)
 
 ---
 
@@ -34,13 +34,15 @@ Three ideas from the brainstorm are already built, so they are not milestones he
 | M18 | Home screen widget | Low–Med | L | No | `home_widget` + a Swift WidgetKit target |
 | M19 | Apple Health | Low–Med | M | No | `health` |
 | M20 | Cloud sync | Low (one device) | XL | Sync metadata | `supabase_flutter` |
+| M21 | Pro unlock (monetization) | — | M | No | `purchases_flutter` |
 
 **Why this order:**
 - **M9 and M10 come first.** They remove taps from every logging session and are pure queries and repository code on the current schema.
 - **M11 comes before any migration.** The app now holds real data on your phone. The first schema migration (M12) is the first chance to lose it, so an export path must exist before then.
 - **M13 comes before M16.** Open Food Facts returns fiber, sugar and sodium, so a barcode lookup can fill them once the columns exist.
 - **M16 is high value but large.** It brings in the network, the camera, permissions and messy third-party data. It is placed after the cheaper wins, not because it matters less.
-- **M18 to M20 are last.** They're mostly platform plumbing, and M18 and M19 may need a paid Apple Developer account (see Open Questions).
+- **M18 to M20 are late.** They're mostly platform plumbing, and M18 and M19 may need a paid Apple Developer account (see Open Questions).
+- **M21 is last.** Pro only has something to sell once the features it unlocks exist. Detailed in [`MONETIZATION_PLAN.md`](./MONETIZATION_PLAN.md).
 
 ---
 
@@ -137,7 +139,10 @@ Each milestone ends with something runnable and its tests passing, as in v1. Run
 ### M20 — Cloud sync
 - [ ] Decide whether it is needed. With M11 in place, sync is only worth building for a second device or a web view
 - [ ] If yes: Supabase Postgres mirroring the drift schema, `updated_at` and `deleted` columns on every table, last-write-wins per row, and sign in with Apple
-- [ ] Plan this one separately in detail before starting
+- [ ] Plan this one separately in detail before starting. The choice between CloudKit and Supabase also decides its pricing tier (see [`MONETIZATION_PLAN.md`](./MONETIZATION_PLAN.md#sync-and-pricing))
+
+### M21 — Pro unlock
+- [ ] Free core plus a one-time Pro in-app purchase, with an optional subscription later only for features that cost money to run. Full plan, free/Pro split and checklist in [`MONETIZATION_PLAN.md`](./MONETIZATION_PLAN.md)
 
 ---
 
@@ -165,3 +170,4 @@ Decide each one before its milestone starts:
 3. **Null vs 0 for new nutrients (M13).** *Proposed:* null means not recorded, so old foods don't claim 0 mg of sodium. The cost is the coverage text in the UI.
 4. **Paid Apple Developer account (M18, M19).** Your current builds use a free personal team. Free teams may not be able to provision App Groups (M18) or HealthKit (M19), and their builds expire after 7 days. Check what your team can provision before starting either milestone. If it can't, these two wait or are dropped.
 5. **Cloud sync (M20).** Is a second device or a web version actually planned? If not, M20 can be cut.
+6. **Monetization (M21).** Price, the free/Pro split, and whether sync is Pro or a subscription. See [`MONETIZATION_PLAN.md`](./MONETIZATION_PLAN.md#open-questions).
