@@ -2,10 +2,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/metrics.dart';
+import '../../core/nutrition_math.dart';
 import '../../data/database/app_database.dart';
 import '../../providers/catalog_providers.dart';
 import '../../providers/infrastructure_providers.dart';
-import '../../providers/preferences_providers.dart';
 import '../common/archivable_list.dart';
 import '../common/form_widgets.dart';
 
@@ -25,7 +25,6 @@ class FoodList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final foods = ref.watch(foodSearchProvider(search));
-    final unit = ref.watch(preferencesProvider.select((s) => s.displayUnit));
 
     return foods.when(
       loading: () => const Center(child: CupertinoActivityIndicator()),
@@ -50,7 +49,7 @@ class FoodList extends ConsumerWidget {
             title: Text(food.name),
             subtitle: Text(
               '${Metric.calories.format(food.calories)} kcal per '
-              '${formatWeight(food.servingWeightG, unit)}',
+              '${formatWeight(food.servingWeightG, _foodUnit(food))}',
             ),
             onTap: () => onTap(food),
           ),
@@ -59,6 +58,10 @@ class FoodList extends ConsumerWidget {
     );
   }
 }
+
+/// The food's own display unit (not the user's setting).
+WeightUnit _foodUnit(FoodItem food) =>
+    WeightUnit.values.asNameMap()[food.displayUnit] ?? WeightUnit.g;
 
 /// Centred hint for an empty catalog list.
 class CatalogEmptyText extends StatelessWidget {

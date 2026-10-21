@@ -30,7 +30,7 @@ Saved catalog foods. Macros are stored per 1 serving, where 1 serving is `servin
 | `carbs` | REAL | No | `>= 0`, per 1 serving |
 | `fat` | REAL | No | `>= 0`, per 1 serving |
 | `serving_weight_g` | REAL | No | `> 0` (used as a divisor) |
-| `display_unit` | TEXT | No | `'g'` or `'oz'`, default `'g'`. Display only |
+| `display_unit` | TEXT | No | `'g'` or `'oz'`, default `'g'`. Display only. This is the food's own unit: the catalog list and food form show the serving weight in it. Logging inputs (weight entry, meal items) use the user's display-unit setting instead |
 | `archived` | BOOL | No | Default `false`. Archived foods leave search but remain referenced by past entries |
 
 ---
@@ -119,7 +119,7 @@ Stored via `shared_preferences`, not in SQLite. Read on app launch to configure 
 | `primary_metric` | String | e.g. `"calories"` |
 | `tracked_metrics` | String list | Metric names, e.g. `["calories", "protein", "fat"]`. Always includes the primary metric; the rest are the secondaries |
 | `goal_<metric>` | Float | Daily goal per metric, e.g. `goal_calories`, `goal_protein`. Required for the primary metric, optional otherwise (key absent = no goal) |
-| `display_unit` | String | `"g"` or `"oz"`. Weights are typed and shown in this unit, stored in grams |
+| `display_unit` | String | `"g"` or `"oz"`. Logging weights (weight entry, meal items) are typed and shown in this unit and stored in grams. Also the default unit for a new catalog food, which then keeps its own `food_items.display_unit` |
 | `onboarding_complete` | Bool | Gate for the onboarding screen |
 
 ---

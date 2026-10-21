@@ -231,13 +231,13 @@ Each milestone ends with something runnable and its tests passing.
 - [x] Tab scaffold with three empty tabs; onboarding gate on launch
 
 ### M3 — Home view
-- [x] Date header: `Today` / `Yesterday` / `Mon, Oct 20`, with ‹ › arrows (tap the title to jump back to today)
+- [x] Date header: `Today` / `Yesterday` / `Mon, Oct 20` (`Mon, Oct 20, 2025` outside the current year), with ‹ › arrows (tap the title to jump back to today)
 - [x] Macro summary: primary metric large with progress toward goal, secondaries below
 - [x] Log list driven by `watchEntriesForDate`; swipe to delete; tap to edit servings (food entries) or view the breakdown (meal entries)
 - [x] Empty state for days with nothing logged
 
 ### M4 — Food catalog
-- [x] Catalog tab: segmented control for Foods / Meals, search field
+- [x] Catalog tab: segmented control for Foods / Meals, search field (literal substring match: `%` and `_` are escaped, not LIKE wildcards)
 - [x] Food item form: name, the four macros per serving, serving weight + unit; validation (required fields, non-negative, weight > 0)
 - [x] Edit and archive food items
 
@@ -263,7 +263,8 @@ Logic lives in `core/summary_math.dart` (window, bucketing, averaging), with uni
 - [x] Settings screen (reuses the onboarding form; saving pops back to Home)
 - [x] Number formatting and rounding rules: whole calories, one decimal for macros, applied through `Metric.format` and the shared `formatMacroLine`. Values that round to zero never show as `-0`.
 - [x] Dark mode and 2x text checked in widget tests (`test/views/large_text_dark_mode_test.dart`), covering Home, Summary, Settings and onboarding. Keyboard: every form list (preferences, food, adhoc, meal builder and log, entry edit sheet) dismisses the keyboard on drag. Fixed layout overflows at 2x text on Home's macro summary and the Summary averages.
-- [ ] App icon and name, then a release build on a physical device. **Left open:** this needs a physical device, release signing and an icon asset, none of which can be done in the development environment. The user-visible name is `Nutriton` on Android (`android:label`) and iOS (`CFBundleDisplayName`); the desktop binaries are still named `nutriton_project`.
+- [x] App icon and name: `Nutriton` is the display name on Android, iOS, web (`manifest.json`, page title) and the desktop binaries (macOS `PRODUCT_NAME`, Windows and Linux `BINARY_NAME` and window titles); the icon is generated from `assets/icon/app_icon.png` with `flutter_launcher_icons`.
+- [ ] Release build on a physical device. **Left open:** needs a physical device and release signing, which are not available in the development environment.
 
 ---
 

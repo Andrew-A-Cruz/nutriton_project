@@ -58,6 +58,30 @@ void main() {
       expect(row.name, 'Rice');
     });
 
+    test('search treats % and _ as literal characters', () async {
+      await db.foodDao.insertFood(food('f1', '100% juice'));
+      await db.foodDao.insertFood(food('f2', 'Rice'));
+      await db.foodDao.insertFood(food('f3', 'snack_bar'));
+      await db.foodDao.insertFood(food('f4', 'snackXbar'));
+      await db.foodDao.insertFood(food(r'f5', r'back\slash'));
+
+      expect((await db.foodDao.findActive(search: '%')).map((f) => f.id), [
+        'f1',
+      ]);
+      expect((await db.foodDao.findActive(search: '_')).map((f) => f.id), [
+        'f3',
+      ]);
+      expect(
+        (await db.foodDao.findActive(search: 'snack_b')).map((f) => f.id),
+        ['f3'],
+      );
+      expect(
+        (await db.foodDao.findActive(search: r'\')).map((f) => f.id),
+        ['f5'],
+      );
+      expect(await db.foodDao.findActive(search: '%%'), isEmpty);
+    });
+
     test(
       'search matches part of the name and ignores archived items',
       () async {

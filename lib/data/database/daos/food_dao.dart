@@ -40,8 +40,18 @@ class FoodDao extends DatabaseAccessor<AppDatabase> with _$FoodDaoMixin {
       ..where((t) {
         final notArchived = t.archived.equals(false);
         if (search.trim().isEmpty) return notArchived;
-        return notArchived & t.name.contains(search.trim());
+        return notArchived & _nameContains(t, search.trim());
       })
       ..orderBy([(t) => OrderingTerm.asc(t.name)]);
+  }
+
+  /// Literal substring match: '%', '_' and the escape character '\' in
+  /// [text] are escaped so they are not LIKE wildcards.
+  Expression<bool> _nameContains($FoodItemsTable t, String text) {
+    final escaped = text.replaceAllMapped(
+      RegExp(r'[\\%_]'),
+      (m) => '\\${m[0]}',
+    );
+    return t.name.like('%$escaped%', escapeChar: r'\');
   }
 }

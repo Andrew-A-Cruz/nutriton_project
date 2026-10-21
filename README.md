@@ -36,3 +36,13 @@ lib/
 ├── views/         Cupertino screens (onboarding, home, add food, catalog, meals, summary, settings)
 └── app.dart / main.dart
 ```
+
+## App icon
+
+The icon source is `assets/icon/app_icon.png` (1024x1024, full-bleed) plus `assets/icon/app_icon_foreground.png` for the Android adaptive icon. To regenerate the platform icons after changing them:
+
+```
+dart run flutter_launcher_icons
+```
+
+If the iOS Xcode project is modified by the tool (it can rewrite `ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS`), revert that one line to `YES`.

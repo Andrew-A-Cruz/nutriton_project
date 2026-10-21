@@ -1,11 +1,11 @@
 {
-    "name": "nutriton_project",
-    "short_name": "nutriton_project",
+    "name": "Nutriton",
+    "short_name": "Nutriton",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#2E7D32",
+    "theme_color": "#2E7D32",
+    "description": "Track calories and macronutrients day by day.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

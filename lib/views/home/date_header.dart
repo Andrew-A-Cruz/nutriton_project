@@ -5,11 +5,14 @@ import 'package:intl/intl.dart';
 import '../../core/date_key.dart';
 import '../../providers/log_providers.dart';
 
-/// 'Today', 'Yesterday', or 'Mon, Oct 20'.
+/// 'Today', 'Yesterday', 'Mon, Oct 20', or 'Mon, Oct 20, 2025' when the
+/// date is not in the same year as [today].
 String dayLabel(String key, {required String today}) {
   if (key == today) return 'Today';
   if (key == addDays(today, -1)) return 'Yesterday';
-  return DateFormat('EEE, MMM d').format(dateFromKey(key));
+  final date = dateFromKey(key);
+  final sameYear = date.year == dateFromKey(today).year;
+  return DateFormat(sameYear ? 'EEE, MMM d' : 'EEE, MMM d, y').format(date);
 }
 
 /// Day title with previous/next arrows. Tapping the title returns to today.

@@ -12,10 +12,12 @@ import '../support/test_app.dart';
 void main() {
   late AppDatabase db;
   late SharedPreferences prefs;
-  final today = todayKey();
-  final yesterday = addDays(today, -1);
+  late String today;
+  late String yesterday;
 
   setUp(() async {
+    today = todayKey();
+    yesterday = addDays(today, -1);
     db = AppDatabase(NativeDatabase.memory());
     prefs = await mockPreferences({
       'onboarding_complete': true,

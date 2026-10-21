@@ -68,6 +68,30 @@ void main() {
     await settle(tester);
   }
 
+  testWidgets('shows each food in its own display unit, not the setting', (
+    tester,
+  ) async {
+    await tester.runAsync(() async {
+      final catalog = CatalogRepository(db);
+      await catalog.createFood(
+        name: 'Steak',
+        perServing: const Macros(calories: 250, protein: 26, carbs: 0, fat: 15),
+        servingWeightG: 100,
+        displayUnit: WeightUnit.oz,
+      );
+      await catalog.createFood(
+        name: 'Rice',
+        perServing: const Macros(calories: 130, protein: 3, carbs: 28, fat: 0),
+        servingWeightG: 100,
+      );
+    });
+    await openCatalog(tester); // user setting is grams
+
+    expect(find.text('250 kcal per 3.5 oz'), findsOneWidget);
+    expect(find.text('130 kcal per 100 g'), findsOneWidget);
+    await unmount(tester);
+  });
+
   testWidgets('lists active foods by name with calories per serving', (
     tester,
   ) async {
