@@ -47,7 +47,7 @@ The main daily logging screen.
 
 #### Add Food View
 
-Accessible from the Home View bottom scaffold. Three entry methods:
+Accessible from the Home View bottom scaffold. Four entry methods:
 
 **1. Add from Food Catalog**
 - User browses saved food items or meals

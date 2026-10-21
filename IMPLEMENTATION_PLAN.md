@@ -26,12 +26,17 @@ React Native would work, but nothing about this app needs it, and switching woul
 
 | Area | State |
 |---|---|
-| `lib/main.dart` | `CupertinoApp` with a 2-tab placeholder (`Articles` / `Views`, "Hello, world!") |
-| `lib/database/database.dart` | drift tables for `food_items`, `meals`, `meal_food_items`, `food_log_entries`; generated code is current |
-| `test/widget_test.dart` | Stock counter test from `flutter create`, **fails** |
-| `flutter analyze` | 13 `recursive_getters` infos (drift false positive from `.check()` referencing its own column) |
-| App IDs | Still `com.example.nutriton_project` / `com.example.nutritonProject` |
-| State management, navigation, preferences | Not started |
+| `lib/main.dart`, `lib/app.dart` | `CupertinoApp` with three real tabs: Today (Home), Catalog and Summary |
+| `lib/data/database/` | drift tables (split into `tables/`), four DAOs, repositories; database file `food_log`; generated code current |
+| `lib/core/` | Pure Dart: `nutrition_math`, `date_key`, `metrics` (formatting), `validation`, `summary_math` (ranges, bucketing, averages) |
+| `lib/views/` | Onboarding, Home (date header, totals, log list), Catalog (foods and meals, search, archive), Add Food sheet (catalog by servings or grams, one-off, new food with save & log), meal builder and meal log, Summary (range picker, averages, bar chart), Settings (the onboarding form) |
+| `lib/providers/` | Riverpod providers for the database, repositories, preferences, the selected Home date, log entries, catalog lists and the Summary range and report |
+| `test/` | Unit tests for `nutrition_math`, `summary_math`, `metrics`, `date_key`, validation; DAO and repository tests on `NativeDatabase.memory()`; widget tests for onboarding, Home, the food and adhoc forms, the catalog, Add Food, the meal flows, Summary, Settings, and a 2x-text / dark-mode layout pass |
+| `flutter analyze` | Clean |
+| App IDs | `com.nutriton.app` (Android, iOS, macOS, Linux, Windows metadata) |
+| State management, preferences | Riverpod (no codegen) and `shared_preferences`, in place |
+| Summary view | Done (M7) |
+| Settings | Done (M8). Gear on Home opens it; saving applies at once |
 
 ---
 
@@ -130,7 +135,7 @@ FROM (
 
 Note the off-by-one in DATA_MODEL.md: `BETWEEN today-7 AND today` covers **8** days. A 7-day window starts at `today - 6`.
 
-DATA_MODEL.md should be updated to match once these changes are agreed.
+DATA_MODEL.md has been updated to match these changes.
 
 ---
 
@@ -141,11 +146,11 @@ DATA_MODEL.md should be updated to match once these changes are agreed.
 | Purpose | Package | Status |
 |---|---|---|
 | Database | `drift`, `drift_flutter`, `drift_dev`, `build_runner` | Installed |
-| State management | `flutter_riverpod` | Add |
-| Preferences | `shared_preferences` | Add |
-| IDs | `uuid` | Add |
-| Date formatting | `intl` | Add |
-| Summary charts | `fl_chart` | Add (Milestone 7) |
+| State management | `flutter_riverpod` | Installed |
+| Preferences | `shared_preferences` | Installed |
+| IDs | `uuid` | Installed |
+| Date formatting | `intl` | Installed |
+| Summary charts | `fl_chart` | Installed (Milestone 7, `^1.2.0`) |
 
 **Why Riverpod:** drift's `watch()` queries return `Stream`s, and a Riverpod `StreamProvider` turns each one into a widget that rebuilds when the data changes. Logging a food on the Add sheet updates the Home list and totals with no manual refresh. Start without Riverpod code generation to keep `build_runner` limited to drift.
 
@@ -204,59 +209,61 @@ lib/
 Each milestone ends with something runnable and its tests passing.
 
 ### M0 — Cleanup
-- [ ] Replace the failing counter test with a smoke test that pumps `MyApp`
-- [ ] Silence `recursive_getters` in the table file; `flutter analyze` is clean
-- [ ] Rename placeholder tabs; replace the README boilerplate with a short description and setup steps (`flutter pub get`, `dart run build_runner build`)
-- [ ] Change the app ID / bundle ID from `com.example.*` (much harder to change after any store upload)
-- [ ] Fix "three entry methods" → four in GAME_PLAN.md
+- [x] Replace the failing counter test with a smoke test that pumps `MyApp`
+- [x] Silence `recursive_getters` in the table file; `flutter analyze` is clean
+- [x] Rename placeholder tabs; replace the README boilerplate with a short description and setup steps (`flutter pub get`, `dart run build_runner build`)
+- [x] Change the app ID / bundle ID from `com.example.*` (much harder to change after any store upload)
+- [x] Fix "three entry methods" → four in GAME_PLAN.md
 
 ### M1 — Data layer
-- [ ] Apply the schema changes above; split tables into `data/database/tables/`
-- [ ] `nutrition_math.dart` + unit tests (servings scaling, weight scaling, meal sum, g↔oz, zero/rounding edge cases)
-- [ ] DAOs: food items (CRUD, search by name, archive), meals (CRUD with items), log (watch entries for date, insert, update, delete), summary (averages for a range)
-- [ ] Repositories with transactions for meal create/update and meal logging
-- [ ] DAO tests against an in-memory database (`NativeDatabase.memory()`)
+- [x] Apply the schema changes above; split tables into `data/database/tables/`
+- [x] `nutrition_math.dart` + unit tests (servings scaling, weight scaling, meal sum, g↔oz, zero/rounding edge cases)
+- [x] DAOs: food items (CRUD, search by name, archive), meals (CRUD with items), log (watch entries for date, insert, update, delete), summary (averages for a range)
+- [x] Repositories with transactions for meal create/update and meal logging
+- [x] DAO tests against an in-memory database (`NativeDatabase.memory()`)
 
 **Done when:** every create/log/summary path in the data model is exercised by a test, with no UI involved.
 
 ### M2 — Preferences, onboarding, app shell
-- [ ] `UserPreferences` wrapper over `shared_preferences` (primary metric, secondary metrics as a list, daily goal, display unit, `onboarding_complete`)
-- [ ] Riverpod setup: `ProviderScope`, providers for database, repositories, and preferences
-- [ ] Onboarding screen: pick primary metric, toggle secondaries, enter goal, choose g/oz
-- [ ] Tab scaffold with three empty tabs; onboarding gate on launch
+- [x] `UserPreferences` wrapper over `shared_preferences` (primary metric, secondary metrics as a list, daily goal, display unit, `onboarding_complete`)
+- [x] Riverpod setup: `ProviderScope`, providers for database, repositories, and preferences
+- [x] Onboarding screen: pick primary metric, toggle secondaries, enter goal, choose g/oz
+- [x] Tab scaffold with three empty tabs; onboarding gate on launch
 
 ### M3 — Home view
-- [ ] Date header: `Today` / `Yesterday` / `Mon, Oct 20`, with ‹ › arrows (tap the title to jump back to today)
-- [ ] Macro summary: primary metric large with progress toward goal, secondaries below
-- [ ] Log list driven by `watchEntriesForDate`; swipe to delete; tap to edit servings (food entries) or view the breakdown (meal entries)
-- [ ] Empty state for days with nothing logged
+- [x] Date header: `Today` / `Yesterday` / `Mon, Oct 20`, with ‹ › arrows (tap the title to jump back to today)
+- [x] Macro summary: primary metric large with progress toward goal, secondaries below
+- [x] Log list driven by `watchEntriesForDate`; swipe to delete; tap to edit servings (food entries) or view the breakdown (meal entries)
+- [x] Empty state for days with nothing logged
 
 ### M4 — Food catalog
-- [ ] Catalog tab: segmented control for Foods / Meals, search field
-- [ ] Food item form: name, the four macros per serving, serving weight + unit; validation (required fields, non-negative, weight > 0)
-- [ ] Edit and archive food items
+- [x] Catalog tab: segmented control for Foods / Meals, search field
+- [x] Food item form: name, the four macros per serving, serving weight + unit; validation (required fields, non-negative, weight > 0)
+- [x] Edit and archive food items
 
 ### M5 — Add Food sheet
-- [ ] **From catalog:** search → pick → enter servings (with a live macro preview) → log
-- [ ] **Adhoc:** name + macros → log (never written to the catalog)
-- [ ] **New catalog item:** reuses the M4 form, with a "save & log" option
-- [ ] All paths log to Home's active date, not necessarily today
+- [x] **From catalog:** search → pick → enter servings (with a live macro preview) → log
+- [x] **Adhoc:** name + macros → log (never written to the catalog)
+- [x] **New catalog item:** reuses the M4 form, with a "save & log" option
+- [x] All paths log to Home's active date, not necessarily today
 
 ### M6 — Meals
-- [ ] Meal builder: name, add items from the catalog, set each item's weight, reorder/remove, running totals
-- [ ] Log meal: pick a meal → editable copy of its items (add, remove, re-weigh) → confirm writes one entry + `food_log_entry_items` snapshot, leaving the template unchanged
-- [ ] Optional "update meal template with these changes" toggle
+- [x] Meal builder: name, add items from the catalog, set each item's weight, reorder/remove, running totals
+- [x] Log meal: pick a meal → editable copy of its items (add, remove, re-weigh) → confirm writes one entry + `food_log_entry_items` snapshot, leaving the template unchanged
+- [x] Optional "update meal template with these changes" toggle
 
 ### M7 — Summary view
-- [ ] Segmented control: Day / Week / Month / 6M / Year
-- [ ] Averages for each tracked metric, plus "days logged: n of N"
-- [ ] Bar chart of daily calories (or primary metric) across the range, with the goal as a reference line (`fl_chart`); for 6M/Year, plot weekly or monthly averages so the bars stay readable
+- [x] Segmented control: Day / Week / Month / 6M / Year
+- [x] Averages for each tracked metric, plus "days logged: n of N"
+- [x] Bar chart of the primary metric across the range, with the goal as a reference line (`fl_chart`); 6M plots weekly averages and Year plots monthly averages. Week and Month plot one bar per day. Day has no chart, since a single bar adds nothing to the averages.
+
+Logic lives in `core/summary_math.dart` (window, bucketing, averaging), with unit tests in `test/core/summary_math_test.dart`. Week and 6M buckets are counted back from today, so the newest bar is always complete. Year buckets are calendar months.
 
 ### M8 — Settings & polish
-- [ ] Settings screen (reuses the onboarding form)
-- [ ] Number formatting and rounding rules (whole calories, one decimal for macros)
-- [ ] Dark mode check, Dynamic Type / large text check, keyboard handling on forms
-- [ ] App icon and name, then a release build on a physical device
+- [x] Settings screen (reuses the onboarding form; saving pops back to Home)
+- [x] Number formatting and rounding rules: whole calories, one decimal for macros, applied through `Metric.format` and the shared `formatMacroLine`. Values that round to zero never show as `-0`.
+- [x] Dark mode and 2x text checked in widget tests (`test/views/large_text_dark_mode_test.dart`), covering Home, Summary, Settings and onboarding. Keyboard: every form list (preferences, food, adhoc, meal builder and log, entry edit sheet) dismisses the keyboard on drag. Fixed layout overflows at 2x text on Home's macro summary and the Summary averages.
+- [ ] App icon and name, then a release build on a physical device. **Left open:** this needs a physical device, release signing and an icon asset, none of which can be done in the development environment. The user-visible name is `Nutriton` on Android (`android:label`) and iOS (`CFBundleDisplayName`); the desktop binaries are still named `nutriton_project`.
 
 ---
 
@@ -275,13 +282,13 @@ Run `flutter analyze && flutter test` before each push.
 
 ## Open Questions
 
-These change the UI or schema, so they're worth deciding before the related milestone:
+All five are decided. The reasoning is recorded so it isn't reopened by accident:
 
-1. **Goals for non-calorie metrics.** If the primary metric is Protein, what does the "daily calorie goal" mean? Options: a goal per tracked metric (recommended; four nullable prefs), or calories-only. *(needed by M2)*
-2. **Summary averaging.** Average over days with entries (recommended: skipped days don't drag averages to zero) or over every calendar day in the range? *(M7)*
-3. **Logging by weight.** Allow "log 150 g of chicken" as well as "1.5 servings"? It's cheap with the weight normalization above. *(M5)*
-4. **Android look.** Cupertino everywhere, or adaptive widgets? *(before M3)*
-5. **Fiber, sugar, sodium.** Out of scope for v1? Adding columns later is a simple migration, but the onboarding metric picker should be built so that list can grow. *(M2)*
+1. **Goals for non-calorie metrics.** *Decided:* a goal per tracked metric, stored as optional `goal_<metric>` preferences. The primary metric needs a goal in onboarding; secondary goals may be left blank. The Home progress bars and the Summary goal line use the goal for the metric shown.
+2. **Summary averaging.** *Decided:* average over days with at least one entry. Skipped days do not count, and "days logged: n of N" shows the basis. Day totals are summed first, then averaged. Each chart bar is the per-logged-day average within its bucket.
+3. **Logging by weight.** *Decided and implemented in M5:* a catalog food can be logged by servings or by weight. The weight is typed in the user's display unit (g or oz), converted to grams and then to servings with `servingsForWeight`, and the entry stores the resulting snapshot. Meal item weights also use the display unit.
+4. **Android look.** *Decided:* Cupertino everywhere, including Android. Adaptive widgets are not planned for v1.
+5. **Fiber, sugar, sodium.** *Decided:* out of scope for v1. Adding one later means a new `Metric` value and a column. The onboarding picker and the Summary both iterate `Metric.values`, so they pick it up without other changes.
 
 ---
 

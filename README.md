@@ -1,21 +1,38 @@
-# nutriton_project
+# Nutriton
 
-A new Flutter project.
+A Flutter app for tracking calories and macronutrients day by day. Data stays on the device (SQLite via drift).
 
-## Getting Started
+See [`GAME_PLAN.md`](./GAME_PLAN.md) for what the app does, [`DATA_MODEL.md`](./DATA_MODEL.md) for the schema, and [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md) for the build order.
 
-This project is a starting point for a Flutter application.
+## Setup
 
-A few resources to get you started if this is your first Flutter project:
+Requires the Flutter SDK (stable channel).
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+```sh
+flutter pub get
+dart run build_runner build --delete-conflicting-outputs
+flutter run
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Run the `build_runner` step after changing any file under `lib/data/database/` (tables or DAOs). It generates the `*.g.dart` files that drift needs. The generated files are committed.
 
+## Checks
 
-# About nutrition_project
-This project is going to be an application that allows users to track macronutrients and calories throughout each day. They will be able to see their daily, weekly, and monthly calories.
+```sh
+flutter analyze
+flutter test
+```
+
+## Layout
+
+```
+lib/
+├── core/          pure Dart: nutrition math, date keys, summary math, validation
+├── data/
+│   ├── database/  drift tables, DAOs, AppDatabase
+│   ├── preferences/  shared_preferences wrapper
+│   └── repositories/
+├── providers/     Riverpod providers
+├── views/         Cupertino screens (onboarding, home, add food, catalog, meals, summary, settings)
+└── app.dart / main.dart
+```

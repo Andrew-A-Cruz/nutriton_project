@@ -1,4 +1,4 @@
-package com.example.nutriton_project
+package com.nutriton.app
 
 import io.flutter.embedding.android.FlutterActivity
 
