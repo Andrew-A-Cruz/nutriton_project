@@ -6,6 +6,7 @@ import '../../providers/log_providers.dart';
 import '../../providers/preferences_providers.dart';
 import '../add_food/add_food_view.dart';
 import '../settings/settings_view.dart';
+import '../tour/app_tour.dart';
 import 'date_header.dart';
 import 'day_log_list.dart';
 import 'macro_summary.dart';
@@ -28,25 +29,33 @@ class HomeView extends ConsumerWidget {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CupertinoButton(
-              key: const Key('settings-button'),
-              padding: EdgeInsets.zero,
-              onPressed: () => Navigator.of(context).push(
-                CupertinoPageRoute<void>(builder: (_) => const SettingsView()),
-              ),
-              child: const Icon(CupertinoIcons.settings),
-            ),
-            CupertinoButton(
-              key: const Key('add-food-button'),
-              padding: EdgeInsets.zero,
-              onPressed: () => Navigator.of(context).push(
-                CupertinoPageRoute<void>(
-                  fullscreenDialog: true,
-                  // Logs go to the day shown here, which may not be today.
-                  builder: (_) => AddFoodView(logDate: date),
+            KeyedSubtree(
+              key: TourTargets.settings,
+              child: CupertinoButton(
+                key: const Key('settings-button'),
+                padding: EdgeInsets.zero,
+                onPressed: () => Navigator.of(context).push(
+                  CupertinoPageRoute<void>(
+                    builder: (_) => const SettingsView(),
+                  ),
                 ),
+                child: const Icon(CupertinoIcons.settings),
               ),
-              child: const Icon(CupertinoIcons.add),
+            ),
+            KeyedSubtree(
+              key: TourTargets.addFood,
+              child: CupertinoButton(
+                key: const Key('add-food-button'),
+                padding: EdgeInsets.zero,
+                onPressed: () => Navigator.of(context).push(
+                  CupertinoPageRoute<void>(
+                    fullscreenDialog: true,
+                    // Logs go to the day shown here, which may not be today.
+                    builder: (_) => AddFoodView(logDate: date),
+                  ),
+                ),
+                child: const Icon(CupertinoIcons.add),
+              ),
             ),
           ],
         ),
@@ -56,9 +65,17 @@ class HomeView extends ConsumerWidget {
         bottom: false,
         child: CustomScrollView(
           slivers: [
-            SliverToBoxAdapter(child: DateHeader(date: date)),
             SliverToBoxAdapter(
-              child: MacroSummary(entries: entries, settings: settings),
+              child: KeyedSubtree(
+                key: TourTargets.date,
+                child: DateHeader(date: date),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: KeyedSubtree(
+                key: TourTargets.totals,
+                child: MacroSummary(entries: entries, settings: settings),
+              ),
             ),
             SliverToBoxAdapter(child: ScheduledSuggestions(date: date)),
             if (entriesAsync.hasError)

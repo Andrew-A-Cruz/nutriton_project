@@ -24,6 +24,8 @@ void main() {
       await tester.pumpWidget(testApp(db: db, prefs: prefs!));
       await settle(tester);
 
+      expect(find.text('Welcome to Nutriton'), findsOneWidget);
+      await skipWelcome(tester);
       expect(find.text('Set up Nutriton'), findsOneWidget);
       expect(find.byKey(const Key('goal-calories')), findsOneWidget);
       expect(find.byType(CupertinoTabScaffold), findsNothing);
@@ -38,6 +40,7 @@ void main() {
 
     await tester.pumpWidget(testApp(db: db, prefs: prefs!));
     await settle(tester);
+    await skipWelcome(tester);
 
     await tester.enterText(find.byKey(const Key('goal-calories')), '2000');
     await tapSubmitPreferences(tester);
@@ -58,6 +61,7 @@ void main() {
 
     await tester.pumpWidget(testApp(db: db, prefs: prefs!));
     await settle(tester);
+    await skipWelcome(tester);
 
     await tapSubmitPreferences(tester);
     await settle(tester);

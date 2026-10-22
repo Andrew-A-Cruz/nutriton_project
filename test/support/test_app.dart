@@ -84,11 +84,13 @@ Future<void> unmount(WidgetTester tester) async {
   await tester.pump(const Duration(seconds: 1));
 }
 
-/// Scrolls the preferences form until its submit button is built, then taps it.
-Future<void> tapSubmitPreferences(WidgetTester tester) async {
-  final submit = find.byKey(const Key('submit-preferences'));
+final _submitPreferences = find.byKey(const Key('submit-preferences'));
+
+/// Scrolls the preferences form (onboarding or Settings) until its submit
+/// button is built.
+Future<void> scrollPreferencesToEnd(WidgetTester tester) async {
   await tester.scrollUntilVisible(
-    submit,
+    _submitPreferences,
     200,
     // The text fields contain their own Scrollables, so take the list's first.
     scrollable: find
@@ -98,5 +100,16 @@ Future<void> tapSubmitPreferences(WidgetTester tester) async {
         )
         .first,
   );
-  await tester.tap(submit);
+}
+
+/// Scrolls the preferences form until its submit button is built, then taps it.
+Future<void> tapSubmitPreferences(WidgetTester tester) async {
+  await scrollPreferencesToEnd(tester);
+  await tester.tap(_submitPreferences);
+}
+
+/// Skips the onboarding welcome pages, leaving the setup form showing.
+Future<void> skipWelcome(WidgetTester tester) async {
+  await tester.tap(find.byKey(const Key('welcome-skip')));
+  await settle(tester);
 }

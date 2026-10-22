@@ -5,6 +5,7 @@ import 'package:nutriton_project/core/date_key.dart';
 import 'package:nutriton_project/core/nutrition_math.dart';
 import 'package:nutriton_project/data/database/app_database.dart';
 import 'package:nutriton_project/data/repositories/log_repository.dart';
+import 'package:nutriton_project/views/tour/app_tour.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../support/test_app.dart';
@@ -116,7 +117,37 @@ void main() {
     await tester.pumpWidget(testApp(db: db, prefs: onboardingPrefs!));
     await settle(tester);
 
+    // Every welcome page, then the setup form.
+    for (var i = 0; i < 5; i++) {
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.byKey(const Key('welcome-next')));
+      await settle(tester);
+    }
     expect(find.text('Set up Nutriton'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
+
+  testWidgets('every tour step fits at 2x text in dark mode', (tester) async {
+    stressScreen(tester);
+    // Not onboarded yet, with the goal filled in: at 2x text its field is
+    // below the fold and not built.
+    final onboardingPrefs = await tester.runAsync(
+      () => mockPreferences({'goal_calories': 2000.0}),
+    );
+    await tester.pumpWidget(testApp(db: db, prefs: onboardingPrefs!));
+    await settle(tester);
+    await skipWelcome(tester);
+    await tapSubmitPreferences(tester);
+    await settle(tester);
+
+    for (var i = 0; i < tourSteps.length; i++) {
+      expect(tester.takeException(), isNull);
+      // Next must be on screen at every step: a missed tap leaves the card up.
+      await tester.tap(find.byKey(const Key('tour-next')));
+      await settle(tester);
+    }
+    expect(find.byKey(const Key('tour-card')), findsNothing);
     expect(tester.takeException(), isNull);
     await unmount(tester);
   });

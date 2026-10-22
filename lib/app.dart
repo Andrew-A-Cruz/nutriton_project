@@ -6,6 +6,7 @@ import 'views/catalog/catalog_view.dart';
 import 'views/home/home_view.dart';
 import 'views/onboarding/onboarding_view.dart';
 import 'views/summary/summary_view.dart';
+import 'views/tour/app_tour.dart';
 
 /// Root widget.
 class MyApp extends StatelessWidget {
@@ -33,29 +34,50 @@ class _RootGate extends ConsumerWidget {
 class _HomeTabs extends StatelessWidget {
   const _HomeTabs();
 
-  static const _tabs = [
-    (label: 'Today', icon: CupertinoIcons.today_fill),
-    (label: 'Catalog', icon: CupertinoIcons.book_fill),
-    (label: 'Summary', icon: CupertinoIcons.chart_bar_fill),
+  static final List<({String label, IconData icon, GlobalKey? tourTarget})>
+  _tabs = [
+    (label: 'Today', icon: CupertinoIcons.today_fill, tourTarget: null),
+    (
+      label: 'Catalog',
+      icon: CupertinoIcons.book_fill,
+      tourTarget: TourTargets.catalogTab,
+    ),
+    (
+      label: 'Summary',
+      icon: CupertinoIcons.chart_bar_fill,
+      tourTarget: TourTargets.summaryTab,
+    ),
   ];
 
   @override
   Widget build(BuildContext context) {
-    // Each tab gets its own CupertinoTabView, so it keeps its own stack.
-    return CupertinoTabScaffold(
-      tabBar: CupertinoTabBar(
-        items: [
-          for (final tab in _tabs)
-            BottomNavigationBarItem(icon: Icon(tab.icon), label: tab.label),
-        ],
-      ),
-      tabBuilder: (context, index) => CupertinoTabView(
-        builder: (context) => switch (index) {
-          0 => const HomeView(),
-          1 => const CatalogView(),
-          _ => const SummaryView(),
-        },
-      ),
+    return Stack(
+      children: [
+        // Each tab gets its own CupertinoTabView, so it keeps its own stack.
+        CupertinoTabScaffold(
+          tabBar: CupertinoTabBar(
+            items: [
+              for (final tab in _tabs)
+                BottomNavigationBarItem(
+                  icon: KeyedSubtree(
+                    key: tab.tourTarget,
+                    child: Icon(tab.icon),
+                  ),
+                  label: tab.label,
+                ),
+            ],
+          ),
+          tabBuilder: (context, index) => CupertinoTabView(
+            builder: (context) => switch (index) {
+              0 => const HomeView(),
+              1 => const CatalogView(),
+              _ => const SummaryView(),
+            },
+          ),
+        ),
+        // Above the tab bar too, so the tour can point at the tabs.
+        const Positioned.fill(child: AppTourOverlay()),
+      ],
     );
   }
 }
