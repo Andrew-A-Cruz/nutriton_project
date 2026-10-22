@@ -91,6 +91,9 @@ class _PreferencesFormState extends State<PreferencesForm> {
 
   @override
   Widget build(BuildContext context) {
+    // At large text sizes a goal's label goes above its field, since beside
+    // it the label leaves the field almost no width.
+    final stackGoalLabels = MediaQuery.textScalerOf(context).scale(10) > 15;
     return ListView(
       // Dragging the list hides the keyboard, so the goal fields never trap it.
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -143,10 +146,15 @@ class _PreferencesFormState extends State<PreferencesForm> {
           children: [
             for (final m in Metric.values.where(_tracked.contains))
               CupertinoFormRow(
-                prefix: Text(m.label),
+                prefix: stackGoalLabels ? null : Text(m.label),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
+                    if (stackGoalLabels)
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(m.label),
+                      ),
                     CupertinoTextField(
                       key: Key('goal-${m.name}'),
                       controller: _goals[m],
@@ -177,16 +185,23 @@ class _PreferencesFormState extends State<PreferencesForm> {
           ],
         ),
         CupertinoFormSection.insetGrouped(
-          header: const Text('UNITS'),
+          // The label is the header, not a row prefix: at large text sizes a
+          // prefix leaves the control no width.
+          header: const Text('SHOW WEIGHTS IN'),
           children: [
-            CupertinoFormRow(
-              prefix: const Text('Weights shown in'),
-              child: CupertinoSlidingSegmentedControl<WeightUnit>(
-                groupValue: _unit,
-                children: {for (final u in WeightUnit.values) u: Text(u.name)},
-                onValueChanged: (u) {
-                  if (u != null) setState(() => _unit = u);
-                },
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: SizedBox(
+                width: double.infinity,
+                child: CupertinoSlidingSegmentedControl<WeightUnit>(
+                  groupValue: _unit,
+                  children: {
+                    for (final u in WeightUnit.values) u: Text(u.name),
+                  },
+                  onValueChanged: (u) {
+                    if (u != null) setState(() => _unit = u);
+                  },
+                ),
               ),
             ),
           ],
