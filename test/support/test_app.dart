@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:nutriton_project/app.dart';
 import 'package:nutriton_project/data/database/app_database.dart';
 import 'package:nutriton_project/providers/infrastructure_providers.dart';
@@ -13,12 +14,18 @@ Future<SharedPreferences> mockPreferences(Map<String, Object> values) async {
   return SharedPreferences.getInstance();
 }
 
-/// The app with an in-memory database and the given preferences.
-Widget testApp({required AppDatabase db, required SharedPreferences prefs}) {
+/// The app with an in-memory database and the given preferences. [overrides]
+/// are added after the database and preferences overrides.
+Widget testApp({
+  required AppDatabase db,
+  required SharedPreferences prefs,
+  List<Override> overrides = const [],
+}) {
   return ProviderScope(
     overrides: [
       databaseProvider.overrideWithValue(db),
       sharedPreferencesProvider.overrideWithValue(prefs),
+      ...overrides,
     ],
     child: const MyApp(),
   );

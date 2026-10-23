@@ -1,13 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/date_key.dart';
 import '../../core/metrics.dart';
 import '../../core/nutrition_math.dart';
 import '../../core/validation.dart';
 import '../../data/database/app_database.dart';
 import '../../providers/infrastructure_providers.dart';
 import '../../providers/preferences_providers.dart';
+import '../../providers/today_providers.dart';
 import '../common/form_widgets.dart';
 import '../home/date_header.dart';
 
@@ -147,7 +147,7 @@ class _LogFoodViewState extends ConsumerState<LogFoodView> {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
               child: Text(
-                'Logging to ${dayLabel(widget.logDate, today: todayKey())}',
+                'Logging to ${dayLabel(widget.logDate, today: ref.watch(todayProvider))}',
                 key: const Key('log-food-date'),
                 textAlign: TextAlign.center,
                 style: TextStyle(color: secondary),

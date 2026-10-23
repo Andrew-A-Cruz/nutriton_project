@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/date_key.dart';
 import '../../providers/log_providers.dart';
+import '../../providers/today_providers.dart';
 
 /// 'Today', 'Yesterday', 'Mon, Oct 20', or 'Mon, Oct 20, 2025' when the
 /// date is not in the same year as [today].
@@ -39,7 +40,7 @@ class DateHeader extends ConsumerWidget {
               behavior: HitTestBehavior.opaque,
               onTap: days.goToToday,
               child: Text(
-                dayLabel(date, today: todayKey()),
+                dayLabel(date, today: ref.watch(todayProvider)),
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 17,

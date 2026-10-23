@@ -1,13 +1,65 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
+
 import '../../core/metrics.dart';
 import '../../core/nutrition_math.dart';
 import '../database/app_database.dart';
 import '../preferences/user_preferences.dart';
 
 /// Version written by [BackupCodec.encode]. Bump when the file layout changes;
-/// files with a higher version are rejected, lower ones are still read.
+/// files with a higher version are rejected, lower ones are upgraded on read
+/// (see [_upgrades]).
 const backupFormatVersion = 1;
+
+/// Rewrites the raw JSON map of a version N backup into the version N + 1
+/// layout. Must not mutate its input.
+typedef BackupUpgrade =
+    Map<String, dynamic> Function(Map<String, dynamic> root);
+
+/// Upgrade steps keyed by the version they upgrade FROM. Version 1 is the
+/// current format, so there are none yet.
+///
+/// To change the layout: bump [backupFormatVersion], add one function that
+/// turns version N into N + 1, and register it here as `N: _upgradeV1ToV2`.
+/// The runner sets `version` itself. When a table gained a column, the step
+/// must write that column's default into every row of the old file, using the
+/// same default the database migration used, so `fromJson` sees a complete
+/// row. For example:
+///
+/// ```
+/// Map<String, dynamic> _upgradeV1ToV2(Map<String, dynamic> root) => {
+///   ...root,
+///   'meals': [
+///     for (final r in root['meals'] as List)
+///       {...(r as Map<String, dynamic>), 'color': 0},
+///   ],
+/// };
+/// ```
+///
+/// A missing nullable column needs no step: drift reads it as null.
+const _upgrades = <int, BackupUpgrade>{};
+
+/// Runs the steps from [fromVersion] up to [toVersion], setting `version` after
+/// each one. Throws [BackupException] if a step is missing. [upgrades] and
+/// [toVersion] are overridable so tests can use a fake registry.
+@visibleForTesting
+Map<String, dynamic> upgradeBackupJson(
+  Map<String, dynamic> root, {
+  required int fromVersion,
+  int toVersion = backupFormatVersion,
+  Map<int, BackupUpgrade> upgrades = _upgrades,
+}) {
+  var current = root;
+  for (var v = fromVersion; v < toVersion; v++) {
+    final step = upgrades[v];
+    if (step == null) {
+      throw BackupException('This backup (format $v) can no longer be read.');
+    }
+    current = {...step(current), 'version': v + 1};
+  }
+  return current;
+}
 
 /// The file is not a usable backup (malformed, wrong shape, or too new). The
 /// [message] is safe to show to the user.
@@ -58,14 +110,22 @@ class BackupData {
 /// Referential integrity and CHECK rules are enforced by the database during
 /// import.
 class BackupCodec {
-  const BackupCodec();
+  /// [currentVersion] and [upgrades] are overridable so tests can exercise the
+  /// upgrade pipeline with a fake newer format.
+  const BackupCodec({
+    this.currentVersion = backupFormatVersion,
+    this.upgrades = _upgrades,
+  });
+
+  final int currentVersion;
+  final Map<int, BackupUpgrade> upgrades;
 
   static const appId = 'nutriton';
 
   String encode(BackupData data, {DateTime? exportedAt}) {
     final map = <String, Object?>{
       'app': appId,
-      'version': backupFormatVersion,
+      'version': currentVersion,
       'exportedAt': (exportedAt ?? DateTime.now()).toUtc().toIso8601String(),
       'food_items': [for (final r in data.foodItems) r.toJson()],
       'meals': [for (final r in data.meals) r.toJson()],
@@ -96,30 +156,40 @@ class BackupCodec {
     if (version is! int || version < 1) {
       throw BackupException('The backup has no valid version number.');
     }
-    if (version > backupFormatVersion) {
+    if (version > currentVersion) {
       throw BackupException(
         'This backup was made by a newer version of the app '
         '(format $version). Update the app to restore it.',
       );
     }
     try {
+      final current = upgradeBackupJson(
+        root,
+        fromVersion: version,
+        toVersion: currentVersion,
+        upgrades: upgrades,
+      );
       return BackupData(
-        foodItems: _rows(root, 'food_items', FoodItem.fromJson),
-        meals: _rows(root, 'meals', Meal.fromJson),
-        mealFoodItems: _rows(root, 'meal_food_items', MealFoodItem.fromJson),
-        logEntries: _rows(root, 'food_log_entries', FoodLogEntry.fromJson),
+        foodItems: _rows(current, 'food_items', FoodItem.fromJson),
+        meals: _rows(current, 'meals', Meal.fromJson),
+        mealFoodItems: _rows(current, 'meal_food_items', MealFoodItem.fromJson),
+        logEntries: _rows(current, 'food_log_entries', FoodLogEntry.fromJson),
         logEntryItems: _rows(
-          root,
+          current,
           'food_log_entry_items',
           FoodLogEntryItem.fromJson,
         ),
-        scheduledMeals: _rows(root, 'scheduled_meals', ScheduledMeal.fromJson),
+        scheduledMeals: _rows(
+          current,
+          'scheduled_meals',
+          ScheduledMeal.fromJson,
+        ),
         scheduledMealOutcomes: _rows(
-          root,
+          current,
           'scheduled_meal_outcomes',
           ScheduledMealOutcome.fromJson,
         ),
-        settings: _decodeSettings(root['preferences']),
+        settings: _decodeSettings(current['preferences']),
       );
     } on BackupException {
       rethrow;

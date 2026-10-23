@@ -1,6 +1,6 @@
 # Food Log App — Feature Plan (post-v1)
 
-The features after v1, ordered by value for effort: the most daily benefit for the least work comes first. v1 (M0–M8) is in [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md).
+The features after v1, ordered by value for effort: the most daily benefit for the least work comes first. v1 (M0–M8) is in [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md). Fixes from the October 2026 review and an unordered backlog of further enhancements are at the end, under [Fixes From the October 2026 Review](#fixes-from-the-october-2026-review) and [Enhancement Backlog](#enhancement-backlog).
 
 > Related docs: [`GAME_PLAN.md`](./GAME_PLAN.md) · [`DATA_MODEL.md`](./DATA_MODEL.md) · [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md) · [`MONETIZATION_PLAN.md`](./MONETIZATION_PLAN.md)
 
@@ -79,7 +79,7 @@ Each milestone ends with something runnable and its tests passing, as in v1. Run
 **Done when:** you can export on the phone, delete the app, reinstall and import with nothing lost. Do this once by hand before starting M12.
 
 ### M12 — Meal sections
-- [ ] **Migration setup** (first time, reused by every later schema change): dump the current schema with `dart run drift_dev make-migrations`, commit `drift_schemas/`, and add the generated migration test. Bump `schemaVersion` to 2
+- [x] **Migration setup** (first time, reused by every later schema change): dump the current schema with `dart run drift_dev make-migrations`, commit `drift_schemas/`, and add the generated migration test. *Done in the October 2026 fixes:* `build.yaml`, `drift_schemas/app_database/` (v1 and v2) and `test/drift/app_database/` exist; scheduling already took v2, so meal sections bump `schemaVersion` to 3
 - [ ] Add a nullable `meal_slot` column to `food_log_entries`: `'breakfast' | 'lunch' | 'dinner' | 'snack'`. Existing rows stay null and show under "Other"
 - [ ] Default slot when logging, by time of day: before 10:30 breakfast, before 15:00 lunch, before 20:00 dinner, otherwise snack. The user can change it in the Add sheet and in the entry edit sheet
 - [ ] Home log list: grouped sections with a calorie subtotal per section. Empty sections are hidden
@@ -146,6 +146,102 @@ Each milestone ends with something runnable and its tests passing, as in v1. Run
 
 ---
 
+## Fixes From the October 2026 Review
+
+Problems found in a review of the built app. Do these before new milestones: the first two can lose or misplace data.
+
+- [x] **Stale "today".** `selectedDateProvider` is set to today once and kept alive, and nothing moves it when the app resumes or the date changes. Leave the app in the background overnight and the next morning's breakfast is logged to yesterday, while the header may still read "Today". Listen for app resume (`AppLifecycleListener`) and for midnight; if Home was on the old today, move it to the new one. Summary's `endDate: todayKey()` needs the same refresh. Test with an injectable clock
+- [x] **Undo for swipe-to-delete.** One accidental swipe on Home deletes an entry for good. Show an "Entry deleted · Undo" banner for a few seconds that re-inserts the entry and its breakdown rows. This uses the same copy code as Log again (M10)
+- [x] **Edit any entry.** Tapping a one-off entry does nothing, and food entries only let you change servings. Add an edit sheet for one-off entries (name and macros) and a "Move to another day" action for every entry type
+- [x] **Read older backups after a schema change.** `BackupCodec` rejects newer files but has no step that upgrades older ones. Once a table gains a column (M12, M13), `fromJson` fails on a version 1 file and the restore reports "damaged". Before the next migration, add a per-version upgrade step that fills new columns with their defaults, plus a fixture test holding a real version 1 file
+- [x] **Migration test tooling.** `schema_migration_test.dart` rebuilds v1 by hand. Set up `drift_dev make-migrations` and commit `drift_schemas/` (already planned in M12) before any further schema change. *Done:* after changing tables, bump `schemaVersion`, then run `dart run drift_dev make-migrations` and `dart run build_runner build`
+- [x] **Double-tap on Copy yesterday.** Two quick taps copy the day twice. Disable the button while the copy runs
+- [x] **Release housekeeping.** Android release builds still use the debug signing config; the `pubspec.yaml` description still reads "A new Flutter project."; the Open Food Facts User-Agent contains a personal email in a public repo (consider a project address). *Done:* release builds sign with `android/key.properties` when it exists (create it and the keystore before a Play release; it is git-ignored), and the User-Agent now gives the repo URL
+
+---
+
+## Enhancement Backlog
+
+Ideas that aren't milestones yet. They aren't ordered: when one is picked up, give it a milestone number and place it in the table above. Schema changes get their version number at that point too. The tier column follows the rule of thumb in [`MONETIZATION_PLAN.md`](./MONETIZATION_PLAN.md#free-vs-pro).
+
+### Faster logging
+
+| Idea | Value | Effort | Schema change | Tier |
+|---|---|---|---|---|
+| Quick add | High | S | No | Free |
+| Recipes with a cooked weight | High | M | Yes | Free |
+| Favorites | Medium | S | Yes | Free |
+| Duplicate a catalog food | Medium | S | No | Free |
+| Serving presets | Medium | M | Yes (new table) | Free |
+| Siri Shortcuts / App Intents | Low–Med | L | No | Pro candidate (see Open Questions) |
+
+- [ ] **Quick add.** Log a number of calories (optionally with macros) with no name, e.g. a restaurant estimate. Stored as a one-off entry named "Quick add", so no schema change
+- [ ] **Recipes with a cooked weight.** A meal records the raw ingredients, but batch cooking changes the weight (a pot of chili loses water). A recipe stores its ingredients plus the total cooked weight, so "200 g of chili" logs 200 / cooked weight of the recipe's totals. Either a `cooked_weight_g` column on `meals` or a separate recipe type; decide when planning it
+- [ ] **Favorites.** A `favorite` flag on `food_items` and `meals`, shown as a star in the catalog and pinned at the top of the Add Food sheet, above Recent
+- [ ] **Duplicate a catalog food.** "Duplicate" in the food action sheet opens the food form prefilled with "<name> copy", for variants like a different brand or size
+- [ ] **Serving presets.** Named portions per food, such as "1 cup = 240 g" or "1 slice = 28 g", in a new `food_servings` table. The log-by-weight input offers them alongside g/oz. Open Food Facts' `serving_size` text can seed one preset
+- [ ] **Siri Shortcuts / App Intents.** "Log my usual breakfast" or "How many calories are left?" from Siri, Spotlight or the Action button. Needs a Swift App Intents target and a platform channel, like M18
+
+### Understanding your data
+
+| Idea | Value | Effort | Schema change | Tier |
+|---|---|---|---|---|
+| Movable Summary end date | High | S | No | Free |
+| Macro split chart | Medium | S | No | Free |
+| Over/under goal on the chart | Medium | S | No | Free |
+| Calendar of logged days | Medium | M | No | Free |
+| Top foods | Medium | M | No | Free |
+
+- [ ] **Movable Summary end date.** Summary always ends today. Add ‹ › arrows that step by one range (the previous week, the previous month), plus a "Today" button to return. `summary_math` already takes `endDate`
+- [ ] **Macro split chart.** The share of calories from protein, carbs and fat (4 / 4 / 9 kcal per g) for the day on Home and for the range on Summary, as a ring or stacked bar
+- [ ] **Over/under goal on the chart.** Color each Summary bar by whether it is within, over or under the goal (with a tolerance such as ±10%), and show "n days on target" under the averages
+- [ ] **Calendar of logged days.** A month grid, reachable by tapping the Home date, with a dot on logged days and tinted days over or under goal. Tapping a day jumps Home there. It doubles as a "go to date" picker
+- [ ] **Top foods.** For the Summary range, the foods and meals that contributed most to the primary metric, by total and by how often they were logged. One `GROUP BY` over `food_log_entries` (meal breakdown rows counted per food)
+
+### Goals
+
+| Idea | Value | Effort | Schema change | Tier |
+|---|---|---|---|---|
+| Goals per weekday | Medium | M | No (preferences) | Free |
+| Macro goals as percentages | Medium | S | No (preferences) | Free |
+| TDEE helper | Medium | M | No (preferences) | Free |
+| Adaptive goals | Medium | L | No | Free (after M15) |
+
+- [ ] **Goals per weekday.** Different goals on training and rest days, or per weekday. Stored as optional `goal_<metric>_<weekday>` preferences that fall back to `goal_<metric>`. Home and the Summary goal line read the goal for the day shown (Summary uses the average goal across the range)
+- [ ] **Macro goals as percentages.** Set protein, carbs and fat as a percentage of the calorie goal (e.g. 30 / 40 / 30); the gram goals are derived and update when the calorie goal changes
+- [ ] **TDEE helper.** An optional step in onboarding and Settings: age, sex, height, weight and activity level give an estimated daily energy use (Mifflin-St Jeor) and a suggested calorie goal for maintain, lose or gain. The inputs stay on the device; state that on the screen
+- [ ] **Adaptive goals.** After M15, compare the weight trend with average intake over the last few weeks to estimate real energy use, and suggest a goal change. Suggest only; never change the goal without the user confirming it
+
+### Data and safety
+
+| Idea | Value | Effort | Schema change | Tier |
+|---|---|---|---|---|
+| Automatic backups | High | M | No | Free |
+| Undo last action | Medium | M | No | Free |
+| CSV export of the log | Medium | S | No | See Open Questions |
+
+- [ ] **Automatic backups.** Write a backup to the app's Documents folder after the day's first entry, at most once a week, keeping the newest few. Turning on `UIFileSharingEnabled` and `LSSupportsOpeningDocumentsInPlace` makes that folder visible in the Files app, and Restore can list those files without the file picker. Free, by Principle 1 of the monetization plan
+- [ ] **Undo last action.** Generalizes the swipe-to-delete undo above to edits, copy day and imports: keep the last change's inverse in memory and offer Undo for a few seconds
+- [ ] **CSV export of the log.** One row per entry (date, name, type, macros), readable in a spreadsheet. Overlaps with the Pro "shareable reports"; see Open Questions
+
+### Polish and accessibility
+
+| Idea | Value | Effort | Schema change | Tier |
+|---|---|---|---|---|
+| Haptics | Low | S | No | Free |
+| VoiceOver labels | Medium | S | No | Free |
+| Comma decimals | Medium | S | No | Free |
+| Water tracking | Medium | M | Yes (new table) | Free |
+| iPad and landscape layout | Low–Med | M | No | Free |
+
+- [ ] **Haptics.** A light tap when an entry is logged or a plan is confirmed, and a warning tap on delete
+- [ ] **VoiceOver labels.** `Semantics` on the progress bars ("1,450 of 2,000 calories, 550 left") and a text summary on each chart, since VoiceOver can't read an `fl_chart` bar. Add a semantics check to the 2x text / dark mode test
+- [ ] **Comma decimals.** `parseNumber` uses `double.tryParse`, so "1,5" typed on a European keyboard is rejected. Accept a comma as the decimal separator, and format numbers with the device locale
+- [ ] **Water tracking.** A row on Home with +/- buttons in glasses or ml, an optional daily goal, and a line on Summary. A new `water_log` table (`log_date`, `amount_ml`); include it in the backup format
+- [ ] **iPad and landscape layout.** On wide screens, show the catalog or the day's log beside Home instead of a full-screen push, and give the Summary chart the extra width
+
+---
+
 ## Schema Changes Summary
 
 | Version | Milestone | Change |
@@ -171,3 +267,5 @@ Decide each one before its milestone starts:
 4. **Paid Apple Developer account (M18, M19).** Your current builds use a free personal team. Free teams may not be able to provision App Groups (M18) or HealthKit (M19), and their builds expire after 7 days. Check what your team can provision before starting either milestone. If it can't, these two wait or are dropped.
 5. **Cloud sync (M20).** Is a second device or a web version actually planned? If not, M20 can be cut.
 6. **Monetization (M21).** Price, the free/Pro split, and whether sync is Pro or a subscription. See [`MONETIZATION_PLAN.md`](./MONETIZATION_PLAN.md#open-questions).
+7. **CSV export (backlog).** A raw CSV of your own log is data portability, which argues for free (Principle 1). The Pro "shareable reports" already list "a PDF or CSV of a date range". *Proposed:* the plain CSV is free, and Pro keeps the formatted PDF report.
+8. **Siri Shortcuts (backlog).** It connects the app to something else, which the monetization rule of thumb puts in Pro, but it is also a faster way to log, which Principle 3 keeps free. Decide before building it.

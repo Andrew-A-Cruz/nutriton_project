@@ -1,0 +1,154 @@
+{
+  "app": "nutriton",
+  "version": 1,
+  "exportedAt": "2026-10-21T12:00:00.000Z",
+  "food_items": [
+    {
+      "id": "9b43d1da-fbae-4c85-a93a-7e033c28a1db",
+      "name": "Rice",
+      "calories": 130.0,
+      "protein": 3.0,
+      "carbs": 28.0,
+      "fat": 0.3,
+      "servingWeightG": 100.0,
+      "displayUnit": "g",
+      "archived": false
+    }
+  ],
+  "meals": [
+    {
+      "id": "aca79285-753d-4223-87a3-8825e5788c89",
+      "name": "Lunch",
+      "archived": false
+    }
+  ],
+  "meal_food_items": [
+    {
+      "id": "3220e1a7-2d95-404e-a389-f5d50aa78302",
+      "mealId": "aca79285-753d-4223-87a3-8825e5788c89",
+      "foodItemId": "9b43d1da-fbae-4c85-a93a-7e033c28a1db",
+      "weightG": 200.0,
+      "sortOrder": 0
+    }
+  ],
+  "food_log_entries": [
+    {
+      "id": "9a7d20d2-9148-429d-aa16-188508c73f8c",
+      "logDate": "2026-10-20",
+      "createdAt": 1792719684000,
+      "entryType": "food",
+      "name": "Rice",
+      "calories": 195.0,
+      "protein": 4.5,
+      "carbs": 42.0,
+      "fat": 0.44999999999999996,
+      "foodItemId": "9b43d1da-fbae-4c85-a93a-7e033c28a1db",
+      "mealId": null,
+      "servings": 1.5
+    },
+    {
+      "id": "11250835-a54b-4806-924b-81f0d29458b4",
+      "logDate": "2026-10-20",
+      "createdAt": 1792719684000,
+      "entryType": "adhoc",
+      "name": "Snack",
+      "calories": 90.0,
+      "protein": 1.0,
+      "carbs": 15.0,
+      "fat": 3.0,
+      "foodItemId": null,
+      "mealId": null,
+      "servings": null
+    },
+    {
+      "id": "34ac0ca9-37b3-4e0c-a834-e64c4ff38947",
+      "logDate": "2026-10-20",
+      "createdAt": 1792719684000,
+      "entryType": "meal",
+      "name": "Lunch",
+      "calories": 195.0,
+      "protein": 4.5,
+      "carbs": 42.0,
+      "fat": 0.44999999999999996,
+      "foodItemId": null,
+      "mealId": "aca79285-753d-4223-87a3-8825e5788c89",
+      "servings": null
+    },
+    {
+      "id": "2944d383-b7d5-4294-8619-19b0df47cfa2",
+      "logDate": "2026-10-21",
+      "createdAt": 1792719684000,
+      "entryType": "meal",
+      "name": "Lunch",
+      "calories": 260.0,
+      "protein": 6.0,
+      "carbs": 56.0,
+      "fat": 0.6,
+      "foodItemId": null,
+      "mealId": "aca79285-753d-4223-87a3-8825e5788c89",
+      "servings": null
+    }
+  ],
+  "food_log_entry_items": [
+    {
+      "id": "8a44877b-1a2d-4560-ad8e-8b87f256bee3",
+      "entryId": "34ac0ca9-37b3-4e0c-a834-e64c4ff38947",
+      "foodItemId": "9b43d1da-fbae-4c85-a93a-7e033c28a1db",
+      "name": "Rice",
+      "weightG": 150.0,
+      "calories": 195.0,
+      "protein": 4.5,
+      "carbs": 42.0,
+      "fat": 0.44999999999999996
+    },
+    {
+      "id": "d9c54548-837b-4d8b-a7d3-2a2fa84b695a",
+      "entryId": "2944d383-b7d5-4294-8619-19b0df47cfa2",
+      "foodItemId": "9b43d1da-fbae-4c85-a93a-7e033c28a1db",
+      "name": "Rice",
+      "weightG": 200.0,
+      "calories": 260.0,
+      "protein": 6.0,
+      "carbs": 56.0,
+      "fat": 0.6
+    }
+  ],
+  "scheduled_meals": [
+    {
+      "id": "bbd6a628-3548-45ad-bce7-298abcc2660b",
+      "mealId": "aca79285-753d-4223-87a3-8825e5788c89",
+      "startDate": "2026-10-19",
+      "weekdays": 5,
+      "createdAt": 1792719684000
+    },
+    {
+      "id": "f2654205-e3b7-4100-a0b7-595cb2441250",
+      "mealId": "aca79285-753d-4223-87a3-8825e5788c89",
+      "startDate": "2026-10-25",
+      "weekdays": null,
+      "createdAt": 1792719684000
+    }
+  ],
+  "scheduled_meal_outcomes": [
+    {
+      "id": "acb168a5-bc55-471f-99ab-e8b746ac5320",
+      "scheduledMealId": "bbd6a628-3548-45ad-bce7-298abcc2660b",
+      "date": "2026-10-21",
+      "status": "logged",
+      "entryId": "2944d383-b7d5-4294-8619-19b0df47cfa2"
+    }
+  ],
+  "preferences": {
+    "onboardingComplete": true,
+    "primaryMetric": "protein",
+    "trackedMetrics": [
+      "protein",
+      "carbs"
+    ],
+    "displayUnit": "oz",
+    "goals": {
+      "protein": 140.0,
+      "carbs": 250.0
+    }
+  }
+}

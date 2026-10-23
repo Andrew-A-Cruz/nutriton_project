@@ -6,6 +6,7 @@ import 'package:nutriton_project/core/nutrition_math.dart';
 import 'package:nutriton_project/data/database/app_database.dart';
 import 'package:nutriton_project/data/repositories/catalog_repository.dart';
 import 'package:nutriton_project/data/repositories/log_repository.dart';
+import 'package:nutriton_project/views/home/undo_banner.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../support/test_app.dart';
@@ -31,6 +32,7 @@ void main() {
   });
 
   tearDown(() async {
+    hideUndoBanner();
     await db.close();
   });
 
@@ -139,6 +141,10 @@ void main() {
       () => db.logDao.watchEntriesForDate(today).first,
     );
     expect(remaining!.map((e) => e.name), ['Chicken breast']);
+
+    // The Undo banner stays up for undoBannerDuration; let it expire so no
+    // timer is left pending.
+    await tester.pump(undoBannerDuration + const Duration(milliseconds: 100));
     await unmount(tester);
   });
 

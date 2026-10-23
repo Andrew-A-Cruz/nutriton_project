@@ -40,6 +40,16 @@ class ScheduledMealDao extends DatabaseAccessor<AppDatabase>
         scheduledMealOutcomes,
       )..where((t) => t.scheduledMealId.equals(scheduledMealId))).get();
 
+  /// Outcomes whose provenance link points at the log entry [entryId].
+  Future<List<ScheduledMealOutcome>> findOutcomesForEntry(String entryId) =>
+      (select(
+        scheduledMealOutcomes,
+      )..where((t) => t.entryId.equals(entryId))).get();
+
+  Future<int> setOutcomeEntry(String outcomeId, String? entryId) =>
+      (update(scheduledMealOutcomes)..where((t) => t.id.equals(outcomeId)))
+          .write(ScheduledMealOutcomesCompanion(entryId: Value(entryId)));
+
   /// Plans due on [date] ('yyyy-MM-dd') that have no outcome for that day yet,
   /// oldest plan first. [weekdayBit] is the bit of [date]'s weekday (see
   /// `weekdayBit`). A one-off is due on its start date; a repeating plan on
