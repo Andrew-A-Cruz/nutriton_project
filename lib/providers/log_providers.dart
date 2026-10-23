@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/date_key.dart';
 import '../data/database/app_database.dart';
+import '../data/database/daos/log_dao.dart' show RecentSource;
 import 'infrastructure_providers.dart';
 import 'today_providers.dart';
 
@@ -41,7 +42,21 @@ final entryItemsProvider =
           ref.watch(logRepositoryProvider).watchEntryItems(entryId),
     );
 
-/// Active catalog foods logged before, most recent first. Re-emits on writes.
-final recentFoodsProvider = StreamProvider<List<FoodItem>>(
-  (ref) => ref.watch(logRepositoryProvider).watchRecentFoods(),
+/// Catalog foods and meals logged before, most recent first. Re-emits on
+/// writes.
+final recentSourcesProvider = StreamProvider<List<RecentSource>>(
+  (ref) => ref.watch(logRepositoryProvider).watchRecentSources(),
+);
+
+/// How many days back (counting today) "Frequent" looks.
+const frequentWindowDays = 30;
+
+/// Catalog foods and meals ranked by how often they were logged in the last
+/// [frequentWindowDays] days. Moves its window when the day rolls over.
+final frequentSourcesProvider = StreamProvider<List<RecentSource>>(
+  (ref) => ref
+      .watch(logRepositoryProvider)
+      .watchFrequentSources(
+        sinceDate: addDays(ref.watch(todayProvider), 1 - frequentWindowDays),
+      ),
 );

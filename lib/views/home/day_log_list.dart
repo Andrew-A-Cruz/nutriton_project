@@ -87,21 +87,21 @@ class _DayLogListState extends ConsumerState<DayLogList> {
   }
 }
 
-class _EntryTile extends StatelessWidget {
+class _EntryTile extends ConsumerWidget {
   const _EntryTile({required this.entry, required this.onDelete});
 
   final FoodLogEntry entry;
   final VoidCallback onDelete;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Dismissible(
       key: ValueKey(entry.id),
       direction: DismissDirection.endToStart,
       background: const _DeleteBackground(),
       onDismissed: (_) => onDelete(),
       child: GestureDetector(
-        onLongPress: () => _showActions(context),
+        onLongPress: () => _showActions(context, ref),
         child: CupertinoListTile(
           backgroundColor: CupertinoColors.systemBackground.resolveFrom(
             context,
@@ -115,13 +115,58 @@ class _EntryTile extends StatelessWidget {
     );
   }
 
+  /// Copies the entry onto today, with an Undo banner. Reads everything it
+  /// needs up front, because the action sheet that started it is already gone.
+  Future<void> _logAgain(BuildContext context, WidgetRef ref) async {
+    final repo = ref.read(logRepositoryProvider);
+    final overlay = Overlay.of(context, rootOverlay: true);
+    final navigator = Navigator.of(context, rootNavigator: true);
+    try {
+      final newId = await repo.duplicateEntry(
+        entry.id,
+        ref.read(todayProvider),
+      );
+      showUndoBanner(
+        overlay,
+        message: 'Logged again today',
+        onUndo: () => repo.deleteEntry(newId),
+      );
+    } catch (e) {
+      if (navigator.mounted) {
+        showCupertinoDialog<void>(
+          context: navigator.context,
+          builder: (dialogContext) => CupertinoAlertDialog(
+            content: Text('Could not log again: $e'),
+            actions: [
+              CupertinoDialogAction(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+    }
+  }
+
   /// Long-press menu, shared by every entry type.
-  void _showActions(BuildContext context) {
+  void _showActions(BuildContext context, WidgetRef ref) {
+    // Logging an entry again onto the day it is already on is pointless.
+    final canLogAgain = entry.logDate != ref.read(todayProvider);
     showCupertinoModalPopup<void>(
       context: context,
       builder: (sheetContext) => CupertinoActionSheet(
         title: Text(entry.name),
         actions: [
+          if (canLogAgain)
+            CupertinoActionSheetAction(
+              key: const Key('log-again-today'),
+              onPressed: () {
+                Navigator.of(sheetContext).pop();
+                _logAgain(context, ref);
+              },
+              child: const Text('Log again today'),
+            ),
           CupertinoActionSheetAction(
             onPressed: () {
               Navigator.of(sheetContext).pop();

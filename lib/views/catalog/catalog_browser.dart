@@ -23,7 +23,8 @@ class CatalogBrowser extends StatefulWidget {
   final ValueChanged<Meal> onMealTap;
   final bool archivable;
 
-  /// Shows recently logged foods above the Foods list (when not searching).
+  /// Shows recently or frequently logged foods and meals above the list (when
+  /// not searching).
   final bool showRecent;
 
   @override
@@ -60,10 +61,11 @@ class _CatalogBrowserState extends State<CatalogBrowser> {
             onChanged: (value) => setState(() => _search = value),
           ),
         ),
-        if (widget.showRecent &&
-            _section == CatalogSection.foods &&
-            _search.trim().isEmpty)
-          RecentFoods(onTap: widget.onFoodTap),
+        if (widget.showRecent && _search.trim().isEmpty)
+          RecentSources(
+            onFoodTap: widget.onFoodTap,
+            onMealTap: widget.onMealTap,
+          ),
         Expanded(
           child: switch (_section) {
             CatalogSection.foods => FoodList(
@@ -83,49 +85,99 @@ class _CatalogBrowserState extends State<CatalogBrowser> {
   }
 }
 
-/// A horizontal strip of the foods logged most recently. Hidden when there
-/// are none.
-class RecentFoods extends ConsumerWidget {
-  const RecentFoods({super.key, required this.onTap});
+enum _SourceRanking { recent, frequent }
 
-  final ValueChanged<FoodItem> onTap;
+/// A horizontal strip of the foods and meals logged before, newest first or
+/// most often in the last [frequentWindowDays] days. Hidden until something has
+/// been logged.
+class RecentSources extends ConsumerStatefulWidget {
+  const RecentSources({
+    super.key,
+    required this.onFoodTap,
+    required this.onMealTap,
+  });
+
+  final ValueChanged<FoodItem> onFoodTap;
+  final ValueChanged<Meal> onMealTap;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final foods = ref.watch(recentFoodsProvider).value ?? const <FoodItem>[];
-    if (foods.isEmpty) return const SizedBox.shrink();
+  ConsumerState<RecentSources> createState() => _RecentSourcesState();
+}
+
+class _RecentSourcesState extends ConsumerState<RecentSources> {
+  _SourceRanking _ranking = _SourceRanking.recent;
+
+  @override
+  Widget build(BuildContext context) {
+    // Frequent is a subset of recent, so recent being empty means both are.
+    final recent = ref.watch(recentSourcesProvider).value ?? const [];
+    if (recent.isEmpty) return const SizedBox.shrink();
+    final sources = _ranking == _SourceRanking.recent
+        ? recent
+        : ref.watch(frequentSourcesProvider).value ?? const [];
     return Column(
       key: const Key('recent-foods'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-          child: Text(
-            'Recent',
-            style: TextStyle(
-              fontSize: 13,
-              color: CupertinoColors.secondaryLabel.resolveFrom(context),
+          child: SizedBox(
+            width: double.infinity,
+            child: CupertinoSlidingSegmentedControl<_SourceRanking>(
+              key: const Key('recent-ranking'),
+              groupValue: _ranking,
+              children: const {
+                _SourceRanking.recent: Text('Recent'),
+                _SourceRanking.frequent: Text('Frequent'),
+              },
+              onValueChanged: (ranking) {
+                if (ranking != null) setState(() => _ranking = ranking);
+              },
             ),
           ),
         ),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Row(
-            children: [
-              for (final food in foods)
-                CupertinoButton(
-                  key: Key('recent-food-${food.id}'),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
+        if (sources.isEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            child: Text(
+              'Nothing logged in the last $frequentWindowDays days.',
+              key: const Key('recent-empty'),
+              style: TextStyle(
+                fontSize: 13,
+                color: CupertinoColors.secondaryLabel.resolveFrom(context),
+              ),
+            ),
+          )
+        else
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Row(
+              children: [
+                for (final source in sources)
+                  CupertinoButton(
+                    key: Key(
+                      source.food != null
+                          ? 'recent-food-${source.id}'
+                          : 'recent-meal-${source.id}',
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    onPressed: () {
+                      final food = source.food;
+                      if (food != null) {
+                        widget.onFoodTap(food);
+                      } else {
+                        widget.onMealTap(source.meal!);
+                      }
+                    },
+                    child: Text(source.name),
                   ),
-                  onPressed: () => onTap(food),
-                  child: Text(food.name),
-                ),
-            ],
+              ],
+            ),
           ),
-        ),
       ],
     );
   }

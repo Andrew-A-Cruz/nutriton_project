@@ -18,10 +18,19 @@ enum AmountMode { servings, weight }
 /// with [servingsForWeight], so the entry is always a servings entry. Pops to
 /// the root after logging.
 class LogFoodView extends ConsumerStatefulWidget {
-  const LogFoodView({super.key, required this.food, required this.logDate});
+  const LogFoodView({
+    super.key,
+    required this.food,
+    required this.logDate,
+    this.initialServings,
+  });
 
   final FoodItem food;
   final String logDate;
+
+  /// Servings to start from, such as the amount used last time. One serving
+  /// when null.
+  final double? initialServings;
 
   @override
   ConsumerState<LogFoodView> createState() => _LogFoodViewState();
@@ -37,7 +46,9 @@ class _LogFoodViewState extends ConsumerState<LogFoodView> {
   @override
   void initState() {
     super.initState();
-    _amount = TextEditingController(text: '1');
+    _amount = TextEditingController(
+      text: plainNumber(roundTo(widget.initialServings ?? 1, 2)),
+    );
   }
 
   @override

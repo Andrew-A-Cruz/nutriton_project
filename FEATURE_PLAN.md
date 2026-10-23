@@ -51,22 +51,22 @@ Three ideas from the brainstorm are already built, so they are not milestones he
 Each milestone ends with something runnable and its tests passing, as in v1. Run `flutter analyze && flutter test` before each push.
 
 ### M9 — Recent and frequent foods
-- [ ] `LogDao.watchRecentSources(limit)`: distinct catalog foods and meals from `food_log_entries`, newest `created_at` first, skipping archived items and adhoc entries
-- [ ] `LogDao.watchFrequentSources(sinceDate, limit)`: the same sources ranked by how often they were logged in the last 30 days
-- [ ] Add Food sheet: a "Recent" section above the catalog list, with a Recent / Frequent toggle. Tapping an item opens the normal servings or meal flow
-- [ ] Prefill servings with the amount used last time, read from the most recent entry for that food
-- [ ] Hide the section while the user is searching
-- [ ] DAO tests: ordering, the archived and adhoc exclusions, the 30-day window; a widget test for the section
+- [x] `LogDao.watchRecentSources(limit)`: distinct catalog foods and meals from `food_log_entries`, newest `created_at` first, skipping archived items and adhoc entries
+- [x] `LogDao.watchFrequentSources(sinceDate, limit)`: the same sources ranked by how often they were logged in the last 30 days
+- [x] Add Food sheet: a "Recent" section above the catalog list, with a Recent / Frequent toggle. Tapping an item opens the normal servings or meal flow
+- [x] Prefill servings with the amount used last time, read from the most recent entry for that food
+- [x] Hide the section while the user is searching
+- [x] DAO tests: ordering, the archived and adhoc exclusions, the 30-day window; a widget test for the section
 
 **Done when:** a food logged yesterday can be logged again in two taps from the Add sheet.
 
 ### M10 — Log again and copy day
-- [ ] `LogRepository.duplicateEntry(entryId, toDate)` copies the snapshot row and its `food_log_entry_items` in one transaction, with a new id and `created_at`. It copies the snapshot, not the current catalog values, so you get exactly what you ate before
-- [ ] `LogRepository.copyDay(fromDate, toDate)`: every entry from one day, in its original order
-- [ ] Entry tile: a "Log again today" swipe or long-press action (disabled when Home is already on today)
-- [ ] Home: a "Copy from…" action in the nav bar. It defaults to the previous day, and its date picker shows how many entries the chosen day has
-- [ ] Empty-day state: a "Copy yesterday" button
-- [ ] Repository tests: meal breakdown rows are copied, the source day is unchanged, copying an empty day is a no-op
+- [x] `LogRepository.duplicateEntry(entryId, toDate)` copies the snapshot row and its `food_log_entry_items` in one transaction, with a new id and `created_at`. It copies the snapshot, not the current catalog values, so you get exactly what you ate before
+- [x] `LogRepository.copyDay(fromDate, toDate)`: every entry from one day, in its original order
+- [x] Entry tile: a "Log again today" swipe or long-press action (offered from the long-press menu, and left out when the entry is already on today)
+- [x] Home: a "Copy from…" action in the nav bar. It defaults to the previous day, and its date picker shows how many entries the chosen day has
+- [x] Empty-day state: a "Copy yesterday" button
+- [x] Repository tests: meal breakdown rows are copied, the source day is unchanged, copying an empty day is a no-op
 
 ### M11 — Backup: export and import
 - [ ] Format: a single JSON file `{ "format": 1, "schemaVersion": n, "exportedAt", "preferences": {…}, "tables": {…} }`. JSON is chosen over copying the SQLite file because it stays readable across schema versions (see Open Questions)

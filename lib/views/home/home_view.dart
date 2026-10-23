@@ -7,6 +7,7 @@ import '../../providers/preferences_providers.dart';
 import '../add_food/add_food_view.dart';
 import '../settings/settings_view.dart';
 import '../tour/app_tour.dart';
+import 'copy_day_sheet.dart';
 import 'date_header.dart';
 import 'day_log_list.dart';
 import 'macro_summary.dart';
@@ -29,6 +30,12 @@ class HomeView extends ConsumerWidget {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            CupertinoButton(
+              key: const Key('copy-from-button'),
+              padding: EdgeInsets.zero,
+              onPressed: () => showCopyDaySheet(context, toDate: date),
+              child: const Icon(CupertinoIcons.doc_on_doc),
+            ),
             KeyedSubtree(
               key: TourTargets.settings,
               child: CupertinoButton(
