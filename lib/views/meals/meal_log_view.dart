@@ -1,12 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/date_key.dart';
 import '../../core/nutrition_math.dart';
 import '../../data/database/app_database.dart';
 import '../../providers/catalog_providers.dart';
 import '../../providers/infrastructure_providers.dart';
 import '../../providers/preferences_providers.dart';
+import '../../providers/today_providers.dart';
 import '../common/form_widgets.dart';
 import '../home/date_header.dart';
 import 'food_picker_page.dart';
@@ -130,7 +130,7 @@ class _MealLogViewState extends ConsumerState<MealLogView> {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                     child: Text(
-                      'Logging to ${dayLabel(widget.logDate, today: todayKey())}',
+                      'Logging to ${dayLabel(widget.logDate, today: ref.watch(todayProvider))}',
                       key: const Key('meal-log-date'),
                       textAlign: TextAlign.center,
                       style: TextStyle(

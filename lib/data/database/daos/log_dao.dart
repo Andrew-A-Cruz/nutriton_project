@@ -36,6 +36,36 @@ class LogDao extends DatabaseAccessor<AppDatabase> with _$LogDaoMixin {
   Future<int> deleteEntry(String id) =>
       (delete(foodLogEntries)..where((t) => t.id.equals(id))).go();
 
+  /// The SQLite rowid of the entry, which breaks ties in the day's order.
+  Future<int?> findRowId(String id) async {
+    final row = await customSelect(
+      'SELECT rowid AS r FROM food_log_entries WHERE id = ?',
+      variables: [Variable<String>(id)],
+      readsFrom: {foodLogEntries},
+    ).getSingleOrNull();
+    return row?.read<int>('r');
+  }
+
+  /// Gives the entry back a rowid it used to have, if that rowid is free.
+  Future<void> restoreRowId(String id, int rowId) async {
+    final taken = await customSelect(
+      'SELECT 1 AS x FROM food_log_entries WHERE rowid = ?',
+      variables: [Variable<int>(rowId)],
+      readsFrom: {foodLogEntries},
+    ).get();
+    if (taken.isNotEmpty) return;
+    await customUpdate(
+      'UPDATE food_log_entries SET rowid = ? WHERE id = ?',
+      variables: [Variable<int>(rowId), Variable<String>(id)],
+      updates: {foodLogEntries},
+      updateKind: UpdateKind.update,
+    );
+  }
+
+  /// Moves the entry to [logDate] ('yyyy-MM-dd').
+  Future<int> updateEntryDate(String id, String logDate) =>
+      updateEntry(id, FoodLogEntriesCompanion(logDate: Value(logDate)));
+
   Future<void> insertEntryItems(List<FoodLogEntryItemsCompanion> items) =>
       batch((b) => b.insertAll(foodLogEntryItems, items));
 

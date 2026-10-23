@@ -1,11 +1,30 @@
 import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../core/date_key.dart';
 import '../../core/nutrition_math.dart';
 import '../database/app_database.dart';
 import 'catalog_repository.dart';
 
 const _uuid = Uuid();
+
+/// A deleted log entry with everything needed to put it back: its breakdown
+/// rows and the scheduled-meal outcomes that pointed at it.
+class DeletedLogEntry {
+  const DeletedLogEntry({
+    required this.entry,
+    required this.items,
+    required this.outcomeIds,
+    this.rowId,
+  });
+
+  final FoodLogEntry entry;
+  final List<FoodLogEntryItem> items;
+  final List<String> outcomeIds;
+
+  /// The entry's rowid, so undo keeps same-second entries in order.
+  final int? rowId;
+}
 
 /// Writes to the daily food log. Every entry stores a snapshot of its macros
 /// at the time it was logged, so later catalog edits do not change history.
@@ -233,8 +252,109 @@ class LogRepository {
     });
   }
 
+  /// Changes the name and macros of a one-off entry. Other entry types keep
+  /// their snapshots, so they are rejected.
+  Future<void> updateAdhoc(
+    String entryId, {
+    required String name,
+    required Macros macros,
+  }) async {
+    if (name.trim().isEmpty) {
+      throw ArgumentError.value(name, 'name', 'must not be empty');
+    }
+    CatalogRepository.validateMacros(macros);
+    await _db.transaction(() async {
+      final entry = await _db.logDao.findEntry(entryId);
+      if (entry == null) throw StateError('No log entry $entryId');
+      if (entry.entryType != 'adhoc') {
+        throw StateError('Entry $entryId is not a one-off entry');
+      }
+      await _db.logDao.updateEntry(
+        entryId,
+        FoodLogEntriesCompanion(
+          name: Value(name.trim()),
+          calories: Value(macros.calories),
+          protein: Value(macros.protein),
+          carbs: Value(macros.carbs),
+          fat: Value(macros.fat),
+        ),
+      );
+    });
+  }
+
+  /// Moves an entry of any type to [logDate] ('yyyy-MM-dd').
+  Future<void> moveEntry(String entryId, String logDate) async {
+    dateFromKey(logDate); // throws FormatException for a malformed key
+    final changed = await _db.logDao.updateEntryDate(entryId, logDate);
+    if (changed == 0) throw StateError('No log entry $entryId');
+  }
+
   /// Deletes an entry; its breakdown rows cascade.
   Future<void> deleteEntry(String entryId) => _db.logDao.deleteEntry(entryId);
+
+  /// Deletes an entry like [deleteEntry] and returns what [restoreEntry] needs
+  /// to undo it, or null if there was no such entry.
+  Future<DeletedLogEntry?> deleteEntryForUndo(String entryId) {
+    return _db.transaction(() async {
+      final entry = await _db.logDao.findEntry(entryId);
+      if (entry == null) return null;
+      final items = await _db.logDao.findEntryItems(entryId);
+      final rowId = await _db.logDao.findRowId(entryId);
+      // Deleting the entry nulls these provenance links; keep them to relink.
+      final outcomes = await _db.scheduledMealDao.findOutcomesForEntry(entryId);
+      await _db.logDao.deleteEntry(entryId);
+      return DeletedLogEntry(
+        entry: entry,
+        items: items,
+        outcomeIds: [for (final o in outcomes) o.id],
+        rowId: rowId,
+      );
+    });
+  }
+
+  /// Puts back an entry deleted by [deleteEntryForUndo], with the same id,
+  /// date, macros and breakdown. Catalog links to foods or meals that have
+  /// since been removed are dropped rather than failing the restore.
+  Future<void> restoreEntry(DeletedLogEntry deleted) {
+    return _db.transaction(() async {
+      final e = deleted.entry;
+      if (await _db.logDao.findEntry(e.id) != null) return;
+      final liveFoods = <String, String?>{};
+      Future<String?> liveFood(String? id) async {
+        if (id == null) return null;
+        if (!liveFoods.containsKey(id)) {
+          liveFoods[id] = await _db.foodDao.findById(id) == null ? null : id;
+        }
+        return liveFoods[id];
+      }
+
+      final mealId = e.mealId;
+      final liveMeal =
+          mealId != null && await _db.mealDao.findById(mealId) != null;
+      await _db.logDao.insertEntry(
+        e
+            .toCompanion(true)
+            .copyWith(
+              foodItemId: Value(await liveFood(e.foodItemId)),
+              mealId: Value(liveMeal ? mealId : null),
+            ),
+      );
+      final items = <FoodLogEntryItemsCompanion>[];
+      for (final i in deleted.items) {
+        items.add(
+          i
+              .toCompanion(true)
+              .copyWith(foodItemId: Value(await liveFood(i.foodItemId))),
+        );
+      }
+      final rowId = deleted.rowId;
+      if (rowId != null) await _db.logDao.restoreRowId(e.id, rowId);
+      if (items.isNotEmpty) await _db.logDao.insertEntryItems(items);
+      for (final outcomeId in deleted.outcomeIds) {
+        await _db.scheduledMealDao.setOutcomeEntry(outcomeId, e.id);
+      }
+    });
+  }
 
   /// Servings must be a finite number above zero; anything else would store
   /// infinite or NaN macros.

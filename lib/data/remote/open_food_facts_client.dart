@@ -44,7 +44,7 @@ class FoodLookupException implements Exception {
 
 /// Sent with every request; Open Food Facts asks apps to identify themselves.
 const offUserAgent =
-    'NutritonFoodLog/1.0 (Flutter food log app; techgeek1998@gmail.com)';
+    'NutritonFoodLog/1.0 (https://github.com/Andrew-A-Cruz/nutriton_project)';
 
 const _fields =
     'code,product_name,generic_name,brands,nutriments,serving_quantity,'

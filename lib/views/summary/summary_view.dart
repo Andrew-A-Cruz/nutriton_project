@@ -1,12 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/date_key.dart';
 import '../../core/metrics.dart';
 import '../../core/summary_math.dart';
 import '../../data/preferences/user_preferences.dart';
 import '../../providers/preferences_providers.dart';
 import '../../providers/summary_providers.dart';
+import '../../providers/today_providers.dart';
 import 'summary_chart.dart';
 
 /// The Summary tab: a range picker, averages per logged day for each tracked
@@ -19,7 +19,7 @@ class SummaryView extends ConsumerWidget {
     final range = ref.watch(summaryRangeProvider);
     final settings = ref.watch(preferencesProvider);
     final reportAsync = ref.watch(
-      summaryReportProvider((endDate: todayKey(), range: range)),
+      summaryReportProvider((endDate: ref.watch(todayProvider), range: range)),
     );
 
     return CupertinoPageScaffold(

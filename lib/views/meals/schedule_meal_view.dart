@@ -5,6 +5,7 @@ import '../../core/date_key.dart';
 import '../../core/weekdays.dart';
 import '../../data/database/app_database.dart';
 import '../../providers/schedule_providers.dart';
+import '../../providers/today_providers.dart';
 import '../home/date_header.dart';
 
 enum _Repeat { once, weekdays }
@@ -127,7 +128,7 @@ class _ScheduleMealViewState extends ConsumerState<ScheduleMealView> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                dayLabel(_date, today: todayKey()),
+                dayLabel(_date, today: ref.watch(todayProvider)),
                 key: const Key('schedule-date'),
                 style: const TextStyle(fontSize: 17),
               ),
