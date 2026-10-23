@@ -53,6 +53,7 @@ How the app makes money once the features in [`FEATURE_PLAN.md`](./FEATURE_PLAN.
 | M14 streaks and reminders | | |
 | M15 weigh-ins and the weight trend chart | | |
 | Welcome pages and app tour | | |
+| Enhancement backlog items marked Free in FEATURE_PLAN (quick add, recipes, favorites, automatic backups, goal options, water and more) | | |
 
 **Rule of thumb for new features:** if a new user would want it in their first week, it's free. If it's something only some people want, beyond logging and looking at their own data, it can be Pro.
 
