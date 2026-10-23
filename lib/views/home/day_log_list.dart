@@ -6,10 +6,15 @@ import '../../core/metrics.dart';
 import '../../data/database/app_database.dart';
 import '../../providers/infrastructure_providers.dart';
 import '../../providers/log_providers.dart';
+import '../../providers/today_providers.dart';
+import 'edit_entry_sheets.dart';
 import 'entry_sheets.dart';
+import 'undo_banner.dart';
 
-/// The day's entries as a sliver. Swipe left to delete; tap a food entry to
-/// edit its servings or a meal entry to see its breakdown.
+/// The day's entries as a sliver. Swipe left to delete (with a short Undo
+/// banner); tap a food entry to edit its servings, a meal entry to see its
+/// breakdown or a one-off entry to edit it; long-press any entry to move it to
+/// another day.
 class DayLogList extends ConsumerStatefulWidget {
   const DayLogList({super.key, required this.entries});
 
@@ -26,9 +31,41 @@ class _DayLogListState extends ConsumerState<DayLogList> {
   final _dismissed = <String>{};
 
   Future<void> _delete(String id) async {
+    // Read everything the banner needs now: this list is gone once the last
+    // entry of the day is deleted, but the banner and its Undo must outlive it.
+    final repo = ref.read(logRepositoryProvider);
+    final overlay = Overlay.of(context, rootOverlay: true);
+    final navigator = Navigator.of(context, rootNavigator: true);
     setState(() => _dismissed.add(id));
     try {
-      await ref.read(logRepositoryProvider).deleteEntry(id);
+      final deleted = await repo.deleteEntryForUndo(id);
+      if (deleted == null) return;
+      showUndoBanner(
+        overlay,
+        message: 'Entry deleted',
+        onUndo: () async {
+          try {
+            await repo.restoreEntry(deleted);
+          } catch (e) {
+            if (navigator.mounted) {
+              showCupertinoDialog<void>(
+                context: navigator.context,
+                builder: (dialogContext) => CupertinoAlertDialog(
+                  content: Text('Could not undo: $e'),
+                  actions: [
+                    CupertinoDialogAction(
+                      onPressed: () => Navigator.of(dialogContext).pop(),
+                      child: const Text('OK'),
+                    ),
+                  ],
+                ),
+              );
+            }
+            return;
+          }
+          if (mounted) setState(() => _dismissed.remove(id));
+        },
+      );
     } catch (_) {
       if (mounted) setState(() => _dismissed.remove(id));
     }
@@ -63,12 +100,40 @@ class _EntryTile extends StatelessWidget {
       direction: DismissDirection.endToStart,
       background: const _DeleteBackground(),
       onDismissed: (_) => onDelete(),
-      child: CupertinoListTile(
-        backgroundColor: CupertinoColors.systemBackground.resolveFrom(context),
+      child: GestureDetector(
+        onLongPress: () => _showActions(context),
+        child: CupertinoListTile(
+          backgroundColor: CupertinoColors.systemBackground.resolveFrom(
+            context,
+          ),
+          title: Text(entry.name),
+          subtitle: Text(_describe(entry)),
+          trailing: Text('${Metric.calories.format(entry.calories)} kcal'),
+          onTap: () => _open(context),
+        ),
+      ),
+    );
+  }
+
+  /// Long-press menu, shared by every entry type.
+  void _showActions(BuildContext context) {
+    showCupertinoModalPopup<void>(
+      context: context,
+      builder: (sheetContext) => CupertinoActionSheet(
         title: Text(entry.name),
-        subtitle: Text(_describe(entry)),
-        trailing: Text('${Metric.calories.format(entry.calories)} kcal'),
-        onTap: () => _open(context),
+        actions: [
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.of(sheetContext).pop();
+              showMoveEntryPicker(context, entry: entry);
+            },
+            child: const Text('Move to another day'),
+          ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () => Navigator.of(sheetContext).pop(),
+          child: const Text('Cancel'),
+        ),
       ),
     );
   }
@@ -93,8 +158,10 @@ class _EntryTile extends StatelessWidget {
           builder: (_) => MealBreakdownSheet(entry: entry),
         );
       default:
-        // Ad hoc entries have nothing to edit or break down.
-        break;
+        showCupertinoModalPopup<void>(
+          context: context,
+          builder: (_) => EditAdhocSheet(entry: entry),
+        );
     }
   }
 }
@@ -121,14 +188,34 @@ class _DeleteBackground extends StatelessWidget {
 
 /// Shown for a day with no entries. Offers to copy the day before when that
 /// day has entries.
-class EmptyLogState extends ConsumerWidget {
+class EmptyLogState extends ConsumerStatefulWidget {
   const EmptyLogState({super.key, required this.date});
 
   final String date;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final previous = addDays(date, -1);
+  ConsumerState<EmptyLogState> createState() => _EmptyLogStateState();
+}
+
+class _EmptyLogStateState extends ConsumerState<EmptyLogState> {
+  /// True while a copy is running, so a second tap cannot copy the day twice.
+  bool _copying = false;
+
+  Future<void> _copy(String previous) async {
+    if (_copying) return;
+    setState(() => _copying = true);
+    try {
+      await ref
+          .read(logRepositoryProvider)
+          .copyDay(fromDate: previous, toDate: widget.date);
+    } finally {
+      if (mounted) setState(() => _copying = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final previous = addDays(widget.date, -1);
     final hasPrevious =
         (ref.watch(dayEntriesProvider(previous)).value ?? const []).isNotEmpty;
     return Center(
@@ -158,11 +245,9 @@ class EmptyLogState extends ConsumerWidget {
               const SizedBox(height: 16),
               CupertinoButton.filled(
                 key: const Key('copy-previous-day'),
-                onPressed: () => ref
-                    .read(logRepositoryProvider)
-                    .copyDay(fromDate: previous, toDate: date),
+                onPressed: _copying ? null : () => _copy(previous),
                 child: Text(
-                  previous == addDays(todayKey(), -1)
+                  previous == addDays(ref.watch(todayProvider), -1)
                       ? 'Copy yesterday'
                       : 'Copy previous day',
                 ),

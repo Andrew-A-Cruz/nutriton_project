@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'app_database.steps.dart';
 import 'daos/food_dao.dart';
 import 'daos/log_dao.dart';
 import 'daos/meal_dao.dart';
@@ -38,14 +39,14 @@ class AppDatabase extends _$AppDatabase {
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-    onUpgrade: (m, from, to) async {
+    onUpgrade: stepByStep(
       // v1 -> v2: scheduling.
-      if (from < 2) {
-        await m.createTable(scheduledMeals);
-        await m.createTable(scheduledMealOutcomes);
-        await m.createIndex(scheduledMealsStartDate);
-      }
-    },
+      from1To2: (m, schema) async {
+        await m.createTable(schema.scheduledMeals);
+        await m.createTable(schema.scheduledMealOutcomes);
+        await m.create(schema.scheduledMealsStartDate);
+      },
+    ),
     beforeOpen: (details) async {
       // SQLite does not enforce foreign keys unless asked to.
       await customStatement('PRAGMA foreign_keys = ON');
