@@ -146,87 +146,93 @@ void main() {
       expect(outcomeAfter.status, 'logged');
     });
 
-    test('restore after the referenced food was deleted drops the link',
-        () async {
-      final chickenId = await makeChicken();
-      final entryId = await log.logFood(
-        logDate: day,
-        food: (await catalog.findFood(chickenId))!,
-        servings: 2,
-      );
-      final before = (await db.logDao.findEntry(entryId))!;
-      final deleted = await log.deleteEntryForUndo(entryId);
-
-      // Nothing references the food any more, so it can be removed.
-      await db.foodDao.deleteFood(chickenId);
-
-      await log.restoreEntry(deleted!);
-
-      final after = (await db.logDao.findEntry(entryId))!;
-      expect(after.foodItemId, isNull);
-      expect(after.name, before.name);
-      expect(after.calories, before.calories);
-      expect(after.servings, 2);
-    });
-
-    test('restore after the meal and its foods were deleted drops both links',
-        () async {
-      final made = await logChickenRiceMeal();
-      final itemsBefore = await db.logDao.findEntryItems(made.entryId);
-      final deleted = await log.deleteEntryForUndo(made.entryId);
-
-      // Removing the template first lets the foods go.
-      await db.mealDao.deleteMeal(made.mealId);
-      for (final item in itemsBefore) {
-        await db.foodDao.deleteFood(item.foodItemId!);
-      }
-
-      await log.restoreEntry(deleted!);
-
-      final after = (await db.logDao.findEntry(made.entryId))!;
-      expect(after.mealId, isNull);
-      expect(after.name, 'Chicken & rice');
-      final items = await db.logDao.findEntryItems(made.entryId);
-      expect(items, hasLength(2));
-      expect(items.map((i) => i.foodItemId), everyElement(isNull));
-    });
-
-    test('restoring keeps the list order when entries share a createdAt',
-        () async {
-      // Same second and same day: the list falls back to insertion order.
-      final createdAt = DateTime(2026, 10, 20, 9);
-      for (final id in ['first', 'second']) {
-        await db.logDao.insertEntry(
-          FoodLogEntriesCompanion.insert(
-            id: id,
-            logDate: day,
-            createdAt: createdAt,
-            entryType: 'adhoc',
-            name: id,
-            calories: 100,
-            protein: 0,
-            carbs: 0,
-            fat: 0,
-          ),
+    test(
+      'restore after the referenced food was deleted drops the link',
+      () async {
+        final chickenId = await makeChicken();
+        final entryId = await log.logFood(
+          logDate: day,
+          food: (await catalog.findFood(chickenId))!,
+          servings: 2,
         );
-      }
-      expect(
-        (await db.logDao.findEntriesForDate(day)).map((e) => e.id),
-        ['first', 'second'],
-      );
+        final before = (await db.logDao.findEntry(entryId))!;
+        final deleted = await log.deleteEntryForUndo(entryId);
 
-      final deleted = await log.deleteEntryForUndo('first');
-      await log.restoreEntry(deleted!);
+        // Nothing references the food any more, so it can be removed.
+        await db.foodDao.deleteFood(chickenId);
 
-      expect(
-        (await db.logDao.findEntriesForDate(day)).map((e) => e.id),
-        ['first', 'second'],
-      );
-      expect(
-        (await db.logDao.watchEntriesForDate(day).first).map((e) => e.id),
-        ['first', 'second'],
-      );
-    });
+        await log.restoreEntry(deleted!);
+
+        final after = (await db.logDao.findEntry(entryId))!;
+        expect(after.foodItemId, isNull);
+        expect(after.name, before.name);
+        expect(after.calories, before.calories);
+        expect(after.servings, 2);
+      },
+    );
+
+    test(
+      'restore after the meal and its foods were deleted drops both links',
+      () async {
+        final made = await logChickenRiceMeal();
+        final itemsBefore = await db.logDao.findEntryItems(made.entryId);
+        final deleted = await log.deleteEntryForUndo(made.entryId);
+
+        // Removing the template first lets the foods go.
+        await db.mealDao.deleteMeal(made.mealId);
+        for (final item in itemsBefore) {
+          await db.foodDao.deleteFood(item.foodItemId!);
+        }
+
+        await log.restoreEntry(deleted!);
+
+        final after = (await db.logDao.findEntry(made.entryId))!;
+        expect(after.mealId, isNull);
+        expect(after.name, 'Chicken & rice');
+        final items = await db.logDao.findEntryItems(made.entryId);
+        expect(items, hasLength(2));
+        expect(items.map((i) => i.foodItemId), everyElement(isNull));
+      },
+    );
+
+    test(
+      'restoring keeps the list order when entries share a createdAt',
+      () async {
+        // Same second and same day: the list falls back to insertion order.
+        final createdAt = DateTime(2026, 10, 20, 9);
+        for (final id in ['first', 'second']) {
+          await db.logDao.insertEntry(
+            FoodLogEntriesCompanion.insert(
+              id: id,
+              logDate: day,
+              createdAt: createdAt,
+              entryType: 'adhoc',
+              name: id,
+              calories: 100,
+              protein: 0,
+              carbs: 0,
+              fat: 0,
+            ),
+          );
+        }
+        expect((await db.logDao.findEntriesForDate(day)).map((e) => e.id), [
+          'first',
+          'second',
+        ]);
+
+        final deleted = await log.deleteEntryForUndo('first');
+        await log.restoreEntry(deleted!);
+
+        expect((await db.logDao.findEntriesForDate(day)).map((e) => e.id), [
+          'first',
+          'second',
+        ]);
+        expect(
+          (await db.logDao.watchEntriesForDate(day).first).map((e) => e.id),
+          ['first', 'second'],
+        );
+      },
+    );
 
     test('restoring twice is a no-op', () async {
       final made = await logChickenRiceMeal();

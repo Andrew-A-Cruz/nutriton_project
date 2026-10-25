@@ -8,6 +8,7 @@ import '../../core/nutrition_math.dart';
 import '../../core/validation.dart';
 import '../../data/database/app_database.dart';
 import '../../providers/infrastructure_providers.dart';
+import '../../providers/preferences_providers.dart';
 import '../common/form_widgets.dart';
 import '../common/meal_slot_picker.dart';
 
@@ -34,6 +35,13 @@ class _EditAdhocSheetState extends ConsumerState<EditAdhocSheet> {
     text: plainNumber(widget.entry.carbs),
   );
   late final _fat = TextEditingController(text: plainNumber(widget.entry.fat));
+  late final _extras = OptionalNutrientFields(
+    initial: Macros(
+      fiber: widget.entry.fiber,
+      sugar: widget.entry.sugar,
+      sodium: widget.entry.sodium,
+    ),
+  );
 
   Map<String, String> _errors = const {};
   String? _saveError;
@@ -45,8 +53,11 @@ class _EditAdhocSheetState extends ConsumerState<EditAdhocSheet> {
     for (final c in [_name, _calories, _protein, _carbs, _fat]) {
       c.dispose();
     }
+    _extras.dispose();
     super.dispose();
   }
+
+  Set<Metric> get _tracked => ref.read(preferencesProvider).trackedMetrics;
 
   Map<String, String> _validate() {
     final checks = {
@@ -59,6 +70,7 @@ class _EditAdhocSheetState extends ConsumerState<EditAdhocSheet> {
     return {
       for (final entry in checks.entries)
         if (entry.value != null) entry.key: entry.value!,
+      ..._extras.validate(_tracked),
     };
   }
 
@@ -77,11 +89,14 @@ class _EditAdhocSheetState extends ConsumerState<EditAdhocSheet> {
           .updateAdhoc(
             widget.entry.id,
             name: _name.text,
-            macros: Macros(
-              calories: parseNumber(_calories.text)!,
-              protein: parseNumber(_protein.text)!,
-              carbs: parseNumber(_carbs.text)!,
-              fat: parseNumber(_fat.text)!,
+            macros: _extras.applyTo(
+              Macros(
+                calories: parseNumber(_calories.text)!,
+                protein: parseNumber(_protein.text)!,
+                carbs: parseNumber(_carbs.text)!,
+                fat: parseNumber(_fat.text)!,
+              ),
+              _tracked,
             ),
           );
       await _applySlot(ref, widget.entry, _slot);
@@ -103,6 +118,7 @@ class _EditAdhocSheetState extends ConsumerState<EditAdhocSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final tracked = ref.watch(preferencesProvider).trackedMetrics;
     return Container(
       height: MediaQuery.sizeOf(context).height * 0.85,
       color: CupertinoColors.systemGroupedBackground.resolveFrom(context),
@@ -179,6 +195,11 @@ class _EditAdhocSheetState extends ConsumerState<EditAdhocSheet> {
                         controller: _fat,
                         error: _errors['fat'],
                         suffix: 'g',
+                      ),
+                      ..._extras.rows(
+                        keyPrefix: 'adhoc-edit',
+                        tracked: tracked,
+                        errors: _errors,
                       ),
                     ],
                   ),

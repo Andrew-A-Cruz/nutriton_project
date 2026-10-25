@@ -65,6 +65,9 @@ class _LogFoodViewState extends ConsumerState<LogFoodView> {
     protein: widget.food.protein,
     carbs: widget.food.carbs,
     fat: widget.food.fat,
+    fiber: widget.food.fiber,
+    sugar: widget.food.sugar,
+    sodium: widget.food.sodium,
   );
 
   /// The unit weights are typed in: the user's display unit.
@@ -245,5 +248,8 @@ class _LogFoodViewState extends ConsumerState<LogFoodView> {
     );
   }
 
-  static String _macroLine(Macros m) => formatMacroLine(m);
+  String _macroLine(Macros m) => formatMacroLine(
+    m,
+    tracked: ref.watch(preferencesProvider).trackedMetrics,
+  );
 }

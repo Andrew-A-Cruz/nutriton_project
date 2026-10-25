@@ -5,17 +5,20 @@ import '../../core/nutrition_math.dart';
 import '../../data/database/app_database.dart';
 import '../../data/preferences/user_preferences.dart';
 
-/// Sum of the macros of [entries].
-Macros totalsOf(Iterable<FoodLogEntry> entries) => sumMacros(
-  entries.map(
-    (e) => Macros(
-      calories: e.calories,
-      protein: e.protein,
-      carbs: e.carbs,
-      fat: e.fat,
-    ),
-  ),
+/// The macros stored on a log entry.
+Macros macrosOfEntry(FoodLogEntry e) => Macros(
+  calories: e.calories,
+  protein: e.protein,
+  carbs: e.carbs,
+  fat: e.fat,
+  fiber: e.fiber,
+  sugar: e.sugar,
+  sodium: e.sodium,
 );
+
+/// Sum of the macros of [entries].
+Macros totalsOf(Iterable<FoodLogEntry> entries) =>
+    sumMacros(entries.map(macrosOfEntry));
 
 /// Day totals: the primary metric large with progress toward its goal, and
 /// each secondary metric below.
@@ -33,6 +36,10 @@ class MacroSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     final totals = totalsOf(entries);
     final primary = settings.primaryMetric;
+    final macros = entries.map(macrosOfEntry).toList();
+    // Only the optional nutrients can be missing from an entry.
+    String? hintFor(Metric m) =>
+        coverageText(m, coverageOf(macros, m.recordedAmountIn));
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
@@ -52,6 +59,7 @@ class MacroSummary extends StatelessWidget {
                 metric: primary,
                 amount: primary.amountIn(totals),
                 goal: settings.goalFor(primary),
+                coverageHint: hintFor(primary),
               ),
               for (final m in settings.secondaryMetrics) ...[
                 const SizedBox(height: 14),
@@ -59,6 +67,7 @@ class MacroSummary extends StatelessWidget {
                   metric: m,
                   amount: m.amountIn(totals),
                   goal: settings.goalFor(m),
+                  coverageHint: hintFor(m),
                 ),
               ],
             ],
@@ -74,11 +83,13 @@ class _PrimaryTotal extends StatelessWidget {
     required this.metric,
     required this.amount,
     required this.goal,
+    this.coverageHint,
   });
 
   final Metric metric;
   final double amount;
   final double? goal;
+  final String? coverageHint;
 
   @override
   Widget build(BuildContext context) {
@@ -126,6 +137,14 @@ class _PrimaryTotal extends StatelessWidget {
             style: TextStyle(fontSize: 13, color: secondary),
           ),
         ],
+        if (coverageHint != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            coverageHint!,
+            key: Key('coverage-${metric.name}'),
+            style: TextStyle(fontSize: 13, color: secondary),
+          ),
+        ],
       ],
     );
   }
@@ -136,11 +155,13 @@ class _SecondaryTotal extends StatelessWidget {
     required this.metric,
     required this.amount,
     required this.goal,
+    this.coverageHint,
   });
 
   final Metric metric;
   final double amount;
   final double? goal;
+  final String? coverageHint;
 
   @override
   Widget build(BuildContext context) {
@@ -168,6 +189,17 @@ class _SecondaryTotal extends StatelessWidget {
         if (hasGoal) ...[
           const SizedBox(height: 6),
           _ProgressBar(fraction: amount / goal!, over: amount > goal!),
+        ],
+        if (coverageHint != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            coverageHint!,
+            key: Key('coverage-${metric.name}'),
+            style: TextStyle(
+              fontSize: 13,
+              color: CupertinoColors.secondaryLabel.resolveFrom(context),
+            ),
+          ),
         ],
       ],
     );

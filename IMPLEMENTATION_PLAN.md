@@ -27,7 +27,7 @@ React Native would work, but nothing about this app needs it, and switching woul
 | Area | State |
 |---|---|
 | `lib/main.dart`, `lib/app.dart` | `CupertinoApp` with three real tabs: Today (Home), Catalog and Summary |
-| `lib/data/database/` | drift tables (split into `tables/`), five DAOs, repositories; schema v3 (migrations in `app_database.dart`, dumps in `drift_schemas/`); database file `food_log`; generated code current |
+| `lib/data/database/` | drift tables (split into `tables/`), six DAOs, repositories; schema v5 (migrations in `app_database.dart`, dumps in `drift_schemas/`); database file `food_log`; generated code current |
 | `lib/core/` | Pure Dart: `nutrition_math`, `date_key`, `metrics` (formatting), `validation`, `summary_math` (ranges, bucketing, averages) |
 | `lib/views/` | Onboarding, Home (date header, totals, log list), Catalog (foods and meals, search, archive), Add Food sheet (catalog by servings or grams, one-off, new food with save & log), meal builder and meal log, Summary (range picker, averages, bar chart), Settings (the onboarding form) |
 | `lib/providers/` | Riverpod providers for the database, repositories, preferences, the selected Home date, log entries, catalog lists and the Summary range and report |
@@ -154,6 +154,7 @@ DATA_MODEL.md has been updated to match these changes.
 | Database | `drift`, `drift_flutter`, `drift_dev`, `build_runner` | Installed |
 | State management | `flutter_riverpod` | Installed |
 | Preferences | `shared_preferences` | Installed |
+| Reminders | `flutter_local_notifications`, `timezone`, `flutter_timezone` | Installed (M14; behind `NotificationScheduler`, no-op on desktop and web) |
 | IDs | `uuid` | Installed |
 | Date formatting | `intl` | Installed |
 | Summary charts | `fl_chart` | Installed (Milestone 7, `^1.2.0`) |

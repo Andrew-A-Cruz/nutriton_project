@@ -1,13 +1,16 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/body_weight.dart';
 import '../../core/metrics.dart';
 import '../../core/summary_math.dart';
 import '../../data/preferences/user_preferences.dart';
+import '../../providers/body_weight_providers.dart';
 import '../../providers/preferences_providers.dart';
 import '../../providers/summary_providers.dart';
 import '../../providers/today_providers.dart';
 import 'summary_chart.dart';
+import 'weight_chart.dart';
 
 /// The Summary tab: a range picker, averages per logged day for each tracked
 /// metric, and a bar chart of the primary metric.
@@ -58,14 +61,14 @@ class SummaryView extends ConsumerWidget {
   }
 }
 
-class _ReportBody extends StatelessWidget {
+class _ReportBody extends ConsumerWidget {
   const _ReportBody({required this.report, required this.settings});
 
   final SummaryReport report;
   final UserSettings settings;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final primary = settings.primaryMetric;
     final metrics = [primary, ...settings.secondaryMetrics];
     final averages = report.averages;
@@ -90,7 +93,13 @@ class _ReportBody extends StatelessWidget {
               )
             else
               for (final m in metrics)
-                _AverageRow(metric: m, amount: m.amountIn(averages)),
+                _AverageRow(
+                  metric: m,
+                  amount: m.amountIn(averages),
+                  coverageHint: report.coverage[m] == null
+                      ? null
+                      : coverageText(m, report.coverage[m]!),
+                ),
             const SizedBox(height: 8),
             Text(
               'Days logged: ${report.daysLogged} of ${report.totalDays}',
@@ -99,6 +108,15 @@ class _ReportBody extends StatelessWidget {
             ),
           ],
         ),
+        if (report.range != SummaryRange.day) ...[
+          const SizedBox(height: 16),
+          _WeightCard(
+            range: report.range,
+            startKey: report.startKey,
+            endKey: report.endKey,
+            unit: settings.bodyWeightUnit,
+          ),
+        ],
         if (report.buckets.isNotEmpty) ...[
           const SizedBox(height: 16),
           _Card(
@@ -128,29 +146,102 @@ class _ReportBody extends StatelessWidget {
   }
 }
 
+/// Body weight over the range with its moving average. Shows a short note
+/// instead of a chart when nothing was weighed in the range.
+class _WeightCard extends ConsumerWidget {
+  const _WeightCard({
+    required this.range,
+    required this.startKey,
+    required this.endKey,
+    required this.unit,
+  });
+
+  final SummaryRange range;
+  final String startKey;
+  final String endKey;
+  final BodyWeightUnit unit;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final readings = ref.watch(bodyWeightRangeProvider(range)).value;
+    final inRange = [
+      for (final r in readings ?? const <WeightReading>[])
+        if (r.date.compareTo(startKey) >= 0) r,
+    ];
+    return _Card(
+      children: [
+        _SectionLabel(
+          'BODY WEIGHT (${unit.name}) AND $movingAverageDays-DAY AVERAGE',
+        ),
+        const SizedBox(height: 12),
+        if (inRange.isEmpty)
+          Text(
+            readings == null
+                ? ''
+                : 'No weigh-ins in this period. Add one from the Today screen.',
+            key: const Key('weight-empty'),
+            style: TextStyle(
+              color: CupertinoColors.secondaryLabel.resolveFrom(context),
+            ),
+          )
+        else
+          WeightChart(
+            key: const Key('weight-chart'),
+            readings: readings!,
+            startKey: startKey,
+            endKey: endKey,
+            unit: unit,
+          ),
+      ],
+    );
+  }
+}
+
 class _AverageRow extends StatelessWidget {
-  const _AverageRow({required this.metric, required this.amount});
+  const _AverageRow({
+    required this.metric,
+    required this.amount,
+    this.coverageHint,
+  });
 
   final Metric metric;
   final double amount;
+  final String? coverageHint;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: Text(metric.label, style: const TextStyle(fontSize: 15)),
+          Row(
+            children: [
+              Expanded(
+                child: Text(metric.label, style: const TextStyle(fontSize: 15)),
+              ),
+              Flexible(
+                child: Text(
+                  '${metric.format(amount)} ${metric.unit}',
+                  key: Key('average-${metric.name}'),
+                  textAlign: TextAlign.end,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
           ),
-          Flexible(
-            child: Text(
-              '${metric.format(amount)} ${metric.unit}',
-              key: Key('average-${metric.name}'),
-              textAlign: TextAlign.end,
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          if (coverageHint != null)
+            Text(
+              coverageHint!,
+              key: Key('coverage-${metric.name}'),
+              style: TextStyle(
+                fontSize: 13,
+                color: CupertinoColors.secondaryLabel.resolveFrom(context),
+              ),
             ),
-          ),
         ],
       ),
     );

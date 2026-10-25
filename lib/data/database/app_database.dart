@@ -3,11 +3,13 @@ import 'package:drift_flutter/drift_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'app_database.steps.dart';
+import 'daos/body_weight_dao.dart';
 import 'daos/food_dao.dart';
 import 'daos/log_dao.dart';
 import 'daos/meal_dao.dart';
 import 'daos/scheduled_meal_dao.dart';
 import 'daos/summary_dao.dart';
+import 'tables/body_weights.dart';
 import 'tables/food_items.dart';
 import 'tables/food_log_entries.dart';
 import 'tables/food_log_entry_items.dart';
@@ -26,8 +28,9 @@ part 'app_database.g.dart';
     FoodLogEntryItems,
     ScheduledMeals,
     ScheduledMealOutcomes,
+    BodyWeights,
   ],
-  daos: [FoodDao, MealDao, LogDao, SummaryDao, ScheduledMealDao],
+  daos: [FoodDao, MealDao, LogDao, SummaryDao, ScheduledMealDao, BodyWeightDao],
 )
 class AppDatabase extends _$AppDatabase {
   /// Pass a [QueryExecutor] (e.g. `NativeDatabase.memory()`) in tests. The
@@ -35,7 +38,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -52,6 +55,32 @@ class AppDatabase extends _$AppDatabase {
           schema.foodLogEntries,
           schema.foodLogEntries.mealSlot,
         );
+      },
+      // v3 -> v4: fiber, sugar and sodium; existing rows stay null (not
+      // recorded).
+      from3To4: (m, schema) async {
+        await m.addColumn(schema.foodItems, schema.foodItems.fiber);
+        await m.addColumn(schema.foodItems, schema.foodItems.sugar);
+        await m.addColumn(schema.foodItems, schema.foodItems.sodium);
+        await m.addColumn(schema.foodLogEntries, schema.foodLogEntries.fiber);
+        await m.addColumn(schema.foodLogEntries, schema.foodLogEntries.sugar);
+        await m.addColumn(schema.foodLogEntries, schema.foodLogEntries.sodium);
+        await m.addColumn(
+          schema.foodLogEntryItems,
+          schema.foodLogEntryItems.fiber,
+        );
+        await m.addColumn(
+          schema.foodLogEntryItems,
+          schema.foodLogEntryItems.sugar,
+        );
+        await m.addColumn(
+          schema.foodLogEntryItems,
+          schema.foodLogEntryItems.sodium,
+        );
+      },
+      // v4 -> v5: body weight readings.
+      from4To5: (m, schema) async {
+        await m.createTable(schema.bodyWeights);
       },
     ),
     beforeOpen: (details) async {

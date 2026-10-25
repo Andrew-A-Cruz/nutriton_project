@@ -36,6 +36,7 @@ class BackupRepository {
           scheduledMealOutcomes: await _db
               .select(_db.scheduledMealOutcomes)
               .get(),
+          bodyWeights: await _db.select(_db.bodyWeights).get(),
           settings: _prefs.read(),
         ),
       );
@@ -58,6 +59,7 @@ class BackupRepository {
     try {
       await _db.transaction(() async {
         // Children first, so no delete trips a foreign key.
+        await _db.delete(_db.bodyWeights).go();
         await _db.delete(_db.scheduledMealOutcomes).go();
         await _db.delete(_db.scheduledMeals).go();
         await _db.delete(_db.foodLogEntryItems).go();
@@ -75,6 +77,7 @@ class BackupRepository {
           b.insertAll(_db.foodLogEntryItems, data.logEntryItems);
           b.insertAll(_db.scheduledMeals, data.scheduledMeals);
           b.insertAll(_db.scheduledMealOutcomes, data.scheduledMealOutcomes);
+          b.insertAll(_db.bodyWeights, data.bodyWeights);
         });
       });
     } on Exception {

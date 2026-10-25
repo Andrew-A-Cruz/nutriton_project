@@ -3,8 +3,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nutriton_project/core/date_key.dart';
 import 'package:nutriton_project/core/meal_slot.dart';
+import 'package:nutriton_project/core/metrics.dart';
 import 'package:nutriton_project/core/nutrition_math.dart';
 import 'package:nutriton_project/data/database/app_database.dart';
+import 'package:nutriton_project/data/repositories/body_weight_repository.dart';
 import 'package:nutriton_project/data/repositories/log_repository.dart';
 import 'package:nutriton_project/data/repositories/catalog_repository.dart';
 import 'package:nutriton_project/views/common/meal_slot_picker.dart';
@@ -64,6 +66,10 @@ void main() {
       name: 'Yesterday',
       macros: const Macros(calories: 800, protein: 20, carbs: 60, fat: 10),
     );
+    // Body weight: the Home row and the Summary chart.
+    final weights = BodyWeightRepository(db);
+    await weights.setWeight(todayKey(), 1234.5 / 10);
+    await weights.setWeight(addDays(todayKey(), -1), 124.1);
   }
 
   testWidgets('Home and Summary fit at 2x text in dark mode', (tester) async {
@@ -73,11 +79,20 @@ void main() {
     await settle(tester);
 
     expect(find.text('Food Log'), findsOneWidget);
+    // At 2x text the row sits below the first screenful.
+    await tester.dragUntilVisible(
+      find.byKey(const Key('weigh-in-value')),
+      find.byType(CustomScrollView),
+      const Offset(0, -100),
+    );
     await tester.tap(find.byIcon(CupertinoIcons.chart_bar_fill));
     await settle(tester);
     for (final segment in ['Day', 'Week', 'Month', '6M', 'Year']) {
       await tester.tap(find.text(segment).last);
       await settle(tester);
+      if (segment != 'Day') {
+        expect(find.byKey(const Key('weight-chart')), findsOneWidget);
+      }
     }
     expect(tester.takeException(), isNull);
     await unmount(tester);
@@ -215,6 +230,52 @@ void main() {
     for (final slot in MealSlot.values) {
       expect(find.text(slot.label), findsOneWidget);
     }
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
+
+  testWidgets('sodium, fiber and sugar fit at 2x text', (tester) async {
+    stressScreen(tester);
+    final allMetrics = await tester.runAsync(
+      () => mockPreferences({
+        'onboarding_complete': true,
+        'primary_metric': 'calories',
+        'tracked_metrics': [for (final m in Metric.values) m.name],
+        'goal_calories': 2000.0,
+        'goal_sodium': 2300.0,
+        'goal_fiber': 30.0,
+      }),
+    );
+    await tester.runAsync(() async {
+      final log = LogRepository(db);
+      for (var i = 0; i < 5; i++) {
+        await log.logAdhoc(
+          logDate: todayKey(),
+          name: 'Snack $i',
+          macros: Macros(
+            calories: 100,
+            protein: 1,
+            carbs: 10,
+            fat: 2,
+            fiber: i < 3 ? 2 : null,
+            sugar: i < 3 ? 4 : null,
+            sodium: i < 3 ? 410 : null,
+          ),
+        );
+      }
+    });
+    await tester.pumpWidget(testApp(db: db, prefs: allMetrics!));
+    await settle(tester);
+    await tester.dragUntilVisible(
+      find.byKey(const Key('coverage-sodium')),
+      find.byType(CustomScrollView).first,
+      const Offset(0, -100),
+    );
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.byIcon(CupertinoIcons.chart_bar_fill));
+    await settle(tester);
+    expect(find.byKey(const Key('average-sodium')), findsOneWidget);
     expect(tester.takeException(), isNull);
     await unmount(tester);
   });

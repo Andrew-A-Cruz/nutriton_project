@@ -1,7 +1,9 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/body_weight.dart';
 import '../../core/metrics.dart';
 import '../../core/nutrition_math.dart';
+import '../../core/reminder.dart';
 
 /// User settings. Loaded from [UserPreferences] at launch and saved back on
 /// every change.
@@ -12,8 +14,14 @@ class UserSettings {
     Set<Metric> trackedMetrics = const {},
     Map<Metric, double> goals = const {},
     this.displayUnit = WeightUnit.g,
+    this.bodyWeightUnit = BodyWeightUnit.kg,
+    List<Reminder> reminders = Reminder.defaults,
   }) : trackedMetrics = {...trackedMetrics, primaryMetric},
-       goals = Map.unmodifiable(goals);
+       goals = Map.unmodifiable(goals),
+       reminders = List.unmodifiable([
+         for (var i = 0; i < reminderSlots; i++)
+           i < reminders.length ? reminders[i] : Reminder.defaults[i],
+       ]);
 
   final bool onboardingComplete;
   final Metric primaryMetric;
@@ -24,6 +32,12 @@ class UserSettings {
   /// Goal per metric. A metric with no entry has no goal.
   final Map<Metric, double> goals;
   final WeightUnit displayUnit;
+
+  /// Unit for body weight, separate from the food [displayUnit].
+  final BodyWeightUnit bodyWeightUnit;
+
+  /// Always [reminderSlots] long, all off until the user turns them on.
+  final List<Reminder> reminders;
 
   /// Tracked metrics other than the primary one, in [Metric.values] order.
   List<Metric> get secondaryMetrics => [
@@ -39,12 +53,16 @@ class UserSettings {
     Set<Metric>? trackedMetrics,
     Map<Metric, double>? goals,
     WeightUnit? displayUnit,
+    BodyWeightUnit? bodyWeightUnit,
+    List<Reminder>? reminders,
   }) => UserSettings(
     onboardingComplete: onboardingComplete ?? this.onboardingComplete,
     primaryMetric: primaryMetric ?? this.primaryMetric,
     trackedMetrics: trackedMetrics ?? this.trackedMetrics,
     goals: goals ?? this.goals,
     displayUnit: displayUnit ?? this.displayUnit,
+    bodyWeightUnit: bodyWeightUnit ?? this.bodyWeightUnit,
+    reminders: reminders ?? this.reminders,
   );
 }
 
@@ -57,8 +75,11 @@ class UserPreferences {
   static const primaryKey = 'primary_metric';
   static const trackedKey = 'tracked_metrics';
   static const unitKey = 'display_unit';
+  static const bodyWeightUnitKey = 'body_weight_unit';
   static const lastBackupKey = 'last_backup_at';
   static String goalKey(Metric metric) => 'goal_${metric.name}';
+  static String reminderEnabledKey(int slot) => 'reminder_${slot}_enabled';
+  static String reminderMinutesKey(int slot) => 'reminder_${slot}_minutes';
 
   final SharedPreferences _prefs;
 
@@ -83,8 +104,25 @@ class UserPreferences {
       displayUnit:
           WeightUnit.values.asNameMap()[_prefs.getString(unitKey)] ??
           WeightUnit.g,
+      bodyWeightUnit:
+          BodyWeightUnit.values.asNameMap()[_prefs.getString(
+            bodyWeightUnitKey,
+          )] ??
+          BodyWeightUnit.kg,
+      reminders: [
+        for (var i = 0; i < reminderSlots; i++)
+          Reminder(
+            minutes:
+                _validMinutes(_prefs.getInt(reminderMinutesKey(i))) ??
+                Reminder.defaults[i].minutes,
+            enabled: _prefs.getBool(reminderEnabledKey(i)) ?? false,
+          ),
+      ],
     );
   }
+
+  static int? _validMinutes(int? m) =>
+      m != null && m >= 0 && m < 24 * 60 ? m : null;
 
   Future<void> write(UserSettings settings) async {
     await _prefs.setBool(onboardingKey, settings.onboardingComplete);
@@ -93,6 +131,14 @@ class UserPreferences {
       for (final m in settings.trackedMetrics) m.name,
     ]);
     await _prefs.setString(unitKey, settings.displayUnit.name);
+    await _prefs.setString(bodyWeightUnitKey, settings.bodyWeightUnit.name);
+    for (var i = 0; i < reminderSlots; i++) {
+      await _prefs.setBool(
+        reminderEnabledKey(i),
+        settings.reminders[i].enabled,
+      );
+      await _prefs.setInt(reminderMinutesKey(i), settings.reminders[i].minutes);
+    }
     for (final m in Metric.values) {
       final goal = settings.goalFor(m);
       if (goal == null) {

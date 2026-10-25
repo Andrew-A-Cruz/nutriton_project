@@ -36,6 +36,7 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
   late final TextEditingController _carbs;
   late final TextEditingController _fat;
   late final TextEditingController _weight;
+  late final OptionalNutrientFields _extras;
   late WeightUnit _unit;
   late final WeightUnit _initialUnit;
   late final String _initialWeightText;
@@ -53,6 +54,15 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
     _protein = TextEditingController(text: _macroText(existing?.protein));
     _carbs = TextEditingController(text: _macroText(existing?.carbs));
     _fat = TextEditingController(text: _macroText(existing?.fat));
+    _extras = OptionalNutrientFields(
+      initial: existing == null
+          ? null
+          : Macros(
+              fiber: existing.fiber,
+              sugar: existing.sugar,
+              sodium: existing.sodium,
+            ),
+    );
     _unit = existing == null
         ? ref.read(preferencesProvider).displayUnit
         : WeightUnit.values.asNameMap()[existing.displayUnit] ?? WeightUnit.g;
@@ -68,6 +78,7 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
     for (final c in [_name, _calories, _protein, _carbs, _fat, _weight]) {
       c.dispose();
     }
+    _extras.dispose();
     super.dispose();
   }
 
@@ -104,10 +115,13 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
       _protein.text = _macroText(result.perServing.protein);
       _carbs.text = _macroText(result.perServing.carbs);
       _fat.text = _macroText(result.perServing.fat);
+      _extras.setFrom(result.perServing);
       _weight.text = _weightText(result.servingWeightG, _unit);
       _errors = const {};
     });
   }
+
+  Set<Metric> get _tracked => ref.read(preferencesProvider).trackedMetrics;
 
   Map<String, String> _validate() {
     final checks = {
@@ -121,6 +135,7 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
     return {
       for (final entry in checks.entries)
         if (entry.value != null) entry.key: entry.value!,
+      ..._extras.validate(_tracked),
     };
   }
 
@@ -136,11 +151,14 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
     final grams = _weightUnchanged
         ? existing!.servingWeightG
         : _unit.toGrams(parseNumber(_weight.text)!);
-    final perServing = Macros(
-      calories: parseNumber(_calories.text)!,
-      protein: parseNumber(_protein.text)!,
-      carbs: parseNumber(_carbs.text)!,
-      fat: parseNumber(_fat.text)!,
+    final perServing = _extras.applyTo(
+      Macros(
+        calories: parseNumber(_calories.text)!,
+        protein: parseNumber(_protein.text)!,
+        carbs: parseNumber(_carbs.text)!,
+        fat: parseNumber(_fat.text)!,
+      ),
+      _tracked,
     );
     final catalog = ref.read(catalogRepositoryProvider);
 
@@ -179,6 +197,7 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
   @override
   Widget build(BuildContext context) {
     final existing = widget.existing;
+    final tracked = ref.watch(preferencesProvider).trackedMetrics;
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         leading: CupertinoButton(
@@ -246,6 +265,11 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
                   controller: _fat,
                   error: _errors['fat'],
                   suffix: 'g',
+                ),
+                ..._extras.rows(
+                  keyPrefix: 'food',
+                  tracked: tracked,
+                  errors: _errors,
                 ),
               ],
             ),

@@ -115,6 +115,36 @@ class $FoodItemsTable extends FoodItems
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _fiberMeta = const VerificationMeta('fiber');
+  @override
+  late final GeneratedColumn<double> fiber = GeneratedColumn<double>(
+    'fiber',
+    aliasedName,
+    true,
+    check: () => ComparableExpr(fiber).isBiggerOrEqualValue(0),
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sugarMeta = const VerificationMeta('sugar');
+  @override
+  late final GeneratedColumn<double> sugar = GeneratedColumn<double>(
+    'sugar',
+    aliasedName,
+    true,
+    check: () => ComparableExpr(sugar).isBiggerOrEqualValue(0),
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sodiumMeta = const VerificationMeta('sodium');
+  @override
+  late final GeneratedColumn<double> sodium = GeneratedColumn<double>(
+    'sodium',
+    aliasedName,
+    true,
+    check: () => ComparableExpr(sodium).isBiggerOrEqualValue(0),
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -126,6 +156,9 @@ class $FoodItemsTable extends FoodItems
     servingWeightG,
     displayUnit,
     archived,
+    fiber,
+    sugar,
+    sodium,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -210,6 +243,24 @@ class $FoodItemsTable extends FoodItems
         archived.isAcceptableOrUnknown(data['archived']!, _archivedMeta),
       );
     }
+    if (data.containsKey('fiber')) {
+      context.handle(
+        _fiberMeta,
+        fiber.isAcceptableOrUnknown(data['fiber']!, _fiberMeta),
+      );
+    }
+    if (data.containsKey('sugar')) {
+      context.handle(
+        _sugarMeta,
+        sugar.isAcceptableOrUnknown(data['sugar']!, _sugarMeta),
+      );
+    }
+    if (data.containsKey('sodium')) {
+      context.handle(
+        _sodiumMeta,
+        sodium.isAcceptableOrUnknown(data['sodium']!, _sodiumMeta),
+      );
+    }
     return context;
   }
 
@@ -255,6 +306,18 @@ class $FoodItemsTable extends FoodItems
         DriftSqlType.bool,
         data['${effectivePrefix}archived'],
       )!,
+      fiber: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}fiber'],
+      ),
+      sugar: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}sugar'],
+      ),
+      sodium: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}sodium'],
+      ),
     );
   }
 
@@ -274,6 +337,12 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
   final double servingWeightG;
   final String displayUnit;
   final bool archived;
+
+  /// Optional nutrients: null means not recorded, which is not the same as 0.
+  /// Sodium is in milligrams, fiber and sugar in grams.
+  final double? fiber;
+  final double? sugar;
+  final double? sodium;
   const FoodItem({
     required this.id,
     required this.name,
@@ -284,6 +353,9 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     required this.servingWeightG,
     required this.displayUnit,
     required this.archived,
+    this.fiber,
+    this.sugar,
+    this.sodium,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -297,6 +369,15 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     map['serving_weight_g'] = Variable<double>(servingWeightG);
     map['display_unit'] = Variable<String>(displayUnit);
     map['archived'] = Variable<bool>(archived);
+    if (!nullToAbsent || fiber != null) {
+      map['fiber'] = Variable<double>(fiber);
+    }
+    if (!nullToAbsent || sugar != null) {
+      map['sugar'] = Variable<double>(sugar);
+    }
+    if (!nullToAbsent || sodium != null) {
+      map['sodium'] = Variable<double>(sodium);
+    }
     return map;
   }
 
@@ -311,6 +392,15 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
       servingWeightG: Value(servingWeightG),
       displayUnit: Value(displayUnit),
       archived: Value(archived),
+      fiber: fiber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fiber),
+      sugar: sugar == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sugar),
+      sodium: sodium == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sodium),
     );
   }
 
@@ -329,6 +419,9 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
       servingWeightG: serializer.fromJson<double>(json['servingWeightG']),
       displayUnit: serializer.fromJson<String>(json['displayUnit']),
       archived: serializer.fromJson<bool>(json['archived']),
+      fiber: serializer.fromJson<double?>(json['fiber']),
+      sugar: serializer.fromJson<double?>(json['sugar']),
+      sodium: serializer.fromJson<double?>(json['sodium']),
     );
   }
   @override
@@ -344,6 +437,9 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
       'servingWeightG': serializer.toJson<double>(servingWeightG),
       'displayUnit': serializer.toJson<String>(displayUnit),
       'archived': serializer.toJson<bool>(archived),
+      'fiber': serializer.toJson<double?>(fiber),
+      'sugar': serializer.toJson<double?>(sugar),
+      'sodium': serializer.toJson<double?>(sodium),
     };
   }
 
@@ -357,6 +453,9 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     double? servingWeightG,
     String? displayUnit,
     bool? archived,
+    Value<double?> fiber = const Value.absent(),
+    Value<double?> sugar = const Value.absent(),
+    Value<double?> sodium = const Value.absent(),
   }) => FoodItem(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -367,6 +466,9 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     servingWeightG: servingWeightG ?? this.servingWeightG,
     displayUnit: displayUnit ?? this.displayUnit,
     archived: archived ?? this.archived,
+    fiber: fiber.present ? fiber.value : this.fiber,
+    sugar: sugar.present ? sugar.value : this.sugar,
+    sodium: sodium.present ? sodium.value : this.sodium,
   );
   FoodItem copyWithCompanion(FoodItemsCompanion data) {
     return FoodItem(
@@ -383,6 +485,9 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
           ? data.displayUnit.value
           : this.displayUnit,
       archived: data.archived.present ? data.archived.value : this.archived,
+      fiber: data.fiber.present ? data.fiber.value : this.fiber,
+      sugar: data.sugar.present ? data.sugar.value : this.sugar,
+      sodium: data.sodium.present ? data.sodium.value : this.sodium,
     );
   }
 
@@ -397,7 +502,10 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
           ..write('fat: $fat, ')
           ..write('servingWeightG: $servingWeightG, ')
           ..write('displayUnit: $displayUnit, ')
-          ..write('archived: $archived')
+          ..write('archived: $archived, ')
+          ..write('fiber: $fiber, ')
+          ..write('sugar: $sugar, ')
+          ..write('sodium: $sodium')
           ..write(')'))
         .toString();
   }
@@ -413,6 +521,9 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     servingWeightG,
     displayUnit,
     archived,
+    fiber,
+    sugar,
+    sodium,
   );
   @override
   bool operator ==(Object other) =>
@@ -426,7 +537,10 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
           other.fat == this.fat &&
           other.servingWeightG == this.servingWeightG &&
           other.displayUnit == this.displayUnit &&
-          other.archived == this.archived);
+          other.archived == this.archived &&
+          other.fiber == this.fiber &&
+          other.sugar == this.sugar &&
+          other.sodium == this.sodium);
 }
 
 class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
@@ -439,6 +553,9 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
   final Value<double> servingWeightG;
   final Value<String> displayUnit;
   final Value<bool> archived;
+  final Value<double?> fiber;
+  final Value<double?> sugar;
+  final Value<double?> sodium;
   final Value<int> rowid;
   const FoodItemsCompanion({
     this.id = const Value.absent(),
@@ -450,6 +567,9 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     this.servingWeightG = const Value.absent(),
     this.displayUnit = const Value.absent(),
     this.archived = const Value.absent(),
+    this.fiber = const Value.absent(),
+    this.sugar = const Value.absent(),
+    this.sodium = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   FoodItemsCompanion.insert({
@@ -462,6 +582,9 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     required double servingWeightG,
     this.displayUnit = const Value.absent(),
     this.archived = const Value.absent(),
+    this.fiber = const Value.absent(),
+    this.sugar = const Value.absent(),
+    this.sodium = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -480,6 +603,9 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     Expression<double>? servingWeightG,
     Expression<String>? displayUnit,
     Expression<bool>? archived,
+    Expression<double>? fiber,
+    Expression<double>? sugar,
+    Expression<double>? sodium,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -492,6 +618,9 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
       if (servingWeightG != null) 'serving_weight_g': servingWeightG,
       if (displayUnit != null) 'display_unit': displayUnit,
       if (archived != null) 'archived': archived,
+      if (fiber != null) 'fiber': fiber,
+      if (sugar != null) 'sugar': sugar,
+      if (sodium != null) 'sodium': sodium,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -506,6 +635,9 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     Value<double>? servingWeightG,
     Value<String>? displayUnit,
     Value<bool>? archived,
+    Value<double?>? fiber,
+    Value<double?>? sugar,
+    Value<double?>? sodium,
     Value<int>? rowid,
   }) {
     return FoodItemsCompanion(
@@ -518,6 +650,9 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
       servingWeightG: servingWeightG ?? this.servingWeightG,
       displayUnit: displayUnit ?? this.displayUnit,
       archived: archived ?? this.archived,
+      fiber: fiber ?? this.fiber,
+      sugar: sugar ?? this.sugar,
+      sodium: sodium ?? this.sodium,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -552,6 +687,15 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     if (archived.present) {
       map['archived'] = Variable<bool>(archived.value);
     }
+    if (fiber.present) {
+      map['fiber'] = Variable<double>(fiber.value);
+    }
+    if (sugar.present) {
+      map['sugar'] = Variable<double>(sugar.value);
+    }
+    if (sodium.present) {
+      map['sodium'] = Variable<double>(sodium.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -570,6 +714,9 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
           ..write('servingWeightG: $servingWeightG, ')
           ..write('displayUnit: $displayUnit, ')
           ..write('archived: $archived, ')
+          ..write('fiber: $fiber, ')
+          ..write('sugar: $sugar, ')
+          ..write('sodium: $sodium, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1356,6 +1503,36 @@ class $FoodLogEntriesTable extends FoodLogEntries
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _fiberMeta = const VerificationMeta('fiber');
+  @override
+  late final GeneratedColumn<double> fiber = GeneratedColumn<double>(
+    'fiber',
+    aliasedName,
+    true,
+    check: () => ComparableExpr(fiber).isBiggerOrEqualValue(0),
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sugarMeta = const VerificationMeta('sugar');
+  @override
+  late final GeneratedColumn<double> sugar = GeneratedColumn<double>(
+    'sugar',
+    aliasedName,
+    true,
+    check: () => ComparableExpr(sugar).isBiggerOrEqualValue(0),
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sodiumMeta = const VerificationMeta('sodium');
+  @override
+  late final GeneratedColumn<double> sodium = GeneratedColumn<double>(
+    'sodium',
+    aliasedName,
+    true,
+    check: () => ComparableExpr(sodium).isBiggerOrEqualValue(0),
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1371,6 +1548,9 @@ class $FoodLogEntriesTable extends FoodLogEntries
     mealId,
     servings,
     mealSlot,
+    fiber,
+    sugar,
+    sodium,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1480,6 +1660,24 @@ class $FoodLogEntriesTable extends FoodLogEntries
         mealSlot.isAcceptableOrUnknown(data['meal_slot']!, _mealSlotMeta),
       );
     }
+    if (data.containsKey('fiber')) {
+      context.handle(
+        _fiberMeta,
+        fiber.isAcceptableOrUnknown(data['fiber']!, _fiberMeta),
+      );
+    }
+    if (data.containsKey('sugar')) {
+      context.handle(
+        _sugarMeta,
+        sugar.isAcceptableOrUnknown(data['sugar']!, _sugarMeta),
+      );
+    }
+    if (data.containsKey('sodium')) {
+      context.handle(
+        _sodiumMeta,
+        sodium.isAcceptableOrUnknown(data['sodium']!, _sodiumMeta),
+      );
+    }
     return context;
   }
 
@@ -1541,6 +1739,18 @@ class $FoodLogEntriesTable extends FoodLogEntries
         DriftSqlType.string,
         data['${effectivePrefix}meal_slot'],
       ),
+      fiber: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}fiber'],
+      ),
+      sugar: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}sugar'],
+      ),
+      sodium: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}sodium'],
+      ),
     );
   }
 
@@ -1572,6 +1782,12 @@ class FoodLogEntry extends DataClass implements Insertable<FoodLogEntry> {
 
   /// 'breakfast' | 'lunch' | 'dinner' | 'snack'; null shows under "Other".
   final String? mealSlot;
+
+  /// Optional nutrients: null means not recorded, which is not the same as 0.
+  /// Sodium is in milligrams, fiber and sugar in grams.
+  final double? fiber;
+  final double? sugar;
+  final double? sodium;
   const FoodLogEntry({
     required this.id,
     required this.logDate,
@@ -1586,6 +1802,9 @@ class FoodLogEntry extends DataClass implements Insertable<FoodLogEntry> {
     this.mealId,
     this.servings,
     this.mealSlot,
+    this.fiber,
+    this.sugar,
+    this.sodium,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1610,6 +1829,15 @@ class FoodLogEntry extends DataClass implements Insertable<FoodLogEntry> {
     }
     if (!nullToAbsent || mealSlot != null) {
       map['meal_slot'] = Variable<String>(mealSlot);
+    }
+    if (!nullToAbsent || fiber != null) {
+      map['fiber'] = Variable<double>(fiber);
+    }
+    if (!nullToAbsent || sugar != null) {
+      map['sugar'] = Variable<double>(sugar);
+    }
+    if (!nullToAbsent || sodium != null) {
+      map['sodium'] = Variable<double>(sodium);
     }
     return map;
   }
@@ -1637,6 +1865,15 @@ class FoodLogEntry extends DataClass implements Insertable<FoodLogEntry> {
       mealSlot: mealSlot == null && nullToAbsent
           ? const Value.absent()
           : Value(mealSlot),
+      fiber: fiber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fiber),
+      sugar: sugar == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sugar),
+      sodium: sodium == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sodium),
     );
   }
 
@@ -1659,6 +1896,9 @@ class FoodLogEntry extends DataClass implements Insertable<FoodLogEntry> {
       mealId: serializer.fromJson<String?>(json['mealId']),
       servings: serializer.fromJson<double?>(json['servings']),
       mealSlot: serializer.fromJson<String?>(json['mealSlot']),
+      fiber: serializer.fromJson<double?>(json['fiber']),
+      sugar: serializer.fromJson<double?>(json['sugar']),
+      sodium: serializer.fromJson<double?>(json['sodium']),
     );
   }
   @override
@@ -1678,6 +1918,9 @@ class FoodLogEntry extends DataClass implements Insertable<FoodLogEntry> {
       'mealId': serializer.toJson<String?>(mealId),
       'servings': serializer.toJson<double?>(servings),
       'mealSlot': serializer.toJson<String?>(mealSlot),
+      'fiber': serializer.toJson<double?>(fiber),
+      'sugar': serializer.toJson<double?>(sugar),
+      'sodium': serializer.toJson<double?>(sodium),
     };
   }
 
@@ -1695,6 +1938,9 @@ class FoodLogEntry extends DataClass implements Insertable<FoodLogEntry> {
     Value<String?> mealId = const Value.absent(),
     Value<double?> servings = const Value.absent(),
     Value<String?> mealSlot = const Value.absent(),
+    Value<double?> fiber = const Value.absent(),
+    Value<double?> sugar = const Value.absent(),
+    Value<double?> sodium = const Value.absent(),
   }) => FoodLogEntry(
     id: id ?? this.id,
     logDate: logDate ?? this.logDate,
@@ -1709,6 +1955,9 @@ class FoodLogEntry extends DataClass implements Insertable<FoodLogEntry> {
     mealId: mealId.present ? mealId.value : this.mealId,
     servings: servings.present ? servings.value : this.servings,
     mealSlot: mealSlot.present ? mealSlot.value : this.mealSlot,
+    fiber: fiber.present ? fiber.value : this.fiber,
+    sugar: sugar.present ? sugar.value : this.sugar,
+    sodium: sodium.present ? sodium.value : this.sodium,
   );
   FoodLogEntry copyWithCompanion(FoodLogEntriesCompanion data) {
     return FoodLogEntry(
@@ -1727,6 +1976,9 @@ class FoodLogEntry extends DataClass implements Insertable<FoodLogEntry> {
       mealId: data.mealId.present ? data.mealId.value : this.mealId,
       servings: data.servings.present ? data.servings.value : this.servings,
       mealSlot: data.mealSlot.present ? data.mealSlot.value : this.mealSlot,
+      fiber: data.fiber.present ? data.fiber.value : this.fiber,
+      sugar: data.sugar.present ? data.sugar.value : this.sugar,
+      sodium: data.sodium.present ? data.sodium.value : this.sodium,
     );
   }
 
@@ -1745,7 +1997,10 @@ class FoodLogEntry extends DataClass implements Insertable<FoodLogEntry> {
           ..write('foodItemId: $foodItemId, ')
           ..write('mealId: $mealId, ')
           ..write('servings: $servings, ')
-          ..write('mealSlot: $mealSlot')
+          ..write('mealSlot: $mealSlot, ')
+          ..write('fiber: $fiber, ')
+          ..write('sugar: $sugar, ')
+          ..write('sodium: $sodium')
           ..write(')'))
         .toString();
   }
@@ -1765,6 +2020,9 @@ class FoodLogEntry extends DataClass implements Insertable<FoodLogEntry> {
     mealId,
     servings,
     mealSlot,
+    fiber,
+    sugar,
+    sodium,
   );
   @override
   bool operator ==(Object other) =>
@@ -1782,7 +2040,10 @@ class FoodLogEntry extends DataClass implements Insertable<FoodLogEntry> {
           other.foodItemId == this.foodItemId &&
           other.mealId == this.mealId &&
           other.servings == this.servings &&
-          other.mealSlot == this.mealSlot);
+          other.mealSlot == this.mealSlot &&
+          other.fiber == this.fiber &&
+          other.sugar == this.sugar &&
+          other.sodium == this.sodium);
 }
 
 class FoodLogEntriesCompanion extends UpdateCompanion<FoodLogEntry> {
@@ -1799,6 +2060,9 @@ class FoodLogEntriesCompanion extends UpdateCompanion<FoodLogEntry> {
   final Value<String?> mealId;
   final Value<double?> servings;
   final Value<String?> mealSlot;
+  final Value<double?> fiber;
+  final Value<double?> sugar;
+  final Value<double?> sodium;
   final Value<int> rowid;
   const FoodLogEntriesCompanion({
     this.id = const Value.absent(),
@@ -1814,6 +2078,9 @@ class FoodLogEntriesCompanion extends UpdateCompanion<FoodLogEntry> {
     this.mealId = const Value.absent(),
     this.servings = const Value.absent(),
     this.mealSlot = const Value.absent(),
+    this.fiber = const Value.absent(),
+    this.sugar = const Value.absent(),
+    this.sodium = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   FoodLogEntriesCompanion.insert({
@@ -1830,6 +2097,9 @@ class FoodLogEntriesCompanion extends UpdateCompanion<FoodLogEntry> {
     this.mealId = const Value.absent(),
     this.servings = const Value.absent(),
     this.mealSlot = const Value.absent(),
+    this.fiber = const Value.absent(),
+    this.sugar = const Value.absent(),
+    this.sodium = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        logDate = Value(logDate),
@@ -1854,6 +2124,9 @@ class FoodLogEntriesCompanion extends UpdateCompanion<FoodLogEntry> {
     Expression<String>? mealId,
     Expression<double>? servings,
     Expression<String>? mealSlot,
+    Expression<double>? fiber,
+    Expression<double>? sugar,
+    Expression<double>? sodium,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1870,6 +2143,9 @@ class FoodLogEntriesCompanion extends UpdateCompanion<FoodLogEntry> {
       if (mealId != null) 'meal_id': mealId,
       if (servings != null) 'servings': servings,
       if (mealSlot != null) 'meal_slot': mealSlot,
+      if (fiber != null) 'fiber': fiber,
+      if (sugar != null) 'sugar': sugar,
+      if (sodium != null) 'sodium': sodium,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1888,6 +2164,9 @@ class FoodLogEntriesCompanion extends UpdateCompanion<FoodLogEntry> {
     Value<String?>? mealId,
     Value<double?>? servings,
     Value<String?>? mealSlot,
+    Value<double?>? fiber,
+    Value<double?>? sugar,
+    Value<double?>? sodium,
     Value<int>? rowid,
   }) {
     return FoodLogEntriesCompanion(
@@ -1904,6 +2183,9 @@ class FoodLogEntriesCompanion extends UpdateCompanion<FoodLogEntry> {
       mealId: mealId ?? this.mealId,
       servings: servings ?? this.servings,
       mealSlot: mealSlot ?? this.mealSlot,
+      fiber: fiber ?? this.fiber,
+      sugar: sugar ?? this.sugar,
+      sodium: sodium ?? this.sodium,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1950,6 +2232,15 @@ class FoodLogEntriesCompanion extends UpdateCompanion<FoodLogEntry> {
     if (mealSlot.present) {
       map['meal_slot'] = Variable<String>(mealSlot.value);
     }
+    if (fiber.present) {
+      map['fiber'] = Variable<double>(fiber.value);
+    }
+    if (sugar.present) {
+      map['sugar'] = Variable<double>(sugar.value);
+    }
+    if (sodium.present) {
+      map['sodium'] = Variable<double>(sodium.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1972,6 +2263,9 @@ class FoodLogEntriesCompanion extends UpdateCompanion<FoodLogEntry> {
           ..write('mealId: $mealId, ')
           ..write('servings: $servings, ')
           ..write('mealSlot: $mealSlot, ')
+          ..write('fiber: $fiber, ')
+          ..write('sugar: $sugar, ')
+          ..write('sodium: $sodium, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2086,6 +2380,36 @@ class $FoodLogEntryItemsTable extends FoodLogEntryItems
     type: DriftSqlType.double,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _fiberMeta = const VerificationMeta('fiber');
+  @override
+  late final GeneratedColumn<double> fiber = GeneratedColumn<double>(
+    'fiber',
+    aliasedName,
+    true,
+    check: () => ComparableExpr(fiber).isBiggerOrEqualValue(0),
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sugarMeta = const VerificationMeta('sugar');
+  @override
+  late final GeneratedColumn<double> sugar = GeneratedColumn<double>(
+    'sugar',
+    aliasedName,
+    true,
+    check: () => ComparableExpr(sugar).isBiggerOrEqualValue(0),
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sodiumMeta = const VerificationMeta('sodium');
+  @override
+  late final GeneratedColumn<double> sodium = GeneratedColumn<double>(
+    'sodium',
+    aliasedName,
+    true,
+    check: () => ComparableExpr(sodium).isBiggerOrEqualValue(0),
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -2097,6 +2421,9 @@ class $FoodLogEntryItemsTable extends FoodLogEntryItems
     protein,
     carbs,
     fat,
+    fiber,
+    sugar,
+    sodium,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2180,6 +2507,24 @@ class $FoodLogEntryItemsTable extends FoodLogEntryItems
     } else if (isInserting) {
       context.missing(_fatMeta);
     }
+    if (data.containsKey('fiber')) {
+      context.handle(
+        _fiberMeta,
+        fiber.isAcceptableOrUnknown(data['fiber']!, _fiberMeta),
+      );
+    }
+    if (data.containsKey('sugar')) {
+      context.handle(
+        _sugarMeta,
+        sugar.isAcceptableOrUnknown(data['sugar']!, _sugarMeta),
+      );
+    }
+    if (data.containsKey('sodium')) {
+      context.handle(
+        _sodiumMeta,
+        sodium.isAcceptableOrUnknown(data['sodium']!, _sodiumMeta),
+      );
+    }
     return context;
   }
 
@@ -2225,6 +2570,18 @@ class $FoodLogEntryItemsTable extends FoodLogEntryItems
         DriftSqlType.double,
         data['${effectivePrefix}fat'],
       )!,
+      fiber: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}fiber'],
+      ),
+      sugar: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}sugar'],
+      ),
+      sodium: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}sodium'],
+      ),
     );
   }
 
@@ -2245,6 +2602,12 @@ class FoodLogEntryItem extends DataClass
   final double protein;
   final double carbs;
   final double fat;
+
+  /// Optional nutrients: null means not recorded, which is not the same as 0.
+  /// Sodium is in milligrams, fiber and sugar in grams.
+  final double? fiber;
+  final double? sugar;
+  final double? sodium;
   const FoodLogEntryItem({
     required this.id,
     required this.entryId,
@@ -2255,6 +2618,9 @@ class FoodLogEntryItem extends DataClass
     required this.protein,
     required this.carbs,
     required this.fat,
+    this.fiber,
+    this.sugar,
+    this.sodium,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2270,6 +2636,15 @@ class FoodLogEntryItem extends DataClass
     map['protein'] = Variable<double>(protein);
     map['carbs'] = Variable<double>(carbs);
     map['fat'] = Variable<double>(fat);
+    if (!nullToAbsent || fiber != null) {
+      map['fiber'] = Variable<double>(fiber);
+    }
+    if (!nullToAbsent || sugar != null) {
+      map['sugar'] = Variable<double>(sugar);
+    }
+    if (!nullToAbsent || sodium != null) {
+      map['sodium'] = Variable<double>(sodium);
+    }
     return map;
   }
 
@@ -2286,6 +2661,15 @@ class FoodLogEntryItem extends DataClass
       protein: Value(protein),
       carbs: Value(carbs),
       fat: Value(fat),
+      fiber: fiber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fiber),
+      sugar: sugar == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sugar),
+      sodium: sodium == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sodium),
     );
   }
 
@@ -2304,6 +2688,9 @@ class FoodLogEntryItem extends DataClass
       protein: serializer.fromJson<double>(json['protein']),
       carbs: serializer.fromJson<double>(json['carbs']),
       fat: serializer.fromJson<double>(json['fat']),
+      fiber: serializer.fromJson<double?>(json['fiber']),
+      sugar: serializer.fromJson<double?>(json['sugar']),
+      sodium: serializer.fromJson<double?>(json['sodium']),
     );
   }
   @override
@@ -2319,6 +2706,9 @@ class FoodLogEntryItem extends DataClass
       'protein': serializer.toJson<double>(protein),
       'carbs': serializer.toJson<double>(carbs),
       'fat': serializer.toJson<double>(fat),
+      'fiber': serializer.toJson<double?>(fiber),
+      'sugar': serializer.toJson<double?>(sugar),
+      'sodium': serializer.toJson<double?>(sodium),
     };
   }
 
@@ -2332,6 +2722,9 @@ class FoodLogEntryItem extends DataClass
     double? protein,
     double? carbs,
     double? fat,
+    Value<double?> fiber = const Value.absent(),
+    Value<double?> sugar = const Value.absent(),
+    Value<double?> sodium = const Value.absent(),
   }) => FoodLogEntryItem(
     id: id ?? this.id,
     entryId: entryId ?? this.entryId,
@@ -2342,6 +2735,9 @@ class FoodLogEntryItem extends DataClass
     protein: protein ?? this.protein,
     carbs: carbs ?? this.carbs,
     fat: fat ?? this.fat,
+    fiber: fiber.present ? fiber.value : this.fiber,
+    sugar: sugar.present ? sugar.value : this.sugar,
+    sodium: sodium.present ? sodium.value : this.sodium,
   );
   FoodLogEntryItem copyWithCompanion(FoodLogEntryItemsCompanion data) {
     return FoodLogEntryItem(
@@ -2356,6 +2752,9 @@ class FoodLogEntryItem extends DataClass
       protein: data.protein.present ? data.protein.value : this.protein,
       carbs: data.carbs.present ? data.carbs.value : this.carbs,
       fat: data.fat.present ? data.fat.value : this.fat,
+      fiber: data.fiber.present ? data.fiber.value : this.fiber,
+      sugar: data.sugar.present ? data.sugar.value : this.sugar,
+      sodium: data.sodium.present ? data.sodium.value : this.sodium,
     );
   }
 
@@ -2370,7 +2769,10 @@ class FoodLogEntryItem extends DataClass
           ..write('calories: $calories, ')
           ..write('protein: $protein, ')
           ..write('carbs: $carbs, ')
-          ..write('fat: $fat')
+          ..write('fat: $fat, ')
+          ..write('fiber: $fiber, ')
+          ..write('sugar: $sugar, ')
+          ..write('sodium: $sodium')
           ..write(')'))
         .toString();
   }
@@ -2386,6 +2788,9 @@ class FoodLogEntryItem extends DataClass
     protein,
     carbs,
     fat,
+    fiber,
+    sugar,
+    sodium,
   );
   @override
   bool operator ==(Object other) =>
@@ -2399,7 +2804,10 @@ class FoodLogEntryItem extends DataClass
           other.calories == this.calories &&
           other.protein == this.protein &&
           other.carbs == this.carbs &&
-          other.fat == this.fat);
+          other.fat == this.fat &&
+          other.fiber == this.fiber &&
+          other.sugar == this.sugar &&
+          other.sodium == this.sodium);
 }
 
 class FoodLogEntryItemsCompanion extends UpdateCompanion<FoodLogEntryItem> {
@@ -2412,6 +2820,9 @@ class FoodLogEntryItemsCompanion extends UpdateCompanion<FoodLogEntryItem> {
   final Value<double> protein;
   final Value<double> carbs;
   final Value<double> fat;
+  final Value<double?> fiber;
+  final Value<double?> sugar;
+  final Value<double?> sodium;
   final Value<int> rowid;
   const FoodLogEntryItemsCompanion({
     this.id = const Value.absent(),
@@ -2423,6 +2834,9 @@ class FoodLogEntryItemsCompanion extends UpdateCompanion<FoodLogEntryItem> {
     this.protein = const Value.absent(),
     this.carbs = const Value.absent(),
     this.fat = const Value.absent(),
+    this.fiber = const Value.absent(),
+    this.sugar = const Value.absent(),
+    this.sodium = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   FoodLogEntryItemsCompanion.insert({
@@ -2435,6 +2849,9 @@ class FoodLogEntryItemsCompanion extends UpdateCompanion<FoodLogEntryItem> {
     required double protein,
     required double carbs,
     required double fat,
+    this.fiber = const Value.absent(),
+    this.sugar = const Value.absent(),
+    this.sodium = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        entryId = Value(entryId),
@@ -2454,6 +2871,9 @@ class FoodLogEntryItemsCompanion extends UpdateCompanion<FoodLogEntryItem> {
     Expression<double>? protein,
     Expression<double>? carbs,
     Expression<double>? fat,
+    Expression<double>? fiber,
+    Expression<double>? sugar,
+    Expression<double>? sodium,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2466,6 +2886,9 @@ class FoodLogEntryItemsCompanion extends UpdateCompanion<FoodLogEntryItem> {
       if (protein != null) 'protein': protein,
       if (carbs != null) 'carbs': carbs,
       if (fat != null) 'fat': fat,
+      if (fiber != null) 'fiber': fiber,
+      if (sugar != null) 'sugar': sugar,
+      if (sodium != null) 'sodium': sodium,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2480,6 +2903,9 @@ class FoodLogEntryItemsCompanion extends UpdateCompanion<FoodLogEntryItem> {
     Value<double>? protein,
     Value<double>? carbs,
     Value<double>? fat,
+    Value<double?>? fiber,
+    Value<double?>? sugar,
+    Value<double?>? sodium,
     Value<int>? rowid,
   }) {
     return FoodLogEntryItemsCompanion(
@@ -2492,6 +2918,9 @@ class FoodLogEntryItemsCompanion extends UpdateCompanion<FoodLogEntryItem> {
       protein: protein ?? this.protein,
       carbs: carbs ?? this.carbs,
       fat: fat ?? this.fat,
+      fiber: fiber ?? this.fiber,
+      sugar: sugar ?? this.sugar,
+      sodium: sodium ?? this.sodium,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2526,6 +2955,15 @@ class FoodLogEntryItemsCompanion extends UpdateCompanion<FoodLogEntryItem> {
     if (fat.present) {
       map['fat'] = Variable<double>(fat.value);
     }
+    if (fiber.present) {
+      map['fiber'] = Variable<double>(fiber.value);
+    }
+    if (sugar.present) {
+      map['sugar'] = Variable<double>(sugar.value);
+    }
+    if (sodium.present) {
+      map['sodium'] = Variable<double>(sodium.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2544,6 +2982,9 @@ class FoodLogEntryItemsCompanion extends UpdateCompanion<FoodLogEntryItem> {
           ..write('protein: $protein, ')
           ..write('carbs: $carbs, ')
           ..write('fat: $fat, ')
+          ..write('fiber: $fiber, ')
+          ..write('sugar: $sugar, ')
+          ..write('sodium: $sodium, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -3304,6 +3745,277 @@ class ScheduledMealOutcomesCompanion
   }
 }
 
+class $BodyWeightsTable extends BodyWeights
+    with TableInfo<$BodyWeightsTable, BodyWeight> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $BodyWeightsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _logDateMeta = const VerificationMeta(
+    'logDate',
+  );
+  @override
+  late final GeneratedColumn<String> logDate = GeneratedColumn<String>(
+    'log_date',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _weightKgMeta = const VerificationMeta(
+    'weightKg',
+  );
+  @override
+  late final GeneratedColumn<double> weightKg = GeneratedColumn<double>(
+    'weight_kg',
+    aliasedName,
+    false,
+    check: () => ComparableExpr(weightKg).isBiggerThanValue(0),
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [logDate, weightKg, createdAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'body_weights';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<BodyWeight> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('log_date')) {
+      context.handle(
+        _logDateMeta,
+        logDate.isAcceptableOrUnknown(data['log_date']!, _logDateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_logDateMeta);
+    }
+    if (data.containsKey('weight_kg')) {
+      context.handle(
+        _weightKgMeta,
+        weightKg.isAcceptableOrUnknown(data['weight_kg']!, _weightKgMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_weightKgMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {logDate};
+  @override
+  BodyWeight map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return BodyWeight(
+      logDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}log_date'],
+      )!,
+      weightKg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}weight_kg'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $BodyWeightsTable createAlias(String alias) {
+    return $BodyWeightsTable(attachedDatabase, alias);
+  }
+}
+
+class BodyWeight extends DataClass implements Insertable<BodyWeight> {
+  /// Day of the reading, 'yyyy-MM-dd'. One row per day, so it is the key.
+  final String logDate;
+  final double weightKg;
+  final DateTime createdAt;
+  const BodyWeight({
+    required this.logDate,
+    required this.weightKg,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['log_date'] = Variable<String>(logDate);
+    map['weight_kg'] = Variable<double>(weightKg);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  BodyWeightsCompanion toCompanion(bool nullToAbsent) {
+    return BodyWeightsCompanion(
+      logDate: Value(logDate),
+      weightKg: Value(weightKg),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory BodyWeight.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return BodyWeight(
+      logDate: serializer.fromJson<String>(json['logDate']),
+      weightKg: serializer.fromJson<double>(json['weightKg']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'logDate': serializer.toJson<String>(logDate),
+      'weightKg': serializer.toJson<double>(weightKg),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  BodyWeight copyWith({
+    String? logDate,
+    double? weightKg,
+    DateTime? createdAt,
+  }) => BodyWeight(
+    logDate: logDate ?? this.logDate,
+    weightKg: weightKg ?? this.weightKg,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  BodyWeight copyWithCompanion(BodyWeightsCompanion data) {
+    return BodyWeight(
+      logDate: data.logDate.present ? data.logDate.value : this.logDate,
+      weightKg: data.weightKg.present ? data.weightKg.value : this.weightKg,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BodyWeight(')
+          ..write('logDate: $logDate, ')
+          ..write('weightKg: $weightKg, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(logDate, weightKg, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is BodyWeight &&
+          other.logDate == this.logDate &&
+          other.weightKg == this.weightKg &&
+          other.createdAt == this.createdAt);
+}
+
+class BodyWeightsCompanion extends UpdateCompanion<BodyWeight> {
+  final Value<String> logDate;
+  final Value<double> weightKg;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const BodyWeightsCompanion({
+    this.logDate = const Value.absent(),
+    this.weightKg = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  BodyWeightsCompanion.insert({
+    required String logDate,
+    required double weightKg,
+    required DateTime createdAt,
+    this.rowid = const Value.absent(),
+  }) : logDate = Value(logDate),
+       weightKg = Value(weightKg),
+       createdAt = Value(createdAt);
+  static Insertable<BodyWeight> custom({
+    Expression<String>? logDate,
+    Expression<double>? weightKg,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (logDate != null) 'log_date': logDate,
+      if (weightKg != null) 'weight_kg': weightKg,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  BodyWeightsCompanion copyWith({
+    Value<String>? logDate,
+    Value<double>? weightKg,
+    Value<DateTime>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return BodyWeightsCompanion(
+      logDate: logDate ?? this.logDate,
+      weightKg: weightKg ?? this.weightKg,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (logDate.present) {
+      map['log_date'] = Variable<String>(logDate.value);
+    }
+    if (weightKg.present) {
+      map['weight_kg'] = Variable<double>(weightKg.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BodyWeightsCompanion(')
+          ..write('logDate: $logDate, ')
+          ..write('weightKg: $weightKg, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3316,6 +4028,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ScheduledMealsTable scheduledMeals = $ScheduledMealsTable(this);
   late final $ScheduledMealOutcomesTable scheduledMealOutcomes =
       $ScheduledMealOutcomesTable(this);
+  late final $BodyWeightsTable bodyWeights = $BodyWeightsTable(this);
   late final Index foodLogEntriesLogDate = Index(
     'food_log_entries_log_date',
     'CREATE INDEX food_log_entries_log_date ON food_log_entries (log_date)',
@@ -3331,6 +4044,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final ScheduledMealDao scheduledMealDao = ScheduledMealDao(
     this as AppDatabase,
   );
+  late final BodyWeightDao bodyWeightDao = BodyWeightDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3343,6 +4057,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     foodLogEntryItems,
     scheduledMeals,
     scheduledMealOutcomes,
+    bodyWeights,
     foodLogEntriesLogDate,
     scheduledMealsStartDate,
   ];
@@ -3418,6 +4133,9 @@ typedef $$FoodItemsTableCreateCompanionBuilder =
       required double servingWeightG,
       Value<String> displayUnit,
       Value<bool> archived,
+      Value<double?> fiber,
+      Value<double?> sugar,
+      Value<double?> sodium,
       Value<int> rowid,
     });
 typedef $$FoodItemsTableUpdateCompanionBuilder =
@@ -3431,6 +4149,9 @@ typedef $$FoodItemsTableUpdateCompanionBuilder =
       Value<double> servingWeightG,
       Value<String> displayUnit,
       Value<bool> archived,
+      Value<double?> fiber,
+      Value<double?> sugar,
+      Value<double?> sodium,
       Value<int> rowid,
     });
 
@@ -3556,6 +4277,21 @@ class $$FoodItemsTableFilterComposer
 
   ColumnFilters<bool> get archived => $composableBuilder(
     column: $table.archived,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get fiber => $composableBuilder(
+    column: $table.fiber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sugar => $composableBuilder(
+    column: $table.sugar,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sodium => $composableBuilder(
+    column: $table.sodium,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3688,6 +4424,21 @@ class $$FoodItemsTableOrderingComposer
     column: $table.archived,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<double> get fiber => $composableBuilder(
+    column: $table.fiber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sugar => $composableBuilder(
+    column: $table.sugar,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sodium => $composableBuilder(
+    column: $table.sodium,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$FoodItemsTableAnnotationComposer
@@ -3729,6 +4480,15 @@ class $$FoodItemsTableAnnotationComposer
 
   GeneratedColumn<bool> get archived =>
       $composableBuilder(column: $table.archived, builder: (column) => column);
+
+  GeneratedColumn<double> get fiber =>
+      $composableBuilder(column: $table.fiber, builder: (column) => column);
+
+  GeneratedColumn<double> get sugar =>
+      $composableBuilder(column: $table.sugar, builder: (column) => column);
+
+  GeneratedColumn<double> get sodium =>
+      $composableBuilder(column: $table.sodium, builder: (column) => column);
 
   Expression<T> mealFoodItemsRefs<T extends Object>(
     Expression<T> Function($$MealFoodItemsTableAnnotationComposer a) f,
@@ -3848,6 +4608,9 @@ class $$FoodItemsTableTableManager
                 Value<double> servingWeightG = const Value.absent(),
                 Value<String> displayUnit = const Value.absent(),
                 Value<bool> archived = const Value.absent(),
+                Value<double?> fiber = const Value.absent(),
+                Value<double?> sugar = const Value.absent(),
+                Value<double?> sodium = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => FoodItemsCompanion(
                 id: id,
@@ -3859,6 +4622,9 @@ class $$FoodItemsTableTableManager
                 servingWeightG: servingWeightG,
                 displayUnit: displayUnit,
                 archived: archived,
+                fiber: fiber,
+                sugar: sugar,
+                sodium: sodium,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -3872,6 +4638,9 @@ class $$FoodItemsTableTableManager
                 required double servingWeightG,
                 Value<String> displayUnit = const Value.absent(),
                 Value<bool> archived = const Value.absent(),
+                Value<double?> fiber = const Value.absent(),
+                Value<double?> sugar = const Value.absent(),
+                Value<double?> sodium = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => FoodItemsCompanion.insert(
                 id: id,
@@ -3883,6 +4652,9 @@ class $$FoodItemsTableTableManager
                 servingWeightG: servingWeightG,
                 displayUnit: displayUnit,
                 archived: archived,
+                fiber: fiber,
+                sugar: sugar,
+                sodium: sodium,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -4880,6 +5652,9 @@ typedef $$FoodLogEntriesTableCreateCompanionBuilder =
       Value<String?> mealId,
       Value<double?> servings,
       Value<String?> mealSlot,
+      Value<double?> fiber,
+      Value<double?> sugar,
+      Value<double?> sodium,
       Value<int> rowid,
     });
 typedef $$FoodLogEntriesTableUpdateCompanionBuilder =
@@ -4897,6 +5672,9 @@ typedef $$FoodLogEntriesTableUpdateCompanionBuilder =
       Value<String?> mealId,
       Value<double?> servings,
       Value<String?> mealSlot,
+      Value<double?> fiber,
+      Value<double?> sugar,
+      Value<double?> sodium,
       Value<int> rowid,
     });
 
@@ -5062,6 +5840,21 @@ class $$FoodLogEntriesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<double> get fiber => $composableBuilder(
+    column: $table.fiber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sugar => $composableBuilder(
+    column: $table.sugar,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sodium => $composableBuilder(
+    column: $table.sodium,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$FoodItemsTableFilterComposer get foodItemId {
     final $$FoodItemsTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -5224,6 +6017,21 @@ class $$FoodLogEntriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get fiber => $composableBuilder(
+    column: $table.fiber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sugar => $composableBuilder(
+    column: $table.sugar,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sodium => $composableBuilder(
+    column: $table.sodium,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$FoodItemsTableOrderingComposer get foodItemId {
     final $$FoodItemsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -5312,6 +6120,15 @@ class $$FoodLogEntriesTableAnnotationComposer
 
   GeneratedColumn<String> get mealSlot =>
       $composableBuilder(column: $table.mealSlot, builder: (column) => column);
+
+  GeneratedColumn<double> get fiber =>
+      $composableBuilder(column: $table.fiber, builder: (column) => column);
+
+  GeneratedColumn<double> get sugar =>
+      $composableBuilder(column: $table.sugar, builder: (column) => column);
+
+  GeneratedColumn<double> get sodium =>
+      $composableBuilder(column: $table.sodium, builder: (column) => column);
 
   $$FoodItemsTableAnnotationComposer get foodItemId {
     final $$FoodItemsTableAnnotationComposer composer = $composerBuilder(
@@ -5460,6 +6277,9 @@ class $$FoodLogEntriesTableTableManager
                 Value<String?> mealId = const Value.absent(),
                 Value<double?> servings = const Value.absent(),
                 Value<String?> mealSlot = const Value.absent(),
+                Value<double?> fiber = const Value.absent(),
+                Value<double?> sugar = const Value.absent(),
+                Value<double?> sodium = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => FoodLogEntriesCompanion(
                 id: id,
@@ -5475,6 +6295,9 @@ class $$FoodLogEntriesTableTableManager
                 mealId: mealId,
                 servings: servings,
                 mealSlot: mealSlot,
+                fiber: fiber,
+                sugar: sugar,
+                sodium: sodium,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -5492,6 +6315,9 @@ class $$FoodLogEntriesTableTableManager
                 Value<String?> mealId = const Value.absent(),
                 Value<double?> servings = const Value.absent(),
                 Value<String?> mealSlot = const Value.absent(),
+                Value<double?> fiber = const Value.absent(),
+                Value<double?> sugar = const Value.absent(),
+                Value<double?> sodium = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => FoodLogEntriesCompanion.insert(
                 id: id,
@@ -5507,6 +6333,9 @@ class $$FoodLogEntriesTableTableManager
                 mealId: mealId,
                 servings: servings,
                 mealSlot: mealSlot,
+                fiber: fiber,
+                sugar: sugar,
+                sodium: sodium,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -5661,6 +6490,9 @@ typedef $$FoodLogEntryItemsTableCreateCompanionBuilder =
       required double protein,
       required double carbs,
       required double fat,
+      Value<double?> fiber,
+      Value<double?> sugar,
+      Value<double?> sodium,
       Value<int> rowid,
     });
 typedef $$FoodLogEntryItemsTableUpdateCompanionBuilder =
@@ -5674,6 +6506,9 @@ typedef $$FoodLogEntryItemsTableUpdateCompanionBuilder =
       Value<double> protein,
       Value<double> carbs,
       Value<double> fat,
+      Value<double?> fiber,
+      Value<double?> sugar,
+      Value<double?> sodium,
       Value<int> rowid,
     });
 
@@ -5776,6 +6611,21 @@ class $$FoodLogEntryItemsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<double> get fiber => $composableBuilder(
+    column: $table.fiber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sugar => $composableBuilder(
+    column: $table.sugar,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sodium => $composableBuilder(
+    column: $table.sodium,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$FoodLogEntriesTableFilterComposer get entryId {
     final $$FoodLogEntriesTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -5867,6 +6717,21 @@ class $$FoodLogEntryItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get fiber => $composableBuilder(
+    column: $table.fiber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sugar => $composableBuilder(
+    column: $table.sugar,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sodium => $composableBuilder(
+    column: $table.sodium,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$FoodLogEntriesTableOrderingComposer get entryId {
     final $$FoodLogEntriesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -5943,6 +6808,15 @@ class $$FoodLogEntryItemsTableAnnotationComposer
 
   GeneratedColumn<double> get fat =>
       $composableBuilder(column: $table.fat, builder: (column) => column);
+
+  GeneratedColumn<double> get fiber =>
+      $composableBuilder(column: $table.fiber, builder: (column) => column);
+
+  GeneratedColumn<double> get sugar =>
+      $composableBuilder(column: $table.sugar, builder: (column) => column);
+
+  GeneratedColumn<double> get sodium =>
+      $composableBuilder(column: $table.sodium, builder: (column) => column);
 
   $$FoodLogEntriesTableAnnotationComposer get entryId {
     final $$FoodLogEntriesTableAnnotationComposer composer = $composerBuilder(
@@ -6033,6 +6907,9 @@ class $$FoodLogEntryItemsTableTableManager
                 Value<double> protein = const Value.absent(),
                 Value<double> carbs = const Value.absent(),
                 Value<double> fat = const Value.absent(),
+                Value<double?> fiber = const Value.absent(),
+                Value<double?> sugar = const Value.absent(),
+                Value<double?> sodium = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => FoodLogEntryItemsCompanion(
                 id: id,
@@ -6044,6 +6921,9 @@ class $$FoodLogEntryItemsTableTableManager
                 protein: protein,
                 carbs: carbs,
                 fat: fat,
+                fiber: fiber,
+                sugar: sugar,
+                sodium: sodium,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -6057,6 +6937,9 @@ class $$FoodLogEntryItemsTableTableManager
                 required double protein,
                 required double carbs,
                 required double fat,
+                Value<double?> fiber = const Value.absent(),
+                Value<double?> sugar = const Value.absent(),
+                Value<double?> sodium = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => FoodLogEntryItemsCompanion.insert(
                 id: id,
@@ -6068,6 +6951,9 @@ class $$FoodLogEntryItemsTableTableManager
                 protein: protein,
                 carbs: carbs,
                 fat: fat,
+                fiber: fiber,
+                sugar: sugar,
+                sodium: sodium,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -7025,6 +7911,168 @@ typedef $$ScheduledMealOutcomesTableProcessedTableManager =
       ScheduledMealOutcome,
       PrefetchHooks Function({bool scheduledMealId, bool entryId})
     >;
+typedef $$BodyWeightsTableCreateCompanionBuilder =
+    BodyWeightsCompanion Function({
+      required String logDate,
+      required double weightKg,
+      required DateTime createdAt,
+      Value<int> rowid,
+    });
+typedef $$BodyWeightsTableUpdateCompanionBuilder =
+    BodyWeightsCompanion Function({
+      Value<String> logDate,
+      Value<double> weightKg,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+
+class $$BodyWeightsTableFilterComposer
+    extends Composer<_$AppDatabase, $BodyWeightsTable> {
+  $$BodyWeightsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get logDate => $composableBuilder(
+    column: $table.logDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get weightKg => $composableBuilder(
+    column: $table.weightKg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$BodyWeightsTableOrderingComposer
+    extends Composer<_$AppDatabase, $BodyWeightsTable> {
+  $$BodyWeightsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get logDate => $composableBuilder(
+    column: $table.logDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get weightKg => $composableBuilder(
+    column: $table.weightKg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$BodyWeightsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $BodyWeightsTable> {
+  $$BodyWeightsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get logDate =>
+      $composableBuilder(column: $table.logDate, builder: (column) => column);
+
+  GeneratedColumn<double> get weightKg =>
+      $composableBuilder(column: $table.weightKg, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$BodyWeightsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $BodyWeightsTable,
+          BodyWeight,
+          $$BodyWeightsTableFilterComposer,
+          $$BodyWeightsTableOrderingComposer,
+          $$BodyWeightsTableAnnotationComposer,
+          $$BodyWeightsTableCreateCompanionBuilder,
+          $$BodyWeightsTableUpdateCompanionBuilder,
+          (
+            BodyWeight,
+            BaseReferences<_$AppDatabase, $BodyWeightsTable, BodyWeight>,
+          ),
+          BodyWeight,
+          PrefetchHooks Function()
+        > {
+  $$BodyWeightsTableTableManager(_$AppDatabase db, $BodyWeightsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$BodyWeightsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$BodyWeightsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$BodyWeightsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> logDate = const Value.absent(),
+                Value<double> weightKg = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => BodyWeightsCompanion(
+                logDate: logDate,
+                weightKg: weightKg,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String logDate,
+                required double weightKg,
+                required DateTime createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => BodyWeightsCompanion.insert(
+                logDate: logDate,
+                weightKg: weightKg,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$BodyWeightsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $BodyWeightsTable,
+      BodyWeight,
+      $$BodyWeightsTableFilterComposer,
+      $$BodyWeightsTableOrderingComposer,
+      $$BodyWeightsTableAnnotationComposer,
+      $$BodyWeightsTableCreateCompanionBuilder,
+      $$BodyWeightsTableUpdateCompanionBuilder,
+      (
+        BodyWeight,
+        BaseReferences<_$AppDatabase, $BodyWeightsTable, BodyWeight>,
+      ),
+      BodyWeight,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -7043,4 +8091,6 @@ class $AppDatabaseManager {
       $$ScheduledMealsTableTableManager(_db, _db.scheduledMeals);
   $$ScheduledMealOutcomesTableTableManager get scheduledMealOutcomes =>
       $$ScheduledMealOutcomesTableTableManager(_db, _db.scheduledMealOutcomes);
+  $$BodyWeightsTableTableManager get bodyWeights =>
+      $$BodyWeightsTableTableManager(_db, _db.bodyWeights);
 }

@@ -25,12 +25,12 @@ Three ideas from the brainstorm are already built, so they are not milestones he
 | M9 | Recent and frequent foods | High | S | No | None |
 | M10 | Log again and copy day | High | S | No | None |
 | M11 | Backup: export and import | High | M | No | `share_plus`, `file_picker` |
-| M12 | Meal sections (breakfast, lunch, dinner, snacks) | Medium | M | v2 (first migration) | None |
-| M13 | Fiber, sugar, sodium | Medium | M | v3 | None |
+| M12 | Meal sections (breakfast, lunch, dinner, snacks) | Medium | M | v3 | None |
+| M13 | Fiber, sugar, sodium | Medium | M | v4 | None |
 | M14 | Streaks and reminders | Medium | M | No | `flutter_local_notifications`, `timezone` |
-| M15 | Body weight tracking | Medium | M | v4 (new table) | None |
-| M16 | Barcode scan and food lookup | High | L | v5 (barcode column) | `mobile_scanner`, `http` |
-| M17 | Planned meals (scheduling) | Medium | L | v6 (new table) | None |
+| M15 | Body weight tracking | Medium | M | v5 (new table) | None |
+| M16 | Barcode scan and food lookup | High | L | v6 (barcode column) | `mobile_scanner`, `http` |
+| M17 | Planned meals (scheduling) | Medium | L | v7 (new table) | None |
 | M18 | Home screen widget | Low–Med | L | No | `home_widget` + a Swift WidgetKit target |
 | M19 | Apple Health | Low–Med | M | No | `health` |
 | M20 | Cloud sync | Low (one device) | XL | Sync metadata | `supabase_flutter` |
@@ -88,26 +88,26 @@ Each milestone ends with something runnable and its tests passing, as in v1. Run
 - [x] Migration test from v2 to v3 with real-looking rows (and v1 to v3); widget test for grouping
 
 ### M13 — Fiber, sugar, sodium
-- [ ] `Metric`: add `fiber (g)`, `sugar (g)` and `sodium (mg)`. Sodium is the first metric not in grams, so check every place that assumes `g` (`formatMacroLine`, form suffixes)
-- [ ] `Macros`: add the three fields. Because the class is used everywhere, the compiler finds each place that builds one
-- [ ] Schema v4: nullable `fiber`, `sugar` and `sodium` on `food_items`, `food_log_entries` and `food_log_entry_items`. Null means "not recorded" and is different from 0
-- [ ] Sums and averages treat null as 0 but report coverage, e.g. "sodium recorded for 3 of 5 entries" on Home and Summary
-- [ ] Forms: the three fields show only for metrics the user tracks, and are optional
-- [ ] `formatMacroLine` shows only tracked metrics; check that 2x text still fits
-- [ ] Migration test v3 to v4; `nutrition_math` tests for null handling
+- [x] `Metric`: add `fiber (g)`, `sugar (g)` and `sodium (mg)`. Sodium is the first metric not in grams, so check every place that assumes `g` (`formatMacroLine`, form suffixes). *Done:* the unit comes from `Metric.unit`; `Metric.format` shows mg as a whole number. Fiber, sugar and sodium also appear in the onboarding and Settings primary/track/goal lists, with their units
+- [x] `Macros`: add the three fields (nullable). Because the class is used everywhere, the compiler finds each place that builds one
+- [x] Schema v4: nullable `fiber`, `sugar` and `sodium` on `food_items`, `food_log_entries` and `food_log_entry_items`. Null means "not recorded" and is different from 0
+- [x] Sums and averages treat null as 0 but report coverage, e.g. "sodium recorded for 3 of 5 entries" on Home and Summary. *Done:* `Coverage` / `coverageOf` in `nutrition_math.dart` and `coverageText` in `metrics.dart`; the hint shows only when coverage is partial (some, not all, entries). A total stays null until some entry records it
+- [x] Forms: the three fields show only for metrics the user tracks, and are optional. *Done:* new food, edit food, one-off entry and edit one-off sheet (`OptionalNutrientFields`). Hiding a field never erases a stored value
+- [x] `formatMacroLine` shows only tracked metrics; check that 2x text still fits. *Done with a deviation:* calories, protein, carbs and fat are always shown, as before; fiber, sugar and sodium are added only when tracked and recorded. The line already wraps, and the large-text test covers it
+- [x] Migration test v3 to v4; `nutrition_math` tests for null handling. Also: v1 and v2 to v4, a real v3 file on disk, a pre-M13 backup importing with nulls (`test/data/backup/backup_nutrients_test.dart`), and Open Food Facts mapping of `fiber_100g`, `sugars_100g` and `sodium_100g` (sodium converted from g to mg, or `salt_100g / 2.5`). Backup `version` stays 1 (nullable columns)
 
 ### M14 — Streaks and reminders
-- [ ] Streak: the number of consecutive days with at least one entry, ending today (or yesterday, if today is still empty). Shown as a small badge in the Home header. A pure function in `core/` plus one `SummaryDao` query
-- [ ] Reminders in Settings: up to three daily times, off by default. Ask for notification permission only when the user turns one on
-- [ ] "Nothing logged yet" reminder: schedule one-off notifications for the next 14 days. Cancel today's when the first entry for today is logged, and top the schedule up on each app launch. iOS can't run the check in the background, so this is how it works without a server
-- [ ] Tests: streak edge cases (gaps, today empty, month boundary); scheduling logic behind an interface so it can be faked
+- [x] Streak: the number of consecutive days with at least one entry, ending today (or yesterday, if today is still empty). Shown as a small badge in the Home header. A pure function in `core/` plus one `SummaryDao` query. *Done:* `currentStreak` in `core/streak.dart`; `SummaryDao.watchLoggedDatesUpTo` returns the distinct logged days up to today, and `streakProvider` combines them. The flame badge (`StreakBadge`) sits at the left of the Home nav bar and is hidden at 0. Entries dated after today are ignored
+- [x] Reminders in Settings: up to three daily times, off by default. Ask for notification permission only when the user turns one on. *Done:* `RemindersSection` in Settings (a switch and a time picker per slot, saved at once). Turning a switch on calls `NotificationScheduler.requestPermission()`; a refusal leaves it off and shows a hint to use system settings. Stored as `reminder_<n>_enabled` / `reminder_<n>_minutes` (n = 0 to 2) and included in the backup `preferences` as an optional `reminders` list (format `version` stays 1)
+- [x] "Nothing logged yet" reminder: schedule one-off notifications for the next 14 days. Cancel today's when the first entry for today is logged, and top the schedule up on each app launch. iOS can't run the check in the background, so this is how it works without a server. *Done with a deviation:* the reminders above are these notifications (there is no separate repeating one). `planNudges` in `core/reminder.dart` lists each enabled reminder for 14 days with ids stable per day and slot; `ReminderSync` cancels everything and re-schedules the plan, so repeating it is idempotent. `reminderPlanProvider` runs it at launch, on settings changes, at day rollover and when today's log gains or loses entries (today is left out while it has any). Android uses inexact scheduling, so no exact-alarm permission and a reminder can be a few minutes late
+- [x] Tests: streak edge cases (gaps, today empty, month boundary); scheduling logic behind an interface so it can be faked. *Done:* `NotificationScheduler` (`data/notifications/`) has a `LocalNotificationScheduler` (`flutter_local_notifications` + `timezone` + `flutter_timezone`, iOS and Android only) and a no-op default; `main` installs the real one, and tests override `notificationSchedulerProvider` with `FakeNotificationScheduler`. Tests: streak (gaps, empty today, month, year, leap day, DST), nudge planning, sync idempotence, the Settings UI with the fake, Home badge, backup round trip and a pre-M14 backup. Platform setup: Android manifest permissions and receivers plus core library desugaring; iOS notification-center delegate in `AppDelegate`. Not verified on a device
 
 ### M15 — Body weight tracking
-- [ ] New table `body_weights`: `log_date` (unique), `weight_kg`, `created_at`. Schema v5
-- [ ] Preference `body_weight_unit`: `kg` or `lb`. This is separate from the food `display_unit`, since people often weigh food in grams and themselves in pounds
-- [ ] Home: a "Weigh in" row on the selected date (one value per day, editing replaces it)
-- [ ] Summary: a weight line chart for the range, with a 7-day moving average to smooth out daily noise, next to average calories
-- [ ] Backup format and the migration test include the new table
+- [x] New table `body_weights`: `log_date` (unique), `weight_kg`, `created_at`. Schema v5. *Done:* `log_date` is the primary key, so uniqueness is structural. `weight_kg` has a `> 0` CHECK. `BodyWeightDao` has upsert-for-date, delete-for-date, watch-for-date and watch-range; `BodyWeightRepository` adds the 20 to 500 kg bound
+- [x] Preference `body_weight_unit`: `kg` or `lb`. This is separate from the food `display_unit`, since people often weigh food in grams and themselves in pounds. *Done:* defaults to `kg` (no locale logic, as the food unit has none). A "BODY WEIGHT IN" selector sits in the shared preferences form, so onboarding and Settings both have it. Conversion, formatting and validation are pure functions in `core/body_weight.dart`
+- [x] Home: a "Weigh in" row on the selected date (one value per day, editing replaces it). *Done:* `WeighInRow` is its own slim card between the totals and the suggestions, so the macro summary is unchanged. It shows "Weigh in" or the weight; tapping opens a dialog with a number field (prefilled when editing), Save, Cancel, and Clear when a value exists
+- [x] Summary: a weight line chart for the range, with a 7-day moving average to smooth out daily noise, next to average calories. *Done:* a card directly under the averages, using the existing `fl_chart` (`WeightChart`): readings as dots on a faint line, the average as a solid line. `movingAverage` in `core/body_weight.dart` averages the readings in the trailing 7 calendar days (the day and six before), skipping days with none, so a gap does not stretch it over old data. Readings from six days before the range are fetched so the first points are complete. A range with no readings shows a short note; the Day range has no card
+- [x] Backup format and the migration test include the new table. *Done:* `body_weights` and `preferences.bodyWeightUnit` are optional on read, so format `version` stays 1 and older files (the `backup_v1.json` fixture included) import with no readings and kg. Restore wipes and refills the table with the rest. Migration tests: v4 to v5 keeps rows, the table works, v1 to v3 run through to v5, and a real v4 file on disk
 
 ### M16 — Barcode scan and food lookup
 - [ ] Schema v6: nullable, indexed `barcode` column on `food_items`
@@ -246,12 +246,13 @@ Ideas that aren't milestones yet. They aren't ordered: when one is picked up, gi
 
 | Version | Milestone | Change |
 |---|---|---|
-| 1 | v1 | Current schema |
-| 2 | M12 | `food_log_entries.meal_slot` (nullable) |
-| 3 | M13 | `fiber`, `sugar`, `sodium` (nullable) on `food_items`, `food_log_entries`, `food_log_entry_items` |
-| 4 | M15 | New `body_weights` table |
-| 5 | M16 | `food_items.barcode` (nullable, indexed) |
-| 6 | M17 | New `scheduled_items` table |
+| 1 | v1 | The v1 schema |
+| 2 | Scheduling (before M9) | New `scheduled_meals` and `scheduled_meal_outcomes` tables |
+| 3 | M12 | `food_log_entries.meal_slot` (nullable) |
+| 4 | M13 | `fiber`, `sugar`, `sodium` (nullable) on `food_items`, `food_log_entries`, `food_log_entry_items` |
+| 5 | M15 | New `body_weights` table |
+| 6 | M16 | `food_items.barcode` (nullable, indexed) |
+| 7 | M17 | New `scheduled_items` table |
 
 Each step gets a drift migration test (`make-migrations`) and an update to `DATA_MODEL.md` and the backup format.
 

@@ -110,7 +110,7 @@ void main() {
   test('rejects missing or invalid preferences', () {
     expect(failure(valid()..remove('preferences')).message, contains('prefer'));
     final bad = valid();
-    (bad['preferences'] as Map)['primaryMetric'] = 'sodium';
+    (bad['preferences'] as Map)['primaryMetric'] = 'zinc';
     expect(failure(bad).message, contains('preferences'));
     final badGoal = valid();
     (badGoal['preferences'] as Map)['goals'] = {'calories': -5};
@@ -119,7 +119,7 @@ void main() {
 
   test('unknown metrics from another build are ignored', () {
     final json = valid();
-    (json['preferences'] as Map)['goals'] = {'protein': 100, 'sodium': 2000};
+    (json['preferences'] as Map)['goals'] = {'protein': 100, 'zinc': 2000};
     expect(codec.decode(jsonEncode(json)).settings.goals, {
       Metric.protein: 100,
     });

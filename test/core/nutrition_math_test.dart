@@ -182,4 +182,113 @@ void main() {
     );
     expect(chicken + Macros.zero, chicken);
   });
+
+  group('optional nutrients (null means not recorded)', () {
+    const oats = Macros(
+      calories: 150,
+      protein: 5,
+      carbs: 27,
+      fat: 3,
+      fiber: 4,
+      sugar: 1,
+      sodium: 100,
+    );
+
+    test('default to null, which is not equal to 0', () {
+      expect(chicken.fiber, isNull);
+      expect(
+        chicken,
+        isNot(
+          const Macros(
+            calories: 165,
+            protein: 31,
+            carbs: 0,
+            fat: 3.6,
+            fiber: 0,
+          ),
+        ),
+      );
+    });
+
+    test('scaling by servings keeps null as null', () {
+      final scaled = scaleByServings(oats, 2);
+      expect(scaled.fiber, 8);
+      expect(scaled.sodium, 200);
+      final unrecorded = scaleByServings(chicken, 2);
+      expect(unrecorded.fiber, isNull);
+      expect(unrecorded.sugar, isNull);
+      expect(unrecorded.sodium, isNull);
+    });
+
+    test('scaling by weight keeps null as null', () {
+      final scaled = scaleByWeight(oats, servingWeightG: 40, weightG: 20);
+      expect(scaled.sugar, 0.5);
+      expect(scaled.sodium, 50);
+      final unrecorded = scaleByWeight(
+        chicken,
+        servingWeightG: 100,
+        weightG: 50,
+      );
+      expect(unrecorded.sodium, isNull);
+    });
+
+    test('a recorded 0 stays 0 when scaled', () {
+      const salty = Macros(sodium: 0);
+      expect(scaleByServings(salty, 3).sodium, 0);
+    });
+
+    test('a sum is null only when no item recorded the nutrient', () {
+      expect(sumMacros([chicken, chicken]).sodium, isNull);
+      final total = sumMacros([oats, chicken, oats]);
+      expect(total.fiber, 8);
+      expect(total.sodium, 200);
+      expect(total.calories, 465);
+    });
+
+    test('an empty sum is null for the optional nutrients', () {
+      expect(sumMacros(const []).fiber, isNull);
+    });
+  });
+
+  group('coverageOf', () {
+    const recorded = Macros(sodium: 120);
+    const missing = Macros();
+
+    test('counts the items that have a value', () {
+      final c = coverageOf([
+        recorded,
+        missing,
+        recorded,
+        missing,
+        recorded,
+      ], (m) => m.sodium);
+      expect(c.recorded, 3);
+      expect(c.total, 5);
+      expect(c.isPartial, isTrue);
+    });
+
+    test('a recorded 0 counts as recorded', () {
+      final c = coverageOf([const Macros(sodium: 0), missing], (m) => m.sodium);
+      expect(c.recorded, 1);
+    });
+
+    test('complete and empty coverage are not partial', () {
+      expect(
+        coverageOf([recorded, recorded], (m) => m.sodium).isPartial,
+        isFalse,
+      );
+      expect(
+        coverageOf([missing, missing], (m) => m.sodium).isPartial,
+        isFalse,
+      );
+      expect(coverageOf(const [], (m) => m.sodium).isPartial, isFalse);
+    });
+
+    test('coverages add up', () {
+      const a = Coverage(recorded: 1, total: 2);
+      const b = Coverage(recorded: 2, total: 3);
+      expect((a + b).recorded, 3);
+      expect((a + b).total, 5);
+    });
+  });
 }

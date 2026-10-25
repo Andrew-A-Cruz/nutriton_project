@@ -6,10 +6,11 @@
 
 | Property | Decision |
 |---|---|
-| Storage | Local SQLite via `drift`, database file `food_log`, schema version 2 |
+| Storage | Local SQLite via `drift`, database file `food_log`, schema version 5 |
 | User preferences | `shared_preferences` (separate from SQLite) |
 | ID format | UUID v4 via `uuid` (`TEXT` primary keys) |
 | Weights | Stored in grams (`*_g`). Users pick g or oz for display only; 1 oz = 28.3495 g |
+| Body weight | Stored in kilograms (`body_weights.weight_kg`). Users pick kg or lb for display and input only; 1 lb = 0.45359237 kg |
 | Dates | `log_date` is a `yyyy-MM-dd` text key (calendar day, no time zone) |
 | Macro storage | Log entries store their own resolved macros (snapshots). Catalog links are provenance only |
 
@@ -32,6 +33,9 @@ Saved catalog foods. Macros are stored per 1 serving, where 1 serving is `servin
 | `serving_weight_g` | REAL | No | `> 0` (used as a divisor) |
 | `display_unit` | TEXT | No | `'g'` or `'oz'`, default `'g'`. Display only. This is the food's own unit: the catalog list and food form show the serving weight in it. Logging inputs (weight entry, meal items) use the user's display-unit setting instead |
 | `archived` | BOOL | No | Default `false`. Archived foods leave search but remain referenced by past entries |
+| `fiber` | REAL | Yes | Schema v4. `>= 0` in grams, per 1 serving. Null = not recorded, which is different from 0 (every row from before v4) |
+| `sugar` | REAL | Yes | Schema v4. `>= 0` in grams, per 1 serving. Null = not recorded |
+| `sodium` | REAL | Yes | Schema v4. `>= 0` in **milligrams**, per 1 serving. Null = not recorded |
 
 ---
 
@@ -80,6 +84,9 @@ The daily log. One row per logged item: a catalog food, a meal, or an adhoc entr
 | `meal_id` | TEXT | Yes | FK → `meals.id`, `ON DELETE SET NULL` (provenance) |
 | `servings` | REAL | Yes | Food entries only, `> 0` |
 | `meal_slot` | TEXT | Yes | Schema v3. `'breakfast'`, `'lunch'`, `'dinner'` or `'snack'` (CHECK). Null = "Other" (every row logged before v3). Home groups by it; stored by name, so backups hold a plain string |
+| `fiber` | REAL | Yes | Schema v4. `>= 0` in grams, resolved total (copied from the food when logged). Null = not recorded, which is different from 0 (every row from before v4) |
+| `sugar` | REAL | Yes | Schema v4. `>= 0` in grams, resolved total (copied from the food when logged). Null = not recorded |
+| `sodium` | REAL | Yes | Schema v4. `>= 0` in **milligrams**, resolved total (copied from the food when logged). Null = not recorded |
 
 **Entry type reference:**
 
@@ -108,6 +115,9 @@ The breakdown of a logged meal, as it was actually eaten. This can differ from t
 | `protein` | REAL | No | `>= 0` |
 | `carbs` | REAL | No | `>= 0` |
 | `fat` | REAL | No | `>= 0` |
+| `fiber` | REAL | Yes | Schema v4. `>= 0` in grams, resolved for `weight_g`. Null = not recorded, which is different from 0 (every row from before v4) |
+| `sugar` | REAL | Yes | Schema v4. `>= 0` in grams, resolved for `weight_g`. Null = not recorded |
+| `sodium` | REAL | Yes | Schema v4. `>= 0` in **milligrams**, resolved for `weight_g`. Null = not recorded |
 
 ---
 
@@ -143,6 +153,20 @@ What happened to a plan on one day. A plan with no row for a day is still a pend
 
 ---
 
+### `body_weights`
+
+Body weight readings (schema v5), at most one per day. Setting a day again replaces its row. Always kilograms; the `body_weight_unit` preference only changes how a value is shown and typed.
+
+| Column | Type | Null | Notes |
+|---|---|---|---|
+| `log_date` | TEXT | No | Primary key. `yyyy-MM-dd` |
+| `weight_kg` | REAL | No | `> 0` (CHECK). The app accepts 20 to 500 kg |
+| `created_at` | DATETIME | No | When the reading was last set |
+
+**Migration:** `schemaVersion` 4 → 5 creates the table (`from4To5` in `app_database.dart`; covered by `test/drift/app_database/migration_test.dart`).
+
+---
+
 ### `user_preferences`
 
 Stored via `shared_preferences`, not in SQLite. Read on app launch to configure the UI and determine which macros to display.
@@ -153,6 +177,9 @@ Stored via `shared_preferences`, not in SQLite. Read on app launch to configure 
 | `tracked_metrics` | String list | Metric names, e.g. `["calories", "protein", "fat"]`. Always includes the primary metric; the rest are the secondaries |
 | `goal_<metric>` | Float | Daily goal per metric, e.g. `goal_calories`, `goal_protein`. Required for the primary metric, optional otherwise (key absent = no goal) |
 | `display_unit` | String | `"g"` or `"oz"`. Logging weights (weight entry, meal items) are typed and shown in this unit and stored in grams. Also the default unit for a new catalog food, which then keeps its own `food_items.display_unit` |
+| `body_weight_unit` | String | `"kg"` or `"lb"`, default `"kg"`. Separate from `display_unit`: body weight is typed and shown in this unit and stored in kilograms. In the backup `preferences` as `bodyWeightUnit`, which older backups lack (read as kg) |
+| `reminder_<n>_enabled` | Bool | Daily reminder slot n (0 to 2) is on. Absent = off |
+| `reminder_<n>_minutes` | Int | Reminder slot n time, minutes after local midnight (defaults 540, 780, 1140). Both reminder keys are in the backup `preferences` as a `reminders` list, which older backups lack |
 | `onboarding_complete` | Bool | Gate for the onboarding screen |
 
 ---
@@ -268,7 +295,7 @@ lib/
 │   ├── nutrition_math.dart          # pure functions: scaling, sums, g <-> oz
 │   ├── date_key.dart                # DateTime <-> 'yyyy-MM-dd'
 │   ├── weekdays.dart                # weekday bitmasks for scheduled meals
-│   └── metrics.dart                 # enum Metric { calories, protein, carbs, fat }
+│   └── metrics.dart                 # enum Metric { calories, protein, carbs, fat, fiber, sugar, sodium }
 ├── data/
 │   ├── database/
 │   │   ├── app_database.dart        # drift DB definition (file: food_log)

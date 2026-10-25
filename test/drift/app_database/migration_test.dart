@@ -9,6 +9,8 @@ import 'package:nutriton_project/data/database/app_database.dart';
 import 'generated/schema.dart';
 import 'generated/schema_v1.dart' as v1;
 import 'generated/schema_v2.dart' as v2;
+import 'generated/schema_v3.dart' as v3;
+import 'generated/schema_v4.dart' as v4;
 
 void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
@@ -335,7 +337,7 @@ void main() {
       );
     });
 
-    test('a real v1 file on disk reopens as v3 with its data', () async {
+    test('a real v1 file on disk reopens as v5 with its data', () async {
       final dir = Directory.systemTemp.createTempSync('food_log_migration');
       addTearDown(() => dir.deleteSync(recursive: true));
       final file = File('${dir.path}/food_log.sqlite');
@@ -359,7 +361,7 @@ void main() {
       addTearDown(db.close);
 
       await expectV1DataSurvived(db);
-      expect(await userVersion(db), 3);
+      expect(await userVersion(db), 5);
       expect(await hasStartDateIndex(db), isTrue);
       expect(await db.scheduledMealDao.findSchedulesForMeal('m1'), isEmpty);
     });
@@ -493,7 +495,7 @@ void main() {
       expect(await userVersion(db), 3);
     });
 
-    test('a real v2 file on disk reopens as v3 with its data', () async {
+    test('a real v2 file on disk reopens as v5 with its data', () async {
       final dir = Directory.systemTemp.createTempSync('food_log_v2');
       addTearDown(() => dir.deleteSync(recursive: true));
       final file = File('${dir.path}/food_log.sqlite');
@@ -511,16 +513,270 @@ void main() {
       final db = AppDatabase(NativeDatabase(file));
       addTearDown(db.close);
       await expectSurvived(db);
-      expect(await userVersion(db), 3);
+      expect(await userVersion(db), 5);
+    });
+  });
+
+  group('v3 to v4 adds fiber, sugar and sodium', () {
+    final seconds = DateTime(2026, 10, 22, 9).millisecondsSinceEpoch ~/ 1000;
+
+    /// A realistic v3 database: foods, a meal with a breakdown, and entries of
+    /// all three types, some with a meal slot.
+    Future<void> seedV3(v3.DatabaseAtV3 old) async {
+      Future<void> sql(String s, [List<Object?> args = const []]) =>
+          old.customStatement(s, args);
+      await sql(
+        'INSERT INTO food_items (id, name, calories, protein, carbs, fat, '
+        'serving_weight_g) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        ['f1', 'Rice', 130, 3, 28, 0.3, 100],
+      );
+      await sql(
+        'INSERT INTO food_items (id, name, calories, protein, carbs, fat, '
+        'serving_weight_g) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        ['f2', 'Chicken', 165, 31, 0, 3.6, 100],
+      );
+      await sql("INSERT INTO meals (id, name) VALUES ('m1', 'Lunch bowl')");
+      await sql(
+        'INSERT INTO meal_food_items (id, meal_id, food_item_id, weight_g) '
+        "VALUES ('mfi1', 'm1', 'f1', 200), ('mfi2', 'm1', 'f2', 150)",
+      );
+      const cols =
+          'id, log_date, created_at, entry_type, name, calories, protein, '
+          'carbs, fat, food_item_id, meal_id, servings, meal_slot';
+      await sql(
+        'INSERT INTO food_log_entries ($cols) VALUES '
+        "('e1', '2026-10-22', $seconds, 'food', 'Rice', 195, 4.5, 42, 0.45, "
+        "'f1', NULL, 1.5, 'lunch'), "
+        "('e2', '2026-10-22', $seconds, 'adhoc', 'Cookie', 90, 1, 15, 3, "
+        "NULL, NULL, NULL, 'snack'), "
+        "('e3', '2026-10-23', $seconds, 'meal', 'Lunch bowl', 507, 37, 56, "
+        "6, NULL, 'm1', NULL, NULL)",
+      );
+      await sql(
+        'INSERT INTO food_log_entry_items (id, entry_id, food_item_id, name, '
+        'weight_g, calories, protein, carbs, fat) VALUES '
+        "('i1', 'e3', 'f1', 'Rice', 200, 260, 6, 56, 0.6), "
+        "('i2', 'e3', 'f2', 'Chicken', 150, 247, 31, 0, 6)",
+      );
+    }
+
+    Future<void> expectSurvived(AppDatabase db) async {
+      final foods = {
+        for (final f in await db.select(db.foodItems).get()) f.id: f,
+      };
+      expect(foods.keys, unorderedEquals(['f1', 'f2']));
+      expect(foods['f1']!.calories, 130);
+      expect(foods['f2']!.protein, 31);
+      expect(await db.select(db.meals).get(), hasLength(1));
+      expect(await db.select(db.mealFoodItems).get(), hasLength(2));
+      final entries = {
+        for (final e in await db.select(db.foodLogEntries).get()) e.id: e,
+      };
+      expect(entries.keys, unorderedEquals(['e1', 'e2', 'e3']));
+      expect(entries['e1']!.servings, 1.5);
+      expect(entries['e1']!.mealSlot, 'lunch');
+      expect(entries['e2']!.mealSlot, 'snack');
+      expect(entries['e3']!.mealSlot, isNull);
+      expect(entries['e3']!.calories, 507);
+      expect(entries['e3']!.createdAt, DateTime(2026, 10, 22, 9));
+      final items = await db.select(db.foodLogEntryItems).get();
+      expect(items.map((i) => i.id), unorderedEquals(['i1', 'i2']));
+      // Not recorded: null, not 0.
+      for (final row in [...foods.values, ...entries.values, ...items]) {
+        final r = row as dynamic;
+        expect(r.fiber, isNull, reason: '${r.id} fiber');
+        expect(r.sugar, isNull, reason: '${r.id} sugar');
+        expect(r.sodium, isNull, reason: '${r.id} sodium');
+      }
+    }
+
+    test('every row survives with null fiber, sugar and sodium', () async {
+      final schema = await verifier.schemaAt(3);
+      final old = v3.DatabaseAtV3(schema.newConnection());
+      await seedV3(old);
+      await old.close();
+
+      final db = AppDatabase(schema.newConnection());
+      addTearDown(db.close);
+      await verifier.migrateAndValidate(db, 4);
+
+      await expectSurvived(db);
+      expect(await userVersion(db), 4);
+    });
+
+    test('the new columns store values and reject negatives', () async {
+      final schema = await verifier.schemaAt(3);
+      final old = v3.DatabaseAtV3(schema.newConnection());
+      await seedV3(old);
+      await old.close();
+
+      final db = AppDatabase(schema.newConnection());
+      addTearDown(db.close);
+      await verifier.migrateAndValidate(db, 4);
+
+      await db.logDao.updateEntry(
+        'e2',
+        const FoodLogEntriesCompanion(
+          fiber: Value(0.5),
+          sugar: Value(9),
+          sodium: Value(0),
+        ),
+      );
+      final e2 = (await db.logDao.findEntry('e2'))!;
+      expect((e2.fiber, e2.sugar, e2.sodium), (0.5, 9.0, 0.0));
+      await expectLater(
+        db.logDao.updateEntry(
+          'e2',
+          const FoodLogEntriesCompanion(sodium: Value(-1)),
+        ),
+        throwsA(isA<SqliteException>()),
+      );
+    });
+
+    test('a v1 and a v2 database run through to v4', () async {
+      for (final from in [1, 2]) {
+        final schema = await verifier.schemaAt(from);
+        final db = AppDatabase(schema.newConnection());
+        addTearDown(db.close);
+        await verifier.migrateAndValidate(db, 4);
+        expect(await userVersion(db), 4, reason: 'from v$from');
+      }
+    });
+
+    test('a real v3 file on disk reopens as v5 with its data', () async {
+      final dir = Directory.systemTemp.createTempSync('food_log_v3');
+      addTearDown(() => dir.deleteSync(recursive: true));
+      final file = File('${dir.path}/food_log.sqlite');
+      final old = v3.DatabaseAtV3(NativeDatabase(file));
+      try {
+        final migrator = Migrator(old);
+        for (final table in old.allTables) {
+          await migrator.createTable(table);
+        }
+        await seedV3(old);
+        await old.customStatement('PRAGMA user_version = 3');
+      } finally {
+        await old.close();
+      }
+      final db = AppDatabase(NativeDatabase(file));
+      addTearDown(db.close);
+      await expectSurvived(db);
+      expect(await userVersion(db), 5);
+    });
+  });
+
+  group('v4 to v5 adds body_weights', () {
+    final seconds = DateTime(2026, 10, 23, 9).millisecondsSinceEpoch ~/ 1000;
+
+    /// A realistic v4 database: a food, an entry with nutrients, a schedule.
+    Future<void> seedV4(v4.DatabaseAtV4 old) async {
+      Future<void> sql(String s, [List<Object?> args = const []]) =>
+          old.customStatement(s, args);
+      await sql(
+        'INSERT INTO food_items (id, name, calories, protein, carbs, fat, '
+        'serving_weight_g, fiber, sodium) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        ['f1', 'Rice', 130, 3, 28, 0.3, 100, 0.4, 1],
+      );
+      await sql("INSERT INTO meals (id, name) VALUES ('m1', 'Lunch bowl')");
+      await sql(
+        'INSERT INTO food_log_entries (id, log_date, created_at, entry_type, '
+        'name, calories, protein, carbs, fat, food_item_id, servings, '
+        'meal_slot, fiber) VALUES '
+        "('e1', '2026-10-23', $seconds, 'food', 'Rice', 195, 4.5, 42, 0.45, "
+        "'f1', 1.5, 'lunch', 0.6)",
+      );
+      await sql(
+        'INSERT INTO scheduled_meals (id, meal_id, start_date, created_at) '
+        "VALUES ('s1', 'm1', '2026-10-24', $seconds)",
+      );
+    }
+
+    Future<void> expectSurvived(AppDatabase db) async {
+      final foods = await db.select(db.foodItems).get();
+      expect(foods.single.calories, 130);
+      expect(foods.single.fiber, 0.4);
+      expect(foods.single.sugar, isNull);
+      final entry = (await db.select(db.foodLogEntries).get()).single;
+      expect(entry.servings, 1.5);
+      expect(entry.mealSlot, 'lunch');
+      expect(entry.fiber, 0.6);
+      expect(await db.select(db.meals).get(), hasLength(1));
+      expect(await db.select(db.scheduledMeals).get(), hasLength(1));
+    }
+
+    test('every row survives and the new table starts empty', () async {
+      final schema = await verifier.schemaAt(4);
+      final old = v4.DatabaseAtV4(schema.newConnection());
+      await seedV4(old);
+      await old.close();
+
+      final db = AppDatabase(schema.newConnection());
+      addTearDown(db.close);
+      await verifier.migrateAndValidate(db, 5);
+
+      await expectSurvived(db);
+      expect(await db.select(db.bodyWeights).get(), isEmpty);
+      expect(await userVersion(db), 5);
+    });
+
+    test('the new table stores one reading per day and rejects <= 0', () async {
+      final schema = await verifier.schemaAt(4);
+      final db = AppDatabase(schema.newConnection());
+      addTearDown(db.close);
+      await verifier.migrateAndValidate(db, 5);
+
+      final at = DateTime(2026, 10, 24, 7);
+      await db.bodyWeightDao.upsertForDate('2026-10-24', 80.5, at);
+      await db.bodyWeightDao.upsertForDate('2026-10-24', 80.1, at);
+      final rows = await db.select(db.bodyWeights).get();
+      expect(rows, hasLength(1));
+      expect(rows.single.weightKg, 80.1);
+      await expectLater(
+        db.bodyWeightDao.upsertForDate('2026-10-25', 0, at),
+        throwsA(isA<SqliteException>()),
+      );
+    });
+
+    test('a v1, v2 and v3 database run through to v5', () async {
+      for (final from in [1, 2, 3]) {
+        final schema = await verifier.schemaAt(from);
+        final db = AppDatabase(schema.newConnection());
+        addTearDown(db.close);
+        await verifier.migrateAndValidate(db, 5);
+        expect(await userVersion(db), 5, reason: 'from v$from');
+        expect(await db.select(db.bodyWeights).get(), isEmpty);
+      }
+    });
+
+    test('a real v4 file on disk reopens as v5 with its data', () async {
+      final dir = Directory.systemTemp.createTempSync('food_log_v4');
+      addTearDown(() => dir.deleteSync(recursive: true));
+      final file = File('${dir.path}/food_log.sqlite');
+      final old = v4.DatabaseAtV4(NativeDatabase(file));
+      try {
+        final migrator = Migrator(old);
+        for (final table in old.allTables) {
+          await migrator.createTable(table);
+        }
+        await seedV4(old);
+        await old.customStatement('PRAGMA user_version = 4');
+      } finally {
+        await old.close();
+      }
+      final db = AppDatabase(NativeDatabase(file));
+      addTearDown(db.close);
+      await expectSurvived(db);
+      expect(await userVersion(db), 5);
+      expect(await db.select(db.bodyWeights).get(), isEmpty);
     });
   });
 
   group('fresh database', () {
-    test('starts at v3 with empty scheduling tables', () async {
+    test('starts at v5 with empty scheduling tables', () async {
       final db = AppDatabase(NativeDatabase.memory());
       addTearDown(db.close);
 
-      expect(await userVersion(db), 3);
+      expect(await userVersion(db), 5);
       expect(await db.scheduledMealDao.findSchedulesForMeal('x'), isEmpty);
       expect(await hasStartDateIndex(db), isTrue);
       await db.validateDatabaseSchema();

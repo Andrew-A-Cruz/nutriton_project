@@ -31,8 +31,7 @@ void main() {
   const codec = BackupCodec();
 
   Map<String, dynamic> fixtureJson() =>
-      jsonDecode(File(_fixturePath).readAsStringSync())
-          as Map<String, dynamic>;
+      jsonDecode(File(_fixturePath).readAsStringSync()) as Map<String, dynamic>;
 
   Map<String, dynamic> copy(Map<String, dynamic> json) =>
       jsonDecode(jsonEncode(json)) as Map<String, dynamic>;
@@ -232,7 +231,9 @@ void main() {
           {'version': 1},
           fromVersion: 1,
           toVersion: 3,
-          upgrades: {1: (r) => {...r}},
+          upgrades: {
+            1: (r) => {...r},
+          },
         ),
         throwsA(
           isA<BackupException>().having(

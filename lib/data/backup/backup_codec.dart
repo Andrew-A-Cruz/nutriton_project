@@ -2,8 +2,10 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
 
+import '../../core/body_weight.dart';
 import '../../core/metrics.dart';
 import '../../core/nutrition_math.dart';
+import '../../core/reminder.dart';
 import '../database/app_database.dart';
 import '../preferences/user_preferences.dart';
 
@@ -82,6 +84,7 @@ class BackupData {
     this.logEntryItems = const [],
     this.scheduledMeals = const [],
     this.scheduledMealOutcomes = const [],
+    this.bodyWeights = const [],
     required this.settings,
     this.exportedAt,
   });
@@ -93,6 +96,7 @@ class BackupData {
   final List<FoodLogEntryItem> logEntryItems;
   final List<ScheduledMeal> scheduledMeals;
   final List<ScheduledMealOutcome> scheduledMealOutcomes;
+  final List<BodyWeight> bodyWeights;
   final UserSettings settings;
 
   /// When the file was written. Null for data not read from a file, or when the
@@ -108,6 +112,7 @@ class BackupData {
 ///   "food_items": [...], "meals": [...], "meal_food_items": [...],
 ///   "food_log_entries": [...], "food_log_entry_items": [...],
 ///   "scheduled_meals": [...], "scheduled_meal_outcomes": [...],
+///   "body_weights": [...],
 ///   "preferences": {...} }
 /// ```
 ///
@@ -141,6 +146,7 @@ class BackupCodec {
       'scheduled_meal_outcomes': [
         for (final r in data.scheduledMealOutcomes) r.toJson(),
       ],
+      'body_weights': [for (final r in data.bodyWeights) r.toJson()],
       'preferences': _encodeSettings(data.settings),
     };
     return const JsonEncoder.withIndent('  ').convert(map);
@@ -194,6 +200,10 @@ class BackupCodec {
           'scheduled_meal_outcomes',
           ScheduledMealOutcome.fromJson,
         ),
+        // Absent in backups made before body weight existed.
+        bodyWeights: current.containsKey('body_weights')
+            ? _rows(current, 'body_weights', BodyWeight.fromJson)
+            : const [],
         settings: _decodeSettings(current['preferences']),
         exportedAt: _decodeExportedAt(current['exportedAt']),
       );
@@ -231,8 +241,29 @@ class BackupCodec {
     'primaryMetric': s.primaryMetric.name,
     'trackedMetrics': [for (final m in s.trackedMetrics) m.name],
     'displayUnit': s.displayUnit.name,
+    'bodyWeightUnit': s.bodyWeightUnit.name,
     'goals': {for (final e in s.goals.entries) e.key.name: e.value},
+    'reminders': [
+      for (final r in s.reminders) {'enabled': r.enabled, 'minutes': r.minutes},
+    ],
   };
+
+  /// Absent in backups made before reminders existed: all off, default times.
+  List<Reminder> _decodeReminders(Object? raw) {
+    if (raw == null) return Reminder.defaults;
+    if (raw is! List) {
+      throw BackupException('The backup has invalid reminders.');
+    }
+    return [
+      for (var i = 0; i < raw.length && i < reminderSlots; i++)
+        switch (raw[i]) {
+          {'enabled': final bool enabled, 'minutes': final int minutes}
+              when minutes >= 0 && minutes < 24 * 60 =>
+            Reminder(minutes: minutes, enabled: enabled),
+          _ => throw BackupException('The backup has invalid reminders.'),
+        },
+    ];
+  }
 
   UserSettings _decodeSettings(Object? raw) {
     if (raw is! Map<String, dynamic>) {
@@ -241,11 +272,16 @@ class BackupCodec {
     final metrics = Metric.values.asNameMap();
     final primary = metrics[raw['primaryMetric']];
     final unit = WeightUnit.values.asNameMap()[raw['displayUnit']];
+    // Absent in backups made before body weight existed: kg.
+    final bodyUnit = raw['bodyWeightUnit'] == null
+        ? BodyWeightUnit.kg
+        : BodyWeightUnit.values.asNameMap()[raw['bodyWeightUnit']];
     final onboarding = raw['onboardingComplete'];
     final tracked = raw['trackedMetrics'];
     final goals = raw['goals'];
     if (primary == null ||
         unit == null ||
+        bodyUnit == null ||
         onboarding is! bool ||
         tracked is! List ||
         goals is! Map) {
@@ -270,6 +306,8 @@ class BackupCodec {
       },
       goals: goalMap,
       displayUnit: unit,
+      bodyWeightUnit: bodyUnit,
+      reminders: _decodeReminders(raw['reminders']),
     );
   }
 }
