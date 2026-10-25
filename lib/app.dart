@@ -44,7 +44,7 @@ class _RootGate extends ConsumerWidget {
 class _HomeTabs extends StatelessWidget {
   const _HomeTabs();
 
-  static final List<({String label, IconData icon, GlobalKey? tourTarget})>
+  static final List<({String label, IconData icon, TourTarget? tourTarget})>
   _tabs = [
     (label: 'Today', icon: CupertinoIcons.today_fill, tourTarget: null),
     (
@@ -69,10 +69,13 @@ class _HomeTabs extends StatelessWidget {
             items: [
               for (final tab in _tabs)
                 BottomNavigationBarItem(
-                  icon: KeyedSubtree(
-                    key: tab.tourTarget,
-                    child: Icon(tab.icon),
-                  ),
+                  icon: switch (tab.tourTarget) {
+                    null => Icon(tab.icon),
+                    final target => TourAnchor(
+                      target: target,
+                      child: Icon(tab.icon),
+                    ),
+                  },
                   label: tab.label,
                 ),
             ],

@@ -4,15 +4,72 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/tour_providers.dart';
 
-/// Widgets the tour points at. Each is wrapped in a [KeyedSubtree] with one of
-/// these keys where it is built, so the tour can find it on screen.
+/// Widgets the tour points at. Each is wrapped in a [TourAnchor] with one of
+/// these targets where it is built, so the tour can find it on screen.
 abstract final class TourTargets {
-  static final date = GlobalKey(debugLabel: 'tour-date');
-  static final totals = GlobalKey(debugLabel: 'tour-totals');
-  static final addFood = GlobalKey(debugLabel: 'tour-add-food');
-  static final settings = GlobalKey(debugLabel: 'tour-settings');
-  static final catalogTab = GlobalKey(debugLabel: 'tour-catalog-tab');
-  static final summaryTab = GlobalKey(debugLabel: 'tour-summary-tab');
+  static final date = TourTarget('tour-date');
+  static final totals = TourTarget('tour-totals');
+  static final addFood = TourTarget('tour-add-food');
+  static final settings = TourTarget('tour-settings');
+  static final catalogTab = TourTarget('tour-catalog-tab');
+  static final summaryTab = TourTarget('tour-summary-tab');
+}
+
+/// Something the tour can point at, found through the [TourAnchor]s built for
+/// it.
+///
+/// Not a [GlobalKey]: a page transition draws a second copy of the nav bar's
+/// buttons, and a GlobalKey in there pulls the real buttons out of the nav bar
+/// for good. Anchors can have several copies mounted at once.
+class TourTarget {
+  TourTarget(this.debugLabel);
+
+  final String debugLabel;
+  final _anchors = <BuildContext>[];
+
+  /// The newest anchor still mounted. During a nav bar transition that is the
+  /// moving copy, which is the one on screen.
+  BuildContext? get currentContext => _anchors.lastOrNull;
+
+  @override
+  String toString() => 'TourTarget($debugLabel)';
+}
+
+/// Marks [child] as where [target] is on screen.
+class TourAnchor extends StatefulWidget {
+  const TourAnchor({super.key, required this.target, required this.child});
+
+  final TourTarget target;
+  final Widget child;
+
+  @override
+  State<TourAnchor> createState() => _TourAnchorState();
+}
+
+class _TourAnchorState extends State<TourAnchor> {
+  @override
+  void initState() {
+    super.initState();
+    widget.target._anchors.add(context);
+  }
+
+  @override
+  void didUpdateWidget(TourAnchor oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.target != widget.target) {
+      oldWidget.target._anchors.remove(context);
+      widget.target._anchors.add(context);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.target._anchors.remove(context);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 class TourStep {
@@ -22,7 +79,7 @@ class TourStep {
   final String body;
 
   /// What to highlight. Null shows the card in the middle of the screen.
-  final GlobalKey? target;
+  final TourTarget? target;
 }
 
 final tourSteps = [
