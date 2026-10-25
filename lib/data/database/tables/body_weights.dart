@@ -10,6 +10,11 @@ class BodyWeights extends Table {
   RealColumn get weightKg => real().check(weightKg.isBiggerThanValue(0))();
   DateTimeColumn get createdAt => dateTime()();
 
+  /// Where the reading came from: 'manual' (typed in the app) or 'health'
+  /// (read from Apple Health). Null, from an old backup, counts as manual.
+  TextColumn get source =>
+      text().nullable().withDefault(const Constant('manual'))();
+
   @override
   Set<Column> get primaryKey => {logDate};
 }

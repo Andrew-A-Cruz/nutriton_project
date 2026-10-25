@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/preferences_providers.dart';
 import '../../providers/tour_providers.dart';
 import '../onboarding/preferences_form.dart';
+import 'apple_health_section.dart';
 import 'backup_section.dart';
 import 'reminders_section.dart';
 
@@ -23,15 +24,20 @@ class SettingsView extends ConsumerWidget {
           submitLabel: 'Save',
           extraSections: const [
             RemindersSection(),
+            AppleHealthSection(),
             BackupSection(),
             _HelpSection(),
           ],
           onSubmit: (settings) async {
             final notifier = ref.read(preferencesProvider.notifier);
-            // Reminders save as they change, so the form's copy may be stale.
+            // Reminders and Health switches save as they change, so the form's
+            // copy may be stale.
+            final current = ref.read(preferencesProvider);
             await notifier.save(
               settings.copyWith(
-                reminders: ref.read(preferencesProvider).reminders,
+                reminders: current.reminders,
+                healthWriteNutrition: current.healthWriteNutrition,
+                healthReadWeight: current.healthReadWeight,
               ),
             );
             if (context.mounted) Navigator.of(context).pop();

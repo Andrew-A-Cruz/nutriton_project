@@ -4,6 +4,7 @@ import 'package:drift/drift.dart' show Migrator, Value, driftRuntimeOptions;
 import 'package:drift/native.dart';
 import 'package:drift_dev/api/migrations_native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nutriton_project/core/body_weight.dart';
 import 'package:nutriton_project/data/database/app_database.dart';
 
 import 'generated/schema.dart';
@@ -13,6 +14,7 @@ import 'generated/schema_v3.dart' as v3;
 import 'generated/schema_v4.dart' as v4;
 import 'generated/schema_v5.dart' as v5;
 import 'generated/schema_v6.dart' as v6;
+import 'generated/schema_v7.dart' as v7;
 
 void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
@@ -349,7 +351,7 @@ void main() {
       );
     });
 
-    test('a real v1 file on disk reopens as v7 with its data', () async {
+    test('a real v1 file on disk reopens as v8 with its data', () async {
       final dir = Directory.systemTemp.createTempSync('food_log_migration');
       addTearDown(() => dir.deleteSync(recursive: true));
       final file = File('${dir.path}/food_log.sqlite');
@@ -373,7 +375,7 @@ void main() {
       addTearDown(db.close);
 
       await expectV1DataSurvived(db);
-      expect(await userVersion(db), 7);
+      expect(await userVersion(db), 8);
       expect(await hasStartDateIndex(db), isTrue);
       expect(await db.scheduledMealDao.findSchedulesForMeal('m1'), isEmpty);
     });
@@ -506,7 +508,7 @@ void main() {
       expect(await userVersion(db), 3);
     });
 
-    test('a real v2 file on disk reopens as v7 with its data', () async {
+    test('a real v2 file on disk reopens as v8 with its data', () async {
       final dir = Directory.systemTemp.createTempSync('food_log_v2');
       addTearDown(() => dir.deleteSync(recursive: true));
       final file = File('${dir.path}/food_log.sqlite');
@@ -524,7 +526,7 @@ void main() {
       final db = AppDatabase(NativeDatabase(file));
       addTearDown(db.close);
       await expectSurvived(db);
-      expect(await userVersion(db), 7);
+      expect(await userVersion(db), 8);
     });
   });
 
@@ -654,7 +656,7 @@ void main() {
       }
     });
 
-    test('a real v3 file on disk reopens as v7 with its data', () async {
+    test('a real v3 file on disk reopens as v8 with its data', () async {
       final dir = Directory.systemTemp.createTempSync('food_log_v3');
       addTearDown(() => dir.deleteSync(recursive: true));
       final file = File('${dir.path}/food_log.sqlite');
@@ -672,7 +674,7 @@ void main() {
       final db = AppDatabase(NativeDatabase(file));
       addTearDown(db.close);
       await expectSurvived(db);
-      expect(await userVersion(db), 7);
+      expect(await userVersion(db), 8);
     });
   });
 
@@ -734,7 +736,8 @@ void main() {
       final schema = await verifier.schemaAt(4);
       final db = AppDatabase(schema.newConnection());
       addTearDown(db.close);
-      await verifier.migrateAndValidate(db, 5);
+      // To the current version: the DAO writes columns added after v5.
+      await verifier.migrateAndValidate(db, 8);
 
       final at = DateTime(2026, 10, 24, 7);
       await db.bodyWeightDao.upsertForDate('2026-10-24', 80.5, at);
@@ -759,7 +762,7 @@ void main() {
       }
     });
 
-    test('a real v4 file on disk reopens as v7 with its data', () async {
+    test('a real v4 file on disk reopens as v8 with its data', () async {
       final dir = Directory.systemTemp.createTempSync('food_log_v4');
       addTearDown(() => dir.deleteSync(recursive: true));
       final file = File('${dir.path}/food_log.sqlite');
@@ -777,7 +780,7 @@ void main() {
       final db = AppDatabase(NativeDatabase(file));
       addTearDown(db.close);
       await expectSurvived(db);
-      expect(await userVersion(db), 7);
+      expect(await userVersion(db), 8);
       expect(await db.select(db.bodyWeights).get(), isEmpty);
     });
   });
@@ -874,7 +877,7 @@ void main() {
       }
     });
 
-    test('a real v5 file on disk reopens as v7 with its data', () async {
+    test('a real v5 file on disk reopens as v8 with its data', () async {
       final dir = Directory.systemTemp.createTempSync('food_log_v5');
       addTearDown(() => dir.deleteSync(recursive: true));
       final file = File('${dir.path}/food_log.sqlite');
@@ -892,7 +895,7 @@ void main() {
       final db = AppDatabase(NativeDatabase(file));
       addTearDown(db.close);
       await expectSurvived(db);
-      expect(await userVersion(db), 7);
+      expect(await userVersion(db), 8);
     });
   });
 
@@ -1055,7 +1058,7 @@ void main() {
       }
     });
 
-    test('a real v6 file on disk reopens as v7 with its data', () async {
+    test('a real v6 file on disk reopens as v8 with its data', () async {
       final dir = Directory.systemTemp.createTempSync('food_log_v6');
       addTearDown(() => dir.deleteSync(recursive: true));
       final file = File('${dir.path}/food_log.sqlite');
@@ -1073,16 +1076,90 @@ void main() {
       final db = AppDatabase(NativeDatabase(file));
       addTearDown(db.close);
       await expectSurvived(db);
-      expect(await userVersion(db), 7);
+      expect(await userVersion(db), 8);
+    });
+  });
+
+  group('v7 to v8 adds body_weights.source', () {
+    final seconds = DateTime(2026, 10, 24, 7).millisecondsSinceEpoch ~/ 1000;
+
+    Future<void> seedV7(v7.DatabaseAtV7 old) => old.customStatement(
+      'INSERT INTO body_weights (log_date, weight_kg, created_at) VALUES '
+      "('2026-10-20', 80.5, $seconds), ('2026-10-21', 80.1, $seconds)",
+    );
+
+    Future<void> expectSurvived(AppDatabase db) async {
+      final rows = await db.select(db.bodyWeights).get();
+      expect(rows.map((r) => r.logDate), ['2026-10-20', '2026-10-21']);
+      expect(rows.map((r) => r.weightKg), [80.5, 80.1]);
+      // Existing readings were typed in, so they stay manual.
+      expect(rows.map((r) => r.source), ['manual', 'manual']);
+      expect(
+        rows.map((r) => WeightSource.fromDb(r.source)),
+        everyElement(WeightSource.manual),
+      );
+    }
+
+    test('readings survive and become manual', () async {
+      final schema = await verifier.schemaAt(7);
+      final old = v7.DatabaseAtV7(schema.newConnection());
+      await seedV7(old);
+      await old.close();
+      final db = AppDatabase(schema.newConnection());
+      addTearDown(db.close);
+      await verifier.migrateAndValidate(db, 8);
+
+      await expectSurvived(db);
+      expect(await userVersion(db), 8);
+    });
+
+    test(
+      'a health reading can be stored and a manual one replaces it',
+      () async {
+        final db = AppDatabase(NativeDatabase.memory());
+        addTearDown(db.close);
+        final now = DateTime(2026, 10, 25);
+
+        await db.bodyWeightDao.upsertForDate(
+          '2026-10-22',
+          79.9,
+          now,
+          source: WeightSource.health,
+        );
+        expect((await db.select(db.bodyWeights).getSingle()).source, 'health');
+        await db.bodyWeightDao.upsertForDate('2026-10-22', 80, now);
+        expect((await db.select(db.bodyWeights).getSingle()).source, 'manual');
+      },
+    );
+
+    test('a real v7 file on disk reopens as v8 with its data', () async {
+      final dir = Directory.systemTemp.createTempSync('food_log_v7');
+      addTearDown(() => dir.deleteSync(recursive: true));
+      final file = File('${dir.path}/food_log.sqlite');
+      final old = v7.DatabaseAtV7(NativeDatabase(file));
+      try {
+        final migrator = Migrator(old);
+        for (final table in old.allTables) {
+          await migrator.createTable(table);
+        }
+        await seedV7(old);
+        await old.customStatement('PRAGMA user_version = 7');
+      } finally {
+        await old.close();
+      }
+      final db = AppDatabase(NativeDatabase(file));
+      addTearDown(db.close);
+      await expectSurvived(db);
+      expect(await userVersion(db), 8);
     });
   });
 
   group('fresh database', () {
-    test('starts at v7 with empty scheduling tables', () async {
+    test('starts at v8 with empty scheduling tables', () async {
       final db = AppDatabase(NativeDatabase.memory());
       addTearDown(db.close);
 
-      expect(await userVersion(db), 7);
+      expect(await userVersion(db), 8);
       expect(await db.scheduledMealDao.findSchedulesForMeal('x'), isEmpty);
       expect(await hasStartDateIndex(db), isTrue);
       await db.validateDatabaseSchema();

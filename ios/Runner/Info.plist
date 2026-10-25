@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Nutriton reads your body weight from Apple Health so your weigh-ins appear in the app.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Nutriton writes your daily calories and nutrients to Apple Health.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Scan a food barcode to look up its nutrition details.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>

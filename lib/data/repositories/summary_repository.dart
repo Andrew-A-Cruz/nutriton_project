@@ -15,6 +15,12 @@ class SummaryRepository {
       .watchLoggedDatesUpTo(today)
       .map((dates) => currentStreak(dates, today: today));
 
+  /// Totals for each day from [startDate] to [endDate] ('yyyy-MM-dd',
+  /// inclusive) that has entries, oldest first. Re-emits whenever the log
+  /// changes.
+  Stream<List<DayTotal>> watchDailyTotals(String startDate, String endDate) =>
+      _db.summaryDao.watchDailyTotalsForRange(startDate, endDate);
+
   /// The report for [range] ending on [endDate] ('yyyy-MM-dd', inclusive).
   /// Re-emits whenever the log changes.
   Stream<SummaryReport> watchReport({

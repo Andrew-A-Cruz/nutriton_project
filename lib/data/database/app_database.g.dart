@@ -4003,8 +4003,18 @@ class $BodyWeightsTable extends BodyWeights
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
   @override
-  List<GeneratedColumn> get $columns => [logDate, weightKg, createdAt];
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('manual'),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [logDate, weightKg, createdAt, source];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -4041,6 +4051,12 @@ class $BodyWeightsTable extends BodyWeights
     } else if (isInserting) {
       context.missing(_createdAtMeta);
     }
+    if (data.containsKey('source')) {
+      context.handle(
+        _sourceMeta,
+        source.isAcceptableOrUnknown(data['source']!, _sourceMeta),
+      );
+    }
     return context;
   }
 
@@ -4062,6 +4078,10 @@ class $BodyWeightsTable extends BodyWeights
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      source: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source'],
+      ),
     );
   }
 
@@ -4076,10 +4096,15 @@ class BodyWeight extends DataClass implements Insertable<BodyWeight> {
   final String logDate;
   final double weightKg;
   final DateTime createdAt;
+
+  /// Where the reading came from: 'manual' (typed in the app) or 'health'
+  /// (read from Apple Health). Null, from an old backup, counts as manual.
+  final String? source;
   const BodyWeight({
     required this.logDate,
     required this.weightKg,
     required this.createdAt,
+    this.source,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -4087,6 +4112,9 @@ class BodyWeight extends DataClass implements Insertable<BodyWeight> {
     map['log_date'] = Variable<String>(logDate);
     map['weight_kg'] = Variable<double>(weightKg);
     map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || source != null) {
+      map['source'] = Variable<String>(source);
+    }
     return map;
   }
 
@@ -4095,6 +4123,9 @@ class BodyWeight extends DataClass implements Insertable<BodyWeight> {
       logDate: Value(logDate),
       weightKg: Value(weightKg),
       createdAt: Value(createdAt),
+      source: source == null && nullToAbsent
+          ? const Value.absent()
+          : Value(source),
     );
   }
 
@@ -4107,6 +4138,7 @@ class BodyWeight extends DataClass implements Insertable<BodyWeight> {
       logDate: serializer.fromJson<String>(json['logDate']),
       weightKg: serializer.fromJson<double>(json['weightKg']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      source: serializer.fromJson<String?>(json['source']),
     );
   }
   @override
@@ -4116,6 +4148,7 @@ class BodyWeight extends DataClass implements Insertable<BodyWeight> {
       'logDate': serializer.toJson<String>(logDate),
       'weightKg': serializer.toJson<double>(weightKg),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'source': serializer.toJson<String?>(source),
     };
   }
 
@@ -4123,16 +4156,19 @@ class BodyWeight extends DataClass implements Insertable<BodyWeight> {
     String? logDate,
     double? weightKg,
     DateTime? createdAt,
+    Value<String?> source = const Value.absent(),
   }) => BodyWeight(
     logDate: logDate ?? this.logDate,
     weightKg: weightKg ?? this.weightKg,
     createdAt: createdAt ?? this.createdAt,
+    source: source.present ? source.value : this.source,
   );
   BodyWeight copyWithCompanion(BodyWeightsCompanion data) {
     return BodyWeight(
       logDate: data.logDate.present ? data.logDate.value : this.logDate,
       weightKg: data.weightKg.present ? data.weightKg.value : this.weightKg,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      source: data.source.present ? data.source.value : this.source,
     );
   }
 
@@ -4141,37 +4177,42 @@ class BodyWeight extends DataClass implements Insertable<BodyWeight> {
     return (StringBuffer('BodyWeight(')
           ..write('logDate: $logDate, ')
           ..write('weightKg: $weightKg, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('source: $source')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(logDate, weightKg, createdAt);
+  int get hashCode => Object.hash(logDate, weightKg, createdAt, source);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is BodyWeight &&
           other.logDate == this.logDate &&
           other.weightKg == this.weightKg &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.source == this.source);
 }
 
 class BodyWeightsCompanion extends UpdateCompanion<BodyWeight> {
   final Value<String> logDate;
   final Value<double> weightKg;
   final Value<DateTime> createdAt;
+  final Value<String?> source;
   final Value<int> rowid;
   const BodyWeightsCompanion({
     this.logDate = const Value.absent(),
     this.weightKg = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.source = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   BodyWeightsCompanion.insert({
     required String logDate,
     required double weightKg,
     required DateTime createdAt,
+    this.source = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : logDate = Value(logDate),
        weightKg = Value(weightKg),
@@ -4180,12 +4221,14 @@ class BodyWeightsCompanion extends UpdateCompanion<BodyWeight> {
     Expression<String>? logDate,
     Expression<double>? weightKg,
     Expression<DateTime>? createdAt,
+    Expression<String>? source,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (logDate != null) 'log_date': logDate,
       if (weightKg != null) 'weight_kg': weightKg,
       if (createdAt != null) 'created_at': createdAt,
+      if (source != null) 'source': source,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -4194,12 +4237,14 @@ class BodyWeightsCompanion extends UpdateCompanion<BodyWeight> {
     Value<String>? logDate,
     Value<double>? weightKg,
     Value<DateTime>? createdAt,
+    Value<String?>? source,
     Value<int>? rowid,
   }) {
     return BodyWeightsCompanion(
       logDate: logDate ?? this.logDate,
       weightKg: weightKg ?? this.weightKg,
       createdAt: createdAt ?? this.createdAt,
+      source: source ?? this.source,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -4216,6 +4261,9 @@ class BodyWeightsCompanion extends UpdateCompanion<BodyWeight> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -4228,6 +4276,7 @@ class BodyWeightsCompanion extends UpdateCompanion<BodyWeight> {
           ..write('logDate: $logDate, ')
           ..write('weightKg: $weightKg, ')
           ..write('createdAt: $createdAt, ')
+          ..write('source: $source, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -8420,6 +8469,7 @@ typedef $$BodyWeightsTableCreateCompanionBuilder =
       required String logDate,
       required double weightKg,
       required DateTime createdAt,
+      Value<String?> source,
       Value<int> rowid,
     });
 typedef $$BodyWeightsTableUpdateCompanionBuilder =
@@ -8427,6 +8477,7 @@ typedef $$BodyWeightsTableUpdateCompanionBuilder =
       Value<String> logDate,
       Value<double> weightKg,
       Value<DateTime> createdAt,
+      Value<String?> source,
       Value<int> rowid,
     });
 
@@ -8451,6 +8502,11 @@ class $$BodyWeightsTableFilterComposer
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get source => $composableBuilder(
+    column: $table.source,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -8478,6 +8534,11 @@ class $$BodyWeightsTableOrderingComposer
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$BodyWeightsTableAnnotationComposer
@@ -8497,6 +8558,9 @@ class $$BodyWeightsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
 }
 
 class $$BodyWeightsTableTableManager
@@ -8533,11 +8597,13 @@ class $$BodyWeightsTableTableManager
                 Value<String> logDate = const Value.absent(),
                 Value<double> weightKg = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<String?> source = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => BodyWeightsCompanion(
                 logDate: logDate,
                 weightKg: weightKg,
                 createdAt: createdAt,
+                source: source,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -8545,11 +8611,13 @@ class $$BodyWeightsTableTableManager
                 required String logDate,
                 required double weightKg,
                 required DateTime createdAt,
+                Value<String?> source = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => BodyWeightsCompanion.insert(
                 logDate: logDate,
                 weightKg: weightKg,
                 createdAt: createdAt,
+                source: source,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

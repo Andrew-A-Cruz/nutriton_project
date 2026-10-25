@@ -159,15 +159,16 @@ What happened to a plan on one day. A plan with no row for a day is still a pend
 
 ### `body_weights`
 
-Body weight readings (schema v5), at most one per day. Setting a day again replaces its row. Always kilograms; the `body_weight_unit` preference only changes how a value is shown and typed.
+Body weight readings (schema v5; `source` added in v8), at most one per day. Setting a day again replaces its row. Always kilograms; the `body_weight_unit` preference only changes how a value is shown and typed.
 
 | Column | Type | Null | Notes |
 |---|---|---|---|
 | `log_date` | TEXT | No | Primary key. `yyyy-MM-dd` |
 | `weight_kg` | REAL | No | `> 0` (CHECK). The app accepts 20 to 500 kg |
 | `created_at` | DATETIME | No | When the reading was last set |
+| `source` | TEXT | Yes | Schema v8. `'manual'` (typed in the app, the default) or `'health'` (read from Apple Health). Null, from an old backup, counts as manual. A health reading is replaced by later health reads, but never overwrites a manual one; setting a weight in the app makes it manual. Weights are never written to Health |
 
-**Migration:** `schemaVersion` 4 → 5 creates the table (`from4To5` in `app_database.dart`; covered by `test/drift/app_database/migration_test.dart`).
+**Migration:** `schemaVersion` 4 → 5 creates the table (`from4To5` in `app_database.dart`; covered by `test/drift/app_database/migration_test.dart`). 7 → 8 adds `source` with `addColumn`; existing rows become `'manual'`.
 
 ---
 
@@ -182,6 +183,8 @@ Stored via `shared_preferences`, not in SQLite. Read on app launch to configure 
 | `goal_<metric>` | Float | Daily goal per metric, e.g. `goal_calories`, `goal_protein`. Required for the primary metric, optional otherwise (key absent = no goal) |
 | `display_unit` | String | `"g"` or `"oz"`. Logging weights (weight entry, meal items) are typed and shown in this unit and stored in grams. Also the default unit for a new catalog food, which then keeps its own `food_items.display_unit` |
 | `body_weight_unit` | String | `"kg"` or `"lb"`, default `"kg"`. Separate from `display_unit`: body weight is typed and shown in this unit and stored in kilograms. In the backup `preferences` as `bodyWeightUnit`, which older backups lack (read as kg) |
+| `health_write_nutrition` | Bool | Write each day's nutrition to Apple Health (iOS). Absent = off. In the backup `preferences` as `healthWriteNutrition`, which older backups lack (read as off) |
+| `health_read_weight` | Bool | Read body weight from Apple Health (iOS). Absent = off. In the backup `preferences` as `healthReadWeight`, optional on read the same way |
 | `reminder_<n>_enabled` | Bool | Daily reminder slot n (0 to 2) is on. Absent = off |
 | `reminder_<n>_minutes` | Int | Reminder slot n time, minutes after local midnight (defaults 540, 780, 1140). Both reminder keys are in the backup `preferences` as a `reminders` list, which older backups lack |
 | `onboarding_complete` | Bool | Gate for the onboarding screen |

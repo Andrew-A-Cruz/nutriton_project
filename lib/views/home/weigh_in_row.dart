@@ -17,6 +17,9 @@ class WeighInRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final kg = ref.watch(bodyWeightForDateProvider(date)).value;
     final unit = ref.watch(preferencesProvider).bodyWeightUnit;
+    final fromHealth =
+        ref.watch(bodyWeightSourceForDateProvider(date)).value ==
+        WeightSource.health;
     final secondary = CupertinoColors.secondaryLabel.resolveFrom(context);
 
     return Padding(
@@ -63,6 +66,15 @@ class WeighInRow extends ConsumerWidget {
                         fontWeight: FontWeight.w600,
                         color: CupertinoColors.label.resolveFrom(context),
                       ),
+                    ),
+                  ),
+                if (kg != null && fromHealth)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 6),
+                    child: Text(
+                      'from Health',
+                      key: const Key('weigh-in-source'),
+                      style: TextStyle(fontSize: 12, color: secondary),
                     ),
                   ),
                 const SizedBox(width: 4),

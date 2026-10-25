@@ -27,7 +27,7 @@ React Native would work, but nothing about this app needs it, and switching woul
 | Area | State |
 |---|---|
 | `lib/main.dart`, `lib/app.dart` | `CupertinoApp` with three real tabs: Today (Home), Catalog and Summary |
-| `lib/data/database/` | drift tables (split into `tables/`), six DAOs, repositories; schema v7 (migrations in `app_database.dart`, dumps in `drift_schemas/`); database file `food_log`; generated code current |
+| `lib/data/database/` | drift tables (split into `tables/`), six DAOs, repositories; schema v8 (migrations in `app_database.dart`, dumps in `drift_schemas/`); database file `food_log`; generated code current |
 | `lib/core/` | Pure Dart: `nutrition_math`, `date_key`, `metrics` (formatting), `validation`, `summary_math` (ranges, bucketing, averages) |
 | `lib/views/` | Onboarding, Home (date header, totals, log list), Catalog (foods and meals, search, archive), Add Food sheet (catalog by servings or grams, one-off, new food with save & log), meal builder and meal log, Summary (range picker, averages, bar chart), Settings (the onboarding form) |
 | `lib/providers/` | Riverpod providers for the database, repositories, preferences, the selected Home date, log entries, catalog lists and the Summary range and report |
@@ -42,6 +42,7 @@ React Native would work, but nothing about this app needs it, and switching woul
 | Scheduling | Done (M17 extended it to foods, slots and servings at schema v7). Schema v2 (`scheduled_meals`, `scheduled_meal_outcomes`) with migration and test; schedule a meal or food from Catalog, Edit Food or Add Food; planned items show dimmed inside their meal section on Home (tap to log, swipe to skip) |
 | Food lookup | Done (M16 added the `barcode` column, schema v6, and the catalog-first scan flow). `OpenFoodFactsClient` (`lib/data/remote/`) -> `FoodLookupRepository` -> `foodLookupRepositoryProvider` -> "Look up" block on the New Food form (barcode digits or name search, tap a result to prefill). Camera barcode scanning via `mobile_scanner` (`barcode_scanner_page.dart`, Scan button hidden on Windows/Linux/web) |
 | Home screen widget | Dart side done (M18), iOS target manual. `buildWidgetSnapshot` (`lib/core/widget_snapshot.dart`) -> `WidgetSync` -> `WidgetPublisher` (`lib/data/widget/`; `HomeWidgetPublisher` on iOS, App Group `group.com.nutriton.app`) -> `widgetPlanProvider` watched from the root. SwiftUI WidgetKit sources, plists and entitlements are in `ios/TodayWidget/` and `ios/Runner/Runner.entitlements`, uncompiled and not in `project.pbxproj`; App Groups on a free Apple team is unverified |
+| Apple Health | Dart side done (M19), iOS capability manual, iOS only. `nutritionSamples` (`lib/core/health.dart`) -> `HealthSync` -> `HealthService` (`lib/data/health/`; `PluginHealthService` on iOS, no-op elsewhere) -> `healthNutritionPlanProvider` and `healthWeightPlanProvider` watched from the root. Writes each day's nutrition (last 30 days on enabling, then changed days); reads body weight into `body_weights` (schema v8 `source`) without touching manual readings. "Apple Health" section in Settings, both switches off by default. Info.plist keys and entitlements are in place; the HealthKit capability must be added in Xcode (`ios/HEALTHKIT.md`), uncompiled, and unverified on a free Apple team. Health Connect (Android) not built |
 | Backup | Done. `BackupCodec` (`lib/data/backup/`, pure Dart, versioned JSON) -> `BackupRepository` (export and replace-all import, one transaction each) -> `backupRepositoryProvider` / `backupFileIoProvider`; "Backup" section in Settings with Export (share sheet on iOS and Android, save dialog elsewhere) and Import (counts preview, then confirm dialog), plus a "Last backup" line. No schema change |
 | Meal sections | Done (M12). Schema v3: nullable `meal_slot` on `food_log_entries` (`MealSlot` in `lib/core/meal_slot.dart`, default by time of day). Slot picker (`MealSlotPicker`) on every logging screen and edit sheet; Home groups the day into Breakfast / Lunch / Dinner / Snack / Other with calorie subtotals, empty sections hidden. Log again, copy day and undo keep the slot. No backup format bump (nullable column) |
 
@@ -157,6 +158,7 @@ DATA_MODEL.md has been updated to match these changes.
 | Preferences | `shared_preferences` | Installed |
 | Reminders | `flutter_local_notifications`, `timezone`, `flutter_timezone` | Installed (M14; behind `NotificationScheduler`, no-op on desktop and web) |
 | Home screen widget | `home_widget` | Installed (M18; behind `WidgetPublisher`, no-op except on iOS; needs the manual Xcode target in `ios/TodayWidget/README.md`) |
+| Apple Health | `health` | Installed (M19; behind `HealthService`, no-op except on iOS; needs the HealthKit capability in Xcode, see `ios/HEALTHKIT.md`) |
 | IDs | `uuid` | Installed |
 | Date formatting | `intl` | Installed |
 | Summary charts | `fl_chart` | Installed (Milestone 7, `^1.2.0`) |

@@ -202,7 +202,8 @@ class BackupCodec {
           'scheduled_meal_outcomes',
           ScheduledMealOutcome.fromJson,
         ),
-        // Absent in backups made before body weight existed.
+        // Absent in backups made before body weight existed. Rows from before
+        // Apple Health sync have no "source", which reads as manual.
         bodyWeights: current.containsKey('body_weights')
             ? _rows(current, 'body_weights', BodyWeight.fromJson)
             : const [],
@@ -248,6 +249,8 @@ class BackupCodec {
     'reminders': [
       for (final r in s.reminders) {'enabled': r.enabled, 'minutes': r.minutes},
     ],
+    'healthWriteNutrition': s.healthWriteNutrition,
+    'healthReadWeight': s.healthReadWeight,
   };
 
   /// Absent in backups made before reminders existed: all off, default times.
@@ -278,6 +281,9 @@ class BackupCodec {
     final bodyUnit = raw['bodyWeightUnit'] == null
         ? BodyWeightUnit.kg
         : BodyWeightUnit.values.asNameMap()[raw['bodyWeightUnit']];
+    // Absent in backups made before Apple Health sync: off.
+    final healthWrite = raw['healthWriteNutrition'] ?? false;
+    final healthRead = raw['healthReadWeight'] ?? false;
     final onboarding = raw['onboardingComplete'];
     final tracked = raw['trackedMetrics'];
     final goals = raw['goals'];
@@ -285,6 +291,8 @@ class BackupCodec {
         unit == null ||
         bodyUnit == null ||
         onboarding is! bool ||
+        healthWrite is! bool ||
+        healthRead is! bool ||
         tracked is! List ||
         goals is! Map) {
       throw BackupException('The backup has invalid preferences.');
@@ -310,6 +318,8 @@ class BackupCodec {
       displayUnit: unit,
       bodyWeightUnit: bodyUnit,
       reminders: _decodeReminders(raw['reminders']),
+      healthWriteNutrition: healthWrite,
+      healthReadWeight: healthRead,
     );
   }
 }

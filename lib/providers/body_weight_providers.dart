@@ -17,6 +17,12 @@ final bodyWeightForDateProvider = StreamProvider.family<double?, String>(
   (ref, date) => ref.watch(bodyWeightRepositoryProvider).watchWeight(date),
 );
 
+/// Where the weight logged on one day came from, or null when there is none.
+final bodyWeightSourceForDateProvider =
+    StreamProvider.family<WeightSource?, String>(
+      (ref, date) => ref.watch(bodyWeightRepositoryProvider).watchSource(date),
+    );
+
 /// Readings for a Summary range ending today, oldest first. They start
 /// [movingAverageDays] - 1 days before the range, so the moving average on the
 /// first day shown already has its full window.

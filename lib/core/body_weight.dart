@@ -91,3 +91,19 @@ List<WeightReading> movingAverage(
   }
   return result;
 }
+
+/// Where a stored reading came from.
+enum WeightSource {
+  /// Typed in the app. Always wins over a health reading.
+  manual,
+
+  /// Read from Apple Health. Replaced by later reads, and never sent back.
+  health;
+
+  /// The stored text for [this].
+  String get dbValue => name;
+
+  /// Null (an old row or backup) and unknown text count as manual.
+  static WeightSource fromDb(String? value) =>
+      value == health.name ? health : manual;
+}

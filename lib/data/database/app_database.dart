@@ -38,7 +38,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -101,6 +101,10 @@ class AppDatabase extends _$AppDatabase {
             ],
           ),
         );
+      },
+      // v7 -> v8: where a body weight came from; existing rows are manual.
+      from7To8: (m, schema) async {
+        await m.addColumn(schema.bodyWeights, schema.bodyWeights.source);
       },
     ),
     beforeOpen: (details) async {
