@@ -2,25 +2,32 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/date_key.dart';
+import '../../core/meal_slot.dart';
+import '../../core/validation.dart';
 import '../../core/weekdays.dart';
 import '../../data/database/app_database.dart';
 import '../../providers/schedule_providers.dart';
 import '../../providers/today_providers.dart';
+import '../common/form_widgets.dart';
+import '../common/meal_slot_picker.dart';
 import '../home/date_header.dart';
 
 enum _Repeat { once, weekdays }
 
-/// Plans [meal] for a day, or for repeating weekdays from that day on. The plan
-/// only shows up as a suggestion on Home; nothing is logged until confirmed.
-/// Pops itself after saving.
+/// Plans a [meal] or a [food] (give exactly one) for a day, or for repeating
+/// weekdays from that day on, in a meal section and with a number of servings.
+/// The plan only shows up as a suggestion on Home; nothing is logged until
+/// confirmed. Pops itself after saving.
 class ScheduleMealView extends ConsumerStatefulWidget {
   const ScheduleMealView({
     super.key,
-    required this.meal,
+    this.meal,
+    this.food,
     required this.initialDate,
-  });
+  }) : assert((meal == null) != (food == null));
 
-  final Meal meal;
+  final Meal? meal;
+  final FoodItem? food;
 
   /// 'yyyy-MM-dd' the date picker starts on.
   final String initialDate;
@@ -34,14 +41,29 @@ class _ScheduleMealViewState extends ConsumerState<ScheduleMealView> {
   _Repeat _repeat = _Repeat.once;
   // DateTime.weekday values; Mon-Fri to start with.
   final Set<int> _days = {1, 2, 3, 4, 5};
+  // Null: picked from the time of day when the suggestion is logged.
+  MealSlot? _slot;
+  final _servings = TextEditingController(text: '1');
   String? _error;
   bool _saving = false;
+
+  @override
+  void dispose() {
+    _servings.dispose();
+    super.dispose();
+  }
 
   Future<void> _save() async {
     if (_repeat == _Repeat.weekdays && _days.isEmpty) {
       setState(() => _error = 'Pick at least one day');
       return;
     }
+    final servingsError = positiveNumber(_servings.text);
+    if (servingsError != null) {
+      setState(() => _error = servingsError);
+      return;
+    }
+    final servings = parseNumber(_servings.text)!;
     setState(() {
       _saving = true;
       _error = null;
@@ -49,12 +71,21 @@ class _ScheduleMealViewState extends ConsumerState<ScheduleMealView> {
     try {
       final repo = ref.read(scheduleRepositoryProvider);
       if (_repeat == _Repeat.once) {
-        await repo.scheduleOnce(mealId: widget.meal.id, date: _date);
+        await repo.scheduleOnce(
+          mealId: widget.meal?.id,
+          foodItemId: widget.food?.id,
+          date: _date,
+          mealSlot: _slot,
+          servings: servings,
+        );
       } else {
         await repo.scheduleWeekdays(
-          mealId: widget.meal.id,
+          mealId: widget.meal?.id,
+          foodItemId: widget.food?.id,
           startDate: _date,
           weekdays: _days,
+          mealSlot: _slot,
+          servings: servings,
         );
       }
       if (mounted) Navigator.of(context).pop();
@@ -62,7 +93,7 @@ class _ScheduleMealViewState extends ConsumerState<ScheduleMealView> {
       if (mounted) {
         setState(() {
           _saving = false;
-          _error = 'Could not schedule meal: $e';
+          _error = 'Could not schedule: $e';
         });
       }
     }
@@ -96,7 +127,7 @@ class _ScheduleMealViewState extends ConsumerState<ScheduleMealView> {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
               child: Text(
-                widget.meal.name,
+                (widget.meal?.name ?? widget.food?.name)!,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 17,
@@ -165,6 +196,48 @@ class _ScheduleMealViewState extends ConsumerState<ScheduleMealView> {
                 ),
               ),
             ],
+            CupertinoFormSection.insetGrouped(
+              header: const Text('MEAL'),
+              footer: Text(
+                _slot == null
+                    ? 'No section chosen: it is filed by the time of day.'
+                    : 'Shown and logged under ${_slot!.label}.',
+              ),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      MealSlotPicker(
+                        value: _slot,
+                        onChanged: (s) => setState(() => _slot = s),
+                      ),
+                      if (_slot != null)
+                        CupertinoButton(
+                          key: const Key('schedule-slot-auto'),
+                          padding: EdgeInsets.zero,
+                          onPressed: () => setState(() => _slot = null),
+                          child: const Text('Use time of day'),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            CupertinoFormSection.insetGrouped(
+              children: [
+                formRow(
+                  fieldKey: const Key('schedule-servings'),
+                  label: 'Servings',
+                  controller: _servings,
+                  onChanged: (_) => setState(() => _error = null),
+                ),
+              ],
+            ),
             if (_error != null)
               Padding(
                 padding: const EdgeInsets.all(16),

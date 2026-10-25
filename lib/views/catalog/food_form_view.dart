@@ -7,8 +7,10 @@ import '../../core/validation.dart';
 import '../../data/database/app_database.dart';
 import '../../data/repositories/food_lookup_repository.dart';
 import '../../providers/infrastructure_providers.dart';
+import '../../providers/log_providers.dart';
 import '../../providers/preferences_providers.dart';
 import '../common/form_widgets.dart';
+import '../meals/schedule_meal_view.dart';
 import 'food_lookup_section.dart';
 
 /// Creates or edits a catalog food. Pops with the saved [FoodItem], or with
@@ -374,6 +376,24 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
                 ),
               ],
             ),
+            if (existing != null)
+              CupertinoFormSection.insetGrouped(
+                children: [
+                  CupertinoListTile(
+                    key: const Key('food-schedule'),
+                    title: const Text('Schedule...'),
+                    trailing: const CupertinoListTileChevron(),
+                    onTap: () => Navigator.of(context).push(
+                      CupertinoPageRoute<void>(
+                        builder: (_) => ScheduleMealView(
+                          food: existing,
+                          initialDate: ref.read(selectedDateProvider),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             if (_saveError != null)
               Padding(
                 padding: const EdgeInsets.all(16),

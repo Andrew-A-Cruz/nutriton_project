@@ -20,7 +20,7 @@ void main() {
       db.scheduledMealDao.insertSchedule(
         ScheduledMealsCompanion.insert(
           id: id,
-          mealId: 'm1',
+          mealId: Value('m1'),
           startDate: start,
           weekdays: Value(mask),
           createdAt: DateTime(2026, 10, 1),

@@ -2,17 +2,25 @@
 
 import 'package:drift/drift.dart';
 
+import 'food_items.dart';
 import 'food_log_entries.dart';
 import 'meals.dart';
 
-/// A planned meal. With [weekdays] null it is a one-off on [startDate]; with a
-/// weekday mask it repeats on those weekdays from [startDate] on. Plans are
-/// suggestions only: nothing is logged until the user confirms.
+/// A planned meal or catalog food (exactly one of [mealId] and [foodItemId]).
+/// With [weekdays] null it is a one-off on [startDate]; with a weekday mask it
+/// repeats on those weekdays from [startDate] on. Plans are suggestions only:
+/// nothing is logged until the user confirms. A plan ends when it is deleted
+/// ("Stop repeating"), so there is no separate active flag.
 @TableIndex(name: 'scheduled_meals_start_date', columns: {#startDate})
 class ScheduledMeals extends Table {
   TextColumn get id => text()();
   TextColumn get mealId =>
-      text().references(Meals, #id, onDelete: KeyAction.cascade)();
+      text().nullable().references(Meals, #id, onDelete: KeyAction.cascade)();
+  TextColumn get foodItemId => text().nullable().references(
+    FoodItems,
+    #id,
+    onDelete: KeyAction.cascade,
+  )();
 
   /// 'yyyy-MM-dd'. The day of a one-off, or the first day of a repeating plan.
   TextColumn get startDate => text()();
@@ -22,10 +30,26 @@ class ScheduledMeals extends Table {
   IntColumn get weekdays => integer().nullable().check(
     weekdays.isNull() | weekdays.isBetweenValues(1, 127),
   )();
+
+  /// 'breakfast' | 'lunch' | 'dinner' | 'snack'. Null means the slot is picked
+  /// from the time of day when the suggestion is shown or confirmed.
+  TextColumn get mealSlot => text().nullable().check(
+    mealSlot.isIn(['breakfast', 'lunch', 'dinner', 'snack']),
+  )();
+
+  /// Servings of the food, or the multiplier on the meal's item weights.
+  RealColumn get servings => real()
+      .withDefault(const Constant(1))
+      .check(servings.isBiggerThanValue(0))();
   DateTimeColumn get createdAt => dateTime()();
 
   @override
   Set<Column> get primaryKey => {id};
+
+  @override
+  List<String> get customConstraints => [
+    'CHECK ((meal_id IS NULL) <> (food_item_id IS NULL))',
+  ];
 }
 
 /// What happened to a scheduled meal on one day: confirmed (logged) or

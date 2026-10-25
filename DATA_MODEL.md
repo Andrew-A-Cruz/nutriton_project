@@ -6,7 +6,7 @@
 
 | Property | Decision |
 |---|---|
-| Storage | Local SQLite via `drift`, database file `food_log`, schema version 6 |
+| Storage | Local SQLite via `drift`, database file `food_log`, schema version 7 |
 | User preferences | `shared_preferences` (separate from SQLite) |
 | ID format | UUID v4 via `uuid` (`TEXT` primary keys) |
 | Weights | Stored in grams (`*_g`). Users pick g or oz for display only; 1 oz = 28.3495 g |
@@ -124,21 +124,24 @@ The breakdown of a logged meal, as it was actually eaten. This can differ from t
 
 ### `scheduled_meals`
 
-Planned meals (schema v2). A plan is only a suggestion on Home; it never logs by itself. With `weekdays` null it is a one-off on `start_date`; otherwise it repeats on those weekdays from `start_date` on.
+Planned meals and foods (schema v2; v7 added foods, a slot and servings). A plan is only a suggestion on Home; it never logs by itself. With `weekdays` null it is a one-off on `start_date`; otherwise it repeats on those weekdays from `start_date` on. A plan names exactly one source: a meal or a catalog food (a table CHECK enforces it). A plan has no `active` flag: "Stop repeating" deletes it. M17's planned `scheduled_items` table was folded into this one rather than created beside it.
 
 | Column | Type | Nullable | Constraints / Notes |
 |---|---|---|---|
 | `id` | TEXT | No | Primary key (UUID) |
-| `meal_id` | TEXT | No | FK → `meals.id`, `ON DELETE CASCADE` |
+| `meal_id` | TEXT | Yes | FK → `meals.id`, `ON DELETE CASCADE`. Set for a planned meal (nullable since schema v7) |
+| `food_item_id` | TEXT | Yes | Schema v7. FK → `food_items.id`, `ON DELETE CASCADE`. Set for a planned food. `CHECK ((meal_id IS NULL) <> (food_item_id IS NULL))`: exactly one of the two |
 | `start_date` | TEXT | No | `yyyy-MM-dd`. The day of a one-off, or the first day of a repeating plan. Indexed (`scheduled_meals_start_date`) |
 | `weekdays` | INT | Yes | Bitmask, bit 0 = Monday ... bit 6 = Sunday, `1..127`. Null = one-off. Mon–Fri = `31` |
+| `meal_slot` | TEXT | Yes | Schema v7. `'breakfast'`, `'lunch'`, `'dinner'` or `'snack'` (CHECK). Null (every plan from before v7) = filed by the time of day, using the same cutoffs as logging, both when shown on Home and when logged |
+| `servings` | REAL | No | Schema v7. `> 0`, default `1`. A food's servings, or the multiplier on a meal's item weights |
 | `created_at` | DATETIME | No | Set on insert; orders suggestions |
 
 ---
 
 ### `scheduled_meal_outcomes`
 
-What happened to a plan on one day. A plan with no row for a day is still a pending suggestion that day. Confirming a suggestion logs the meal through the normal meal-logging path (a snapshot entry with a breakdown, from the meal's current template) and writes a `logged` row; dismissing writes a `dismissed` row.
+What happened to a plan on one day. A plan with no row for a day is still a pending suggestion that day. Confirming a suggestion logs it through the normal path (a meal: a snapshot entry with a breakdown from the meal's current template, scaled by `servings`; a food: a food entry with `servings`), into the plan's slot, and writes a `logged` row; dismissing writes a `dismissed` row.
 
 | Column | Type | Nullable | Constraints / Notes |
 |---|---|---|---|
@@ -148,9 +151,9 @@ What happened to a plan on one day. A plan with no row for a day is still a pend
 | `status` | TEXT | No | `'logged'` or `'dismissed'` |
 | `entry_id` | TEXT | Yes | FK → `food_log_entries.id`, `ON DELETE SET NULL` (provenance, set when `logged`) |
 
-**Pending on date D:** the plan is due (one-off: `start_date = D`; repeating: `start_date <= D` and the weekday bit of D is set in `weekdays`) and has no outcome row for D. "Stop repeating" deletes the plan, which cascades its outcomes.
+**Pending on date D:** the plan is due (one-off: `start_date = D`; repeating: `start_date <= D` and the weekday bit of D is set in `weekdays`), has no outcome row for D, and its meal or food is not archived. Pending plans are not log entries, so they count toward no total, streak or reminder until confirmed. "Stop repeating" deletes the plan, which cascades its outcomes.
 
-**Migration:** `schemaVersion` 1 → 2 creates both tables and the index (`onUpgrade` in `app_database.dart`; covered by `test/data/migrations/schema_migration_test.dart`).
+**Migration:** `schemaVersion` 1 → 2 creates both tables and the index (`onUpgrade` in `app_database.dart`; covered by `test/data/migrations/schema_migration_test.dart`). 6 → 7 rebuilds `scheduled_meals` with drift's `TableMigration` (SQLite cannot drop NOT NULL in place), keeping ids so outcomes still point at their plans; old rows get a null `food_item_id` and `meal_slot` and `servings` 1 (`test/drift/app_database/migration_test.dart`).
 
 ---
 
@@ -195,6 +198,7 @@ food_items      ||--o{  food_log_entries     : "provenance of"
 food_log_entries||--o{  food_log_entry_items : "breakdown of"
 food_items      ||--o{  food_log_entry_items : "provenance of"
 meals           ||--o{  scheduled_meals      : "planned as"
+food_items      ||--o{  scheduled_meals      : "planned as"
 scheduled_meals ||--o{  scheduled_meal_outcomes : "resolved by"
 food_log_entries||--o{  scheduled_meal_outcomes : "provenance of"
 ```

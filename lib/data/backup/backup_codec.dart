@@ -190,10 +190,12 @@ class BackupCodec {
           'food_log_entry_items',
           FoodLogEntryItem.fromJson,
         ),
+        // Plans from before M17 have no servings (their meal_id is always
+        // set; food_item_id and meal_slot read as null).
         scheduledMeals: _rows(
           current,
           'scheduled_meals',
-          ScheduledMeal.fromJson,
+          (row) => ScheduledMeal.fromJson({'servings': 1.0, ...row}),
         ),
         scheduledMealOutcomes: _rows(
           current,

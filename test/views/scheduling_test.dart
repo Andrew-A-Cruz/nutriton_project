@@ -44,22 +44,24 @@ void main() {
   Future<List<FoodLogEntry>> entriesToday(WidgetTester tester) async =>
       (await tester.runAsync(() => db.logDao.findEntriesForDate(today)))!;
 
-  testWidgets('Home suggests a planned meal; Log confirms it', (tester) async {
+  testWidgets('Home suggests a planned meal; tapping it logs it', (
+    tester,
+  ) async {
     final id = await tester.runAsync(
       () => ScheduleRepository(db).scheduleOnce(mealId: mealId, date: today),
     );
     await tester.pumpWidget(testApp(db: db, prefs: prefs));
     await settle(tester);
 
-    expect(find.byKey(const Key('scheduled-suggestions')), findsOneWidget);
+    expect(find.byKey(Key('planned-tile-$id')), findsOneWidget);
     expect(find.text('Lunch bowl'), findsOneWidget);
     // Suggested, not logged.
     expect(await entriesToday(tester), isEmpty);
 
-    await tester.tap(find.byKey(Key('planned-confirm-$id')));
+    await tester.tap(find.byKey(Key('planned-tile-$id')));
     await settle(tester);
 
-    expect(find.byKey(const Key('scheduled-suggestions')), findsNothing);
+    expect(find.byKey(Key('planned-tile-$id')), findsNothing);
     final after = await entriesToday(tester);
     expect(after.single.name, 'Lunch bowl');
     expect(after.single.calories, 130);
@@ -67,22 +69,25 @@ void main() {
     await unmount(tester);
   });
 
-  testWidgets('Dismiss hides the suggestion without logging', (tester) async {
+  testWidgets('Swiping a suggestion hides it without logging', (tester) async {
     final id = await tester.runAsync(
       () => ScheduleRepository(db).scheduleOnce(mealId: mealId, date: today),
     );
     await tester.pumpWidget(testApp(db: db, prefs: prefs));
     await settle(tester);
 
-    await tester.tap(find.byKey(Key('planned-dismiss-$id')));
+    await tester.drag(
+      find.byKey(Key('planned-tile-$id')),
+      const Offset(-500, 0),
+    );
     await settle(tester);
 
-    expect(find.byKey(const Key('scheduled-suggestions')), findsNothing);
+    expect(find.byKey(Key('planned-tile-$id')), findsNothing);
     expect(await entriesToday(tester), isEmpty);
     await unmount(tester);
   });
 
-  testWidgets('dismissing a repeating plan offers skip or stop', (
+  testWidgets('long-pressing a repeating plan offers skip or stop', (
     tester,
   ) async {
     final id = await tester.runAsync(
@@ -95,13 +100,13 @@ void main() {
     await tester.pumpWidget(testApp(db: db, prefs: prefs));
     await settle(tester);
 
-    await tester.tap(find.byKey(Key('planned-dismiss-$id')));
+    await tester.longPress(find.byKey(Key('planned-tile-$id')));
     await settle(tester);
     expect(find.byKey(const Key('planned-skip-day')), findsOneWidget);
     await tester.tap(find.byKey(const Key('planned-stop-repeating')));
     await settle(tester);
 
-    expect(find.byKey(const Key('scheduled-suggestions')), findsNothing);
+    expect(find.byKey(Key('planned-tile-$id')), findsNothing);
     final plan = await tester.runAsync(
       () => db.scheduledMealDao.findSchedule(id!),
     );

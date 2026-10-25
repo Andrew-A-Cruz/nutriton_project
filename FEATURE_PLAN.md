@@ -30,7 +30,7 @@ Three ideas from the brainstorm are already built, so they are not milestones he
 | M14 | Streaks and reminders | Medium | M | No | `flutter_local_notifications`, `timezone` |
 | M15 | Body weight tracking | Medium | M | v5 (new table) | None |
 | M16 | Barcode scan and food lookup | High | L | v6 (barcode column) | `mobile_scanner`, `http` |
-| M17 | Planned meals (scheduling) | Medium | L | v7 (new table) | None |
+| M17 | Planned meals (scheduling) | Medium | L | v7 (extends `scheduled_meals`) | None |
 | M18 | Home screen widget | Low–Med | L | No | `home_widget` + a Swift WidgetKit target |
 | M19 | Apple Health | Low–Med | M | No | `health` |
 | M20 | Cloud sync | Low (one device) | XL | Sync metadata | `supabase_flutter` |
@@ -119,11 +119,11 @@ Each milestone ends with something runnable and its tests passing, as in v1. Run
 - [x] Tests: the mapper against saved JSON fixtures (complete, partial, kJ-only); the HTTP client behind an interface *Done:* JSON fixtures in `test/fixtures/off/` (complete, partial, kJ-only, no nutriments) with `off_fixtures_test.dart`. The HTTP client is injected, and `httpClientProvider` / `foodLookupRepositoryProvider` are the provider-level seams tests override. Widget tests in `barcode_lookup_flow_test.dart` cover local hit without network, archived food not a local hit, remote hit prefilled and saved with its barcode, not found, offline, no nutrition, and per-100 g notice. Backup: `barcode` rides on the food rows and is optional on read (format version stays 1); `backup_barcode_test.dart` covers the round trip and the pre-M16 fixture
 
 ### M17 — Planned meals (scheduling)
-- [ ] Table `scheduled_items`: `meal_id` or `food_item_id`, `meal_slot`, `weekdays` (bitmask), `servings`, `active`. Schema v7
-- [ ] Catalog: "Schedule…" on a meal or food (pick weekdays and a slot)
-- [ ] Home: scheduled items that haven't been logged yet appear as dimmed suggestion rows in their section. Tap to log, swipe to skip for that day. They never log automatically, per GAME_PLAN
-- [ ] Suggestions don't count toward totals until confirmed
-- [ ] Repository tests: matching by weekday, a confirmed or skipped item disappears, archived sources are hidden
+- [x] Table `scheduled_items`: `meal_id` or `food_item_id`, `meal_slot`, `weekdays` (bitmask), `servings`, `active`. Schema v7. *Done with a deviation:* scheduling already existed (schema v2: `scheduled_meals` and `scheduled_meal_outcomes`, with one-off dates and weekday masks), so no `scheduled_items` table was added. v7 rebuilds `scheduled_meals` (`TableMigration`): `meal_id` becomes nullable, and `food_item_id` (FK, cascade), `meal_slot` (nullable) and `servings` (`> 0`, default 1) are added, with a CHECK that exactly one of `meal_id` and `food_item_id` is set. No `active` flag: "Stop repeating" already deletes a plan, and a skipped day is an outcome row. Existing plans and outcomes survive with a null slot and 1 serving. A null slot means "by time of day" (the usual cutoffs), both for where the row shows and where it is logged
+- [x] Catalog: "Schedule…" on a meal or food (pick weekdays and a slot). *Done:* the Catalog meal action sheet and the Edit Food form (a "Schedule..." row, existing foods only) open `ScheduleMealView`, now taking a meal or a food. It has one day or repeat weekly, the date, weekdays, a meal slot (or time of day) and servings
+- [x] Home: scheduled items that haven't been logged yet appear as dimmed suggestion rows in their section. Tap to log, swipe to skip for that day. They never log automatically, per GAME_PLAN. *Done:* the separate "Planned" block is gone. `DayLogList` puts a dimmed `PlannedTile` at the end of its section (a plan with no slot goes by time of day). Tap logs it with the plan's servings into that section and writes a `logged` outcome; swipe left writes `dismissed` for that day only; long-press offers Skip or Stop repeating. A section with only planned items shows no calorie total, and the empty-day state shows only when nothing is logged or planned
+- [x] Suggestions don't count toward totals until confirmed. *Done:* suggestions are not log entries, so the macro summary, Summary, streak and reminders (which read `food_log_entries`) ignore them; tests assert it
+- [x] Repository tests: matching by weekday, a confirmed or skipped item disappears, archived sources are hidden. *Done:* also one-off dates, food plans logging with their servings and slot, meal servings scaling, the exactly-one-source rules, and the DAO CHECKs. Backup: the new columns ride on the plan rows, and `servings` defaults to 1 when missing so pre-M17 files import (format `version` stays 1); `backup_scheduling_test.dart` covers the round trip and the pre-M17 fixture
 
 ### M18 — Home screen widget
 - [ ] Check first: App Groups provisioning with your signing setup (see Open Questions)
@@ -252,7 +252,7 @@ Ideas that aren't milestones yet. They aren't ordered: when one is picked up, gi
 | 4 | M13 | `fiber`, `sugar`, `sodium` (nullable) on `food_items`, `food_log_entries`, `food_log_entry_items` |
 | 5 | M15 | New `body_weights` table |
 | 6 | M16 | `food_items.barcode` (nullable, indexed) |
-| 7 | M17 | New `scheduled_items` table |
+| 7 | M17 | `scheduled_meals` rebuilt: `meal_id` nullable, new nullable `food_item_id`, `meal_slot` (nullable) and `servings` (default 1), with a CHECK that exactly one source is set. The planned `scheduled_items` table was folded into the existing scheduling tables |
 
 Each step gets a drift migration test (`make-migrations`) and an update to `DATA_MODEL.md` and the backup format.
 

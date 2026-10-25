@@ -3063,11 +3063,25 @@ class $ScheduledMealsTable extends ScheduledMeals
   late final GeneratedColumn<String> mealId = GeneratedColumn<String>(
     'meal_id',
     aliasedName,
-    false,
+    true,
     type: DriftSqlType.string,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
       'REFERENCES meals (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _foodItemIdMeta = const VerificationMeta(
+    'foodItemId',
+  );
+  @override
+  late final GeneratedColumn<String> foodItemId = GeneratedColumn<String>(
+    'food_item_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES food_items (id) ON DELETE CASCADE',
     ),
   );
   static const VerificationMeta _startDateMeta = const VerificationMeta(
@@ -3094,6 +3108,31 @@ class $ScheduledMealsTable extends ScheduledMeals
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _mealSlotMeta = const VerificationMeta(
+    'mealSlot',
+  );
+  @override
+  late final GeneratedColumn<String> mealSlot = GeneratedColumn<String>(
+    'meal_slot',
+    aliasedName,
+    true,
+    check: () => mealSlot.isIn(['breakfast', 'lunch', 'dinner', 'snack']),
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _servingsMeta = const VerificationMeta(
+    'servings',
+  );
+  @override
+  late final GeneratedColumn<double> servings = GeneratedColumn<double>(
+    'servings',
+    aliasedName,
+    false,
+    check: () => ComparableExpr(servings).isBiggerThanValue(0),
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -3109,8 +3148,11 @@ class $ScheduledMealsTable extends ScheduledMeals
   List<GeneratedColumn> get $columns => [
     id,
     mealId,
+    foodItemId,
     startDate,
     weekdays,
+    mealSlot,
+    servings,
     createdAt,
   ];
   @override
@@ -3135,8 +3177,15 @@ class $ScheduledMealsTable extends ScheduledMeals
         _mealIdMeta,
         mealId.isAcceptableOrUnknown(data['meal_id']!, _mealIdMeta),
       );
-    } else if (isInserting) {
-      context.missing(_mealIdMeta);
+    }
+    if (data.containsKey('food_item_id')) {
+      context.handle(
+        _foodItemIdMeta,
+        foodItemId.isAcceptableOrUnknown(
+          data['food_item_id']!,
+          _foodItemIdMeta,
+        ),
+      );
     }
     if (data.containsKey('start_date')) {
       context.handle(
@@ -3150,6 +3199,18 @@ class $ScheduledMealsTable extends ScheduledMeals
       context.handle(
         _weekdaysMeta,
         weekdays.isAcceptableOrUnknown(data['weekdays']!, _weekdaysMeta),
+      );
+    }
+    if (data.containsKey('meal_slot')) {
+      context.handle(
+        _mealSlotMeta,
+        mealSlot.isAcceptableOrUnknown(data['meal_slot']!, _mealSlotMeta),
+      );
+    }
+    if (data.containsKey('servings')) {
+      context.handle(
+        _servingsMeta,
+        servings.isAcceptableOrUnknown(data['servings']!, _servingsMeta),
       );
     }
     if (data.containsKey('created_at')) {
@@ -3176,7 +3237,11 @@ class $ScheduledMealsTable extends ScheduledMeals
       mealId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}meal_id'],
-      )!,
+      ),
+      foodItemId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}food_item_id'],
+      ),
       startDate: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}start_date'],
@@ -3185,6 +3250,14 @@ class $ScheduledMealsTable extends ScheduledMeals
         DriftSqlType.int,
         data['${effectivePrefix}weekdays'],
       ),
+      mealSlot: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}meal_slot'],
+      ),
+      servings: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}servings'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -3200,7 +3273,8 @@ class $ScheduledMealsTable extends ScheduledMeals
 
 class ScheduledMeal extends DataClass implements Insertable<ScheduledMeal> {
   final String id;
-  final String mealId;
+  final String? mealId;
+  final String? foodItemId;
 
   /// 'yyyy-MM-dd'. The day of a one-off, or the first day of a repeating plan.
   final String startDate;
@@ -3208,23 +3282,42 @@ class ScheduledMeal extends DataClass implements Insertable<ScheduledMeal> {
   /// Bitmask of weekdays, bit 0 = Monday ... bit 6 = Sunday (1..127), or null
   /// for a one-off.
   final int? weekdays;
+
+  /// 'breakfast' | 'lunch' | 'dinner' | 'snack'. Null means the slot is picked
+  /// from the time of day when the suggestion is shown or confirmed.
+  final String? mealSlot;
+
+  /// Servings of the food, or the multiplier on the meal's item weights.
+  final double servings;
   final DateTime createdAt;
   const ScheduledMeal({
     required this.id,
-    required this.mealId,
+    this.mealId,
+    this.foodItemId,
     required this.startDate,
     this.weekdays,
+    this.mealSlot,
+    required this.servings,
     required this.createdAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
-    map['meal_id'] = Variable<String>(mealId);
+    if (!nullToAbsent || mealId != null) {
+      map['meal_id'] = Variable<String>(mealId);
+    }
+    if (!nullToAbsent || foodItemId != null) {
+      map['food_item_id'] = Variable<String>(foodItemId);
+    }
     map['start_date'] = Variable<String>(startDate);
     if (!nullToAbsent || weekdays != null) {
       map['weekdays'] = Variable<int>(weekdays);
     }
+    if (!nullToAbsent || mealSlot != null) {
+      map['meal_slot'] = Variable<String>(mealSlot);
+    }
+    map['servings'] = Variable<double>(servings);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -3232,11 +3325,20 @@ class ScheduledMeal extends DataClass implements Insertable<ScheduledMeal> {
   ScheduledMealsCompanion toCompanion(bool nullToAbsent) {
     return ScheduledMealsCompanion(
       id: Value(id),
-      mealId: Value(mealId),
+      mealId: mealId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(mealId),
+      foodItemId: foodItemId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(foodItemId),
       startDate: Value(startDate),
       weekdays: weekdays == null && nullToAbsent
           ? const Value.absent()
           : Value(weekdays),
+      mealSlot: mealSlot == null && nullToAbsent
+          ? const Value.absent()
+          : Value(mealSlot),
+      servings: Value(servings),
       createdAt: Value(createdAt),
     );
   }
@@ -3248,9 +3350,12 @@ class ScheduledMeal extends DataClass implements Insertable<ScheduledMeal> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return ScheduledMeal(
       id: serializer.fromJson<String>(json['id']),
-      mealId: serializer.fromJson<String>(json['mealId']),
+      mealId: serializer.fromJson<String?>(json['mealId']),
+      foodItemId: serializer.fromJson<String?>(json['foodItemId']),
       startDate: serializer.fromJson<String>(json['startDate']),
       weekdays: serializer.fromJson<int?>(json['weekdays']),
+      mealSlot: serializer.fromJson<String?>(json['mealSlot']),
+      servings: serializer.fromJson<double>(json['servings']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -3259,32 +3364,46 @@ class ScheduledMeal extends DataClass implements Insertable<ScheduledMeal> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
-      'mealId': serializer.toJson<String>(mealId),
+      'mealId': serializer.toJson<String?>(mealId),
+      'foodItemId': serializer.toJson<String?>(foodItemId),
       'startDate': serializer.toJson<String>(startDate),
       'weekdays': serializer.toJson<int?>(weekdays),
+      'mealSlot': serializer.toJson<String?>(mealSlot),
+      'servings': serializer.toJson<double>(servings),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
 
   ScheduledMeal copyWith({
     String? id,
-    String? mealId,
+    Value<String?> mealId = const Value.absent(),
+    Value<String?> foodItemId = const Value.absent(),
     String? startDate,
     Value<int?> weekdays = const Value.absent(),
+    Value<String?> mealSlot = const Value.absent(),
+    double? servings,
     DateTime? createdAt,
   }) => ScheduledMeal(
     id: id ?? this.id,
-    mealId: mealId ?? this.mealId,
+    mealId: mealId.present ? mealId.value : this.mealId,
+    foodItemId: foodItemId.present ? foodItemId.value : this.foodItemId,
     startDate: startDate ?? this.startDate,
     weekdays: weekdays.present ? weekdays.value : this.weekdays,
+    mealSlot: mealSlot.present ? mealSlot.value : this.mealSlot,
+    servings: servings ?? this.servings,
     createdAt: createdAt ?? this.createdAt,
   );
   ScheduledMeal copyWithCompanion(ScheduledMealsCompanion data) {
     return ScheduledMeal(
       id: data.id.present ? data.id.value : this.id,
       mealId: data.mealId.present ? data.mealId.value : this.mealId,
+      foodItemId: data.foodItemId.present
+          ? data.foodItemId.value
+          : this.foodItemId,
       startDate: data.startDate.present ? data.startDate.value : this.startDate,
       weekdays: data.weekdays.present ? data.weekdays.value : this.weekdays,
+      mealSlot: data.mealSlot.present ? data.mealSlot.value : this.mealSlot,
+      servings: data.servings.present ? data.servings.value : this.servings,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -3294,65 +3413,94 @@ class ScheduledMeal extends DataClass implements Insertable<ScheduledMeal> {
     return (StringBuffer('ScheduledMeal(')
           ..write('id: $id, ')
           ..write('mealId: $mealId, ')
+          ..write('foodItemId: $foodItemId, ')
           ..write('startDate: $startDate, ')
           ..write('weekdays: $weekdays, ')
+          ..write('mealSlot: $mealSlot, ')
+          ..write('servings: $servings, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, mealId, startDate, weekdays, createdAt);
+  int get hashCode => Object.hash(
+    id,
+    mealId,
+    foodItemId,
+    startDate,
+    weekdays,
+    mealSlot,
+    servings,
+    createdAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is ScheduledMeal &&
           other.id == this.id &&
           other.mealId == this.mealId &&
+          other.foodItemId == this.foodItemId &&
           other.startDate == this.startDate &&
           other.weekdays == this.weekdays &&
+          other.mealSlot == this.mealSlot &&
+          other.servings == this.servings &&
           other.createdAt == this.createdAt);
 }
 
 class ScheduledMealsCompanion extends UpdateCompanion<ScheduledMeal> {
   final Value<String> id;
-  final Value<String> mealId;
+  final Value<String?> mealId;
+  final Value<String?> foodItemId;
   final Value<String> startDate;
   final Value<int?> weekdays;
+  final Value<String?> mealSlot;
+  final Value<double> servings;
   final Value<DateTime> createdAt;
   final Value<int> rowid;
   const ScheduledMealsCompanion({
     this.id = const Value.absent(),
     this.mealId = const Value.absent(),
+    this.foodItemId = const Value.absent(),
     this.startDate = const Value.absent(),
     this.weekdays = const Value.absent(),
+    this.mealSlot = const Value.absent(),
+    this.servings = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ScheduledMealsCompanion.insert({
     required String id,
-    required String mealId,
+    this.mealId = const Value.absent(),
+    this.foodItemId = const Value.absent(),
     required String startDate,
     this.weekdays = const Value.absent(),
+    this.mealSlot = const Value.absent(),
+    this.servings = const Value.absent(),
     required DateTime createdAt,
     this.rowid = const Value.absent(),
   }) : id = Value(id),
-       mealId = Value(mealId),
        startDate = Value(startDate),
        createdAt = Value(createdAt);
   static Insertable<ScheduledMeal> custom({
     Expression<String>? id,
     Expression<String>? mealId,
+    Expression<String>? foodItemId,
     Expression<String>? startDate,
     Expression<int>? weekdays,
+    Expression<String>? mealSlot,
+    Expression<double>? servings,
     Expression<DateTime>? createdAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (mealId != null) 'meal_id': mealId,
+      if (foodItemId != null) 'food_item_id': foodItemId,
       if (startDate != null) 'start_date': startDate,
       if (weekdays != null) 'weekdays': weekdays,
+      if (mealSlot != null) 'meal_slot': mealSlot,
+      if (servings != null) 'servings': servings,
       if (createdAt != null) 'created_at': createdAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -3360,17 +3508,23 @@ class ScheduledMealsCompanion extends UpdateCompanion<ScheduledMeal> {
 
   ScheduledMealsCompanion copyWith({
     Value<String>? id,
-    Value<String>? mealId,
+    Value<String?>? mealId,
+    Value<String?>? foodItemId,
     Value<String>? startDate,
     Value<int?>? weekdays,
+    Value<String?>? mealSlot,
+    Value<double>? servings,
     Value<DateTime>? createdAt,
     Value<int>? rowid,
   }) {
     return ScheduledMealsCompanion(
       id: id ?? this.id,
       mealId: mealId ?? this.mealId,
+      foodItemId: foodItemId ?? this.foodItemId,
       startDate: startDate ?? this.startDate,
       weekdays: weekdays ?? this.weekdays,
+      mealSlot: mealSlot ?? this.mealSlot,
+      servings: servings ?? this.servings,
       createdAt: createdAt ?? this.createdAt,
       rowid: rowid ?? this.rowid,
     );
@@ -3385,11 +3539,20 @@ class ScheduledMealsCompanion extends UpdateCompanion<ScheduledMeal> {
     if (mealId.present) {
       map['meal_id'] = Variable<String>(mealId.value);
     }
+    if (foodItemId.present) {
+      map['food_item_id'] = Variable<String>(foodItemId.value);
+    }
     if (startDate.present) {
       map['start_date'] = Variable<String>(startDate.value);
     }
     if (weekdays.present) {
       map['weekdays'] = Variable<int>(weekdays.value);
+    }
+    if (mealSlot.present) {
+      map['meal_slot'] = Variable<String>(mealSlot.value);
+    }
+    if (servings.present) {
+      map['servings'] = Variable<double>(servings.value);
     }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
@@ -3405,8 +3568,11 @@ class ScheduledMealsCompanion extends UpdateCompanion<ScheduledMeal> {
     return (StringBuffer('ScheduledMealsCompanion(')
           ..write('id: $id, ')
           ..write('mealId: $mealId, ')
+          ..write('foodItemId: $foodItemId, ')
           ..write('startDate: $startDate, ')
           ..write('weekdays: $weekdays, ')
+          ..write('mealSlot: $mealSlot, ')
+          ..write('servings: $servings, ')
           ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -4164,6 +4330,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
+        'food_items',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('scheduled_meals', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
         'scheduled_meals',
         limitUpdateKind: UpdateKind.delete,
       ),
@@ -4279,6 +4452,27 @@ final class $$FoodItemsTableReferences
     final cache = $_typedResult.readTableOrNull(
       _foodLogEntryItemsRefsTable($_db),
     );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$ScheduledMealsTable, List<ScheduledMeal>>
+  _scheduledMealsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.scheduledMeals,
+    aliasName: $_aliasNameGenerator(
+      db.foodItems.id,
+      db.scheduledMeals.foodItemId,
+    ),
+  );
+
+  $$ScheduledMealsTableProcessedTableManager get scheduledMealsRefs {
+    final manager = $$ScheduledMealsTableTableManager(
+      $_db,
+      $_db.scheduledMeals,
+    ).filter((f) => f.foodItemId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_scheduledMealsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -4425,6 +4619,31 @@ class $$FoodItemsTableFilterComposer
           }) => $$FoodLogEntryItemsTableFilterComposer(
             $db: $db,
             $table: $db.foodLogEntryItems,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> scheduledMealsRefs(
+    Expression<bool> Function($$ScheduledMealsTableFilterComposer f) f,
+  ) {
+    final $$ScheduledMealsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.scheduledMeals,
+      getReferencedColumn: (t) => t.foodItemId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ScheduledMealsTableFilterComposer(
+            $db: $db,
+            $table: $db.scheduledMeals,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -4637,6 +4856,31 @@ class $$FoodItemsTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> scheduledMealsRefs<T extends Object>(
+    Expression<T> Function($$ScheduledMealsTableAnnotationComposer a) f,
+  ) {
+    final $$ScheduledMealsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.scheduledMeals,
+      getReferencedColumn: (t) => t.foodItemId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ScheduledMealsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.scheduledMeals,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$FoodItemsTableTableManager
@@ -4656,6 +4900,7 @@ class $$FoodItemsTableTableManager
             bool mealFoodItemsRefs,
             bool foodLogEntriesRefs,
             bool foodLogEntryItemsRefs,
+            bool scheduledMealsRefs,
           })
         > {
   $$FoodItemsTableTableManager(_$AppDatabase db, $FoodItemsTable table)
@@ -4746,6 +4991,7 @@ class $$FoodItemsTableTableManager
                 mealFoodItemsRefs = false,
                 foodLogEntriesRefs = false,
                 foodLogEntryItemsRefs = false,
+                scheduledMealsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -4753,6 +4999,7 @@ class $$FoodItemsTableTableManager
                     if (mealFoodItemsRefs) db.mealFoodItems,
                     if (foodLogEntriesRefs) db.foodLogEntries,
                     if (foodLogEntryItemsRefs) db.foodLogEntryItems,
+                    if (scheduledMealsRefs) db.scheduledMeals,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -4820,6 +5067,27 @@ class $$FoodItemsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (scheduledMealsRefs)
+                        await $_getPrefetchedData<
+                          FoodItem,
+                          $FoodItemsTable,
+                          ScheduledMeal
+                        >(
+                          currentTable: table,
+                          referencedTable: $$FoodItemsTableReferences
+                              ._scheduledMealsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$FoodItemsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).scheduledMealsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.foodItemId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -4844,6 +5112,7 @@ typedef $$FoodItemsTableProcessedTableManager =
         bool mealFoodItemsRefs,
         bool foodLogEntriesRefs,
         bool foodLogEntryItemsRefs,
+        bool scheduledMealsRefs,
       })
     >;
 typedef $$MealsTableCreateCompanionBuilder =
@@ -7119,18 +7388,24 @@ typedef $$FoodLogEntryItemsTableProcessedTableManager =
 typedef $$ScheduledMealsTableCreateCompanionBuilder =
     ScheduledMealsCompanion Function({
       required String id,
-      required String mealId,
+      Value<String?> mealId,
+      Value<String?> foodItemId,
       required String startDate,
       Value<int?> weekdays,
+      Value<String?> mealSlot,
+      Value<double> servings,
       required DateTime createdAt,
       Value<int> rowid,
     });
 typedef $$ScheduledMealsTableUpdateCompanionBuilder =
     ScheduledMealsCompanion Function({
       Value<String> id,
-      Value<String> mealId,
+      Value<String?> mealId,
+      Value<String?> foodItemId,
       Value<String> startDate,
       Value<int?> weekdays,
+      Value<String?> mealSlot,
+      Value<double> servings,
       Value<DateTime> createdAt,
       Value<int> rowid,
     });
@@ -7147,14 +7422,33 @@ final class $$ScheduledMealsTableReferences
     $_aliasNameGenerator(db.scheduledMeals.mealId, db.meals.id),
   );
 
-  $$MealsTableProcessedTableManager get mealId {
-    final $_column = $_itemColumn<String>('meal_id')!;
-
+  $$MealsTableProcessedTableManager? get mealId {
+    final $_column = $_itemColumn<String>('meal_id');
+    if ($_column == null) return null;
     final manager = $$MealsTableTableManager(
       $_db,
       $_db.meals,
     ).filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_mealIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $FoodItemsTable _foodItemIdTable(_$AppDatabase db) =>
+      db.foodItems.createAlias(
+        $_aliasNameGenerator(db.scheduledMeals.foodItemId, db.foodItems.id),
+      );
+
+  $$FoodItemsTableProcessedTableManager? get foodItemId {
+    final $_column = $_itemColumn<String>('food_item_id');
+    if ($_column == null) return null;
+    final manager = $$FoodItemsTableTableManager(
+      $_db,
+      $_db.foodItems,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_foodItemIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
@@ -7217,6 +7511,16 @@ class $$ScheduledMealsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get mealSlot => $composableBuilder(
+    column: $table.mealSlot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get servings => $composableBuilder(
+    column: $table.servings,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnFilters(column),
@@ -7236,6 +7540,29 @@ class $$ScheduledMealsTableFilterComposer
           }) => $$MealsTableFilterComposer(
             $db: $db,
             $table: $db.meals,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$FoodItemsTableFilterComposer get foodItemId {
+    final $$FoodItemsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.foodItemId,
+      referencedTable: $db.foodItems,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FoodItemsTableFilterComposer(
+            $db: $db,
+            $table: $db.foodItems,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -7296,6 +7623,16 @@ class $$ScheduledMealsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get mealSlot => $composableBuilder(
+    column: $table.mealSlot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get servings => $composableBuilder(
+    column: $table.servings,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -7315,6 +7652,29 @@ class $$ScheduledMealsTableOrderingComposer
           }) => $$MealsTableOrderingComposer(
             $db: $db,
             $table: $db.meals,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$FoodItemsTableOrderingComposer get foodItemId {
+    final $$FoodItemsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.foodItemId,
+      referencedTable: $db.foodItems,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FoodItemsTableOrderingComposer(
+            $db: $db,
+            $table: $db.foodItems,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -7343,6 +7703,12 @@ class $$ScheduledMealsTableAnnotationComposer
   GeneratedColumn<int> get weekdays =>
       $composableBuilder(column: $table.weekdays, builder: (column) => column);
 
+  GeneratedColumn<String> get mealSlot =>
+      $composableBuilder(column: $table.mealSlot, builder: (column) => column);
+
+  GeneratedColumn<double> get servings =>
+      $composableBuilder(column: $table.servings, builder: (column) => column);
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -7360,6 +7726,29 @@ class $$ScheduledMealsTableAnnotationComposer
           }) => $$MealsTableAnnotationComposer(
             $db: $db,
             $table: $db.meals,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$FoodItemsTableAnnotationComposer get foodItemId {
+    final $$FoodItemsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.foodItemId,
+      referencedTable: $db.foodItems,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FoodItemsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.foodItems,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -7409,7 +7798,11 @@ class $$ScheduledMealsTableTableManager
           $$ScheduledMealsTableUpdateCompanionBuilder,
           (ScheduledMeal, $$ScheduledMealsTableReferences),
           ScheduledMeal,
-          PrefetchHooks Function({bool mealId, bool scheduledMealOutcomesRefs})
+          PrefetchHooks Function({
+            bool mealId,
+            bool foodItemId,
+            bool scheduledMealOutcomesRefs,
+          })
         > {
   $$ScheduledMealsTableTableManager(
     _$AppDatabase db,
@@ -7427,32 +7820,44 @@ class $$ScheduledMealsTableTableManager
           updateCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
-                Value<String> mealId = const Value.absent(),
+                Value<String?> mealId = const Value.absent(),
+                Value<String?> foodItemId = const Value.absent(),
                 Value<String> startDate = const Value.absent(),
                 Value<int?> weekdays = const Value.absent(),
+                Value<String?> mealSlot = const Value.absent(),
+                Value<double> servings = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ScheduledMealsCompanion(
                 id: id,
                 mealId: mealId,
+                foodItemId: foodItemId,
                 startDate: startDate,
                 weekdays: weekdays,
+                mealSlot: mealSlot,
+                servings: servings,
                 createdAt: createdAt,
                 rowid: rowid,
               ),
           createCompanionCallback:
               ({
                 required String id,
-                required String mealId,
+                Value<String?> mealId = const Value.absent(),
+                Value<String?> foodItemId = const Value.absent(),
                 required String startDate,
                 Value<int?> weekdays = const Value.absent(),
+                Value<String?> mealSlot = const Value.absent(),
+                Value<double> servings = const Value.absent(),
                 required DateTime createdAt,
                 Value<int> rowid = const Value.absent(),
               }) => ScheduledMealsCompanion.insert(
                 id: id,
                 mealId: mealId,
+                foodItemId: foodItemId,
                 startDate: startDate,
                 weekdays: weekdays,
+                mealSlot: mealSlot,
+                servings: servings,
                 createdAt: createdAt,
                 rowid: rowid,
               ),
@@ -7465,7 +7870,11 @@ class $$ScheduledMealsTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({mealId = false, scheduledMealOutcomesRefs = false}) {
+              ({
+                mealId = false,
+                foodItemId = false,
+                scheduledMealOutcomesRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
@@ -7498,6 +7907,21 @@ class $$ScheduledMealsTableTableManager
                                     referencedColumn:
                                         $$ScheduledMealsTableReferences
                                             ._mealIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (foodItemId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.foodItemId,
+                                    referencedTable:
+                                        $$ScheduledMealsTableReferences
+                                            ._foodItemIdTable(db),
+                                    referencedColumn:
+                                        $$ScheduledMealsTableReferences
+                                            ._foodItemIdTable(db)
                                             .id,
                                   )
                                   as T;
@@ -7548,7 +7972,11 @@ typedef $$ScheduledMealsTableProcessedTableManager =
       $$ScheduledMealsTableUpdateCompanionBuilder,
       (ScheduledMeal, $$ScheduledMealsTableReferences),
       ScheduledMeal,
-      PrefetchHooks Function({bool mealId, bool scheduledMealOutcomesRefs})
+      PrefetchHooks Function({
+        bool mealId,
+        bool foodItemId,
+        bool scheduledMealOutcomesRefs,
+      })
     >;
 typedef $$ScheduledMealOutcomesTableCreateCompanionBuilder =
     ScheduledMealOutcomesCompanion Function({
