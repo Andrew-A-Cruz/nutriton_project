@@ -2,6 +2,7 @@ import 'package:drift/native.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nutriton_project/data/database/app_database.dart';
+import 'package:nutriton_project/views/settings/settings_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../support/test_app.dart';
@@ -41,6 +42,40 @@ void main() {
     expect(goal.controller!.text, '2000');
     await unmount(tester);
   });
+
+  // The nav bar's transition draws a copy of Home's buttons. When they had
+  // GlobalKeys, the copy took them and they were gone after going back.
+  // pumpAndSettle, not settle: settle lets Home rebuild, which hid the bug.
+  for (final midPush in [false, true]) {
+    testWidgets('the gear and + are still there after backing out of settings'
+        '${midPush ? ' mid push' : ''}', (tester) async {
+      await tester.pumpWidget(testApp(db: db, prefs: prefs));
+      await settle(tester);
+
+      await tester.tap(find.byKey(const Key('settings-button')));
+      if (midPush) {
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 150));
+        // Taps are ignored while a route animates, so pop directly.
+        Navigator.of(tester.element(find.byType(SettingsView))).pop();
+      } else {
+        await tester.pumpAndSettle();
+        await tester.tap(find.byType(CupertinoNavigationBarBackButton));
+      }
+      await tester.pumpAndSettle();
+
+      expect(find.text('Food Log'), findsOneWidget);
+      expect(
+        find.byKey(const Key('settings-button')).hitTestable(),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('add-food-button')).hitTestable(),
+        findsOneWidget,
+      );
+      await unmount(tester);
+    });
+  }
 
   testWidgets('saving changes the goal, updates Home and returns to it', (
     tester,

@@ -48,8 +48,8 @@ class HomeView extends ConsumerWidget {
               onPressed: () => showCopyDaySheet(context, toDate: date),
               child: const Icon(CupertinoIcons.doc_on_doc),
             ),
-            KeyedSubtree(
-              key: TourTargets.settings,
+            TourAnchor(
+              target: TourTargets.settings,
               child: CupertinoButton(
                 key: const Key('settings-button'),
                 padding: EdgeInsets.zero,
@@ -61,8 +61,8 @@ class HomeView extends ConsumerWidget {
                 child: const Icon(CupertinoIcons.settings),
               ),
             ),
-            KeyedSubtree(
-              key: TourTargets.addFood,
+            TourAnchor(
+              target: TourTargets.addFood,
               child: CupertinoButton(
                 key: const Key('add-food-button'),
                 padding: EdgeInsets.zero,
@@ -85,14 +85,14 @@ class HomeView extends ConsumerWidget {
         child: CustomScrollView(
           slivers: [
             SliverToBoxAdapter(
-              child: KeyedSubtree(
-                key: TourTargets.date,
+              child: TourAnchor(
+                target: TourTargets.date,
                 child: DateHeader(date: date),
               ),
             ),
             SliverToBoxAdapter(
-              child: KeyedSubtree(
-                key: TourTargets.totals,
+              child: TourAnchor(
+                target: TourTargets.totals,
                 child: MacroSummary(entries: entries, settings: settings),
               ),
             ),
