@@ -83,6 +83,7 @@ class BackupData {
     this.scheduledMeals = const [],
     this.scheduledMealOutcomes = const [],
     required this.settings,
+    this.exportedAt,
   });
 
   final List<FoodItem> foodItems;
@@ -93,6 +94,10 @@ class BackupData {
   final List<ScheduledMeal> scheduledMeals;
   final List<ScheduledMealOutcome> scheduledMealOutcomes;
   final UserSettings settings;
+
+  /// When the file was written. Null for data not read from a file, or when the
+  /// file's timestamp is missing or unreadable.
+  final DateTime? exportedAt;
 }
 
 /// Pure-Dart JSON (de)serializer for [BackupData]. No Flutter, no database
@@ -190,6 +195,7 @@ class BackupCodec {
           ScheduledMealOutcome.fromJson,
         ),
         settings: _decodeSettings(current['preferences']),
+        exportedAt: _decodeExportedAt(current['exportedAt']),
       );
     } on BackupException {
       rethrow;
@@ -198,6 +204,9 @@ class BackupCodec {
       throw BackupException('The backup is damaged or has unexpected data.');
     }
   }
+
+  DateTime? _decodeExportedAt(Object? raw) =>
+      raw is String ? DateTime.tryParse(raw)?.toLocal() : null;
 
   List<T> _rows<T>(
     Map<String, dynamic> root,

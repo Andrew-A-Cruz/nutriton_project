@@ -2,8 +2,10 @@ import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/date_key.dart';
+import '../../core/meal_slot.dart';
 import '../../core/nutrition_math.dart';
 import '../database/app_database.dart';
+import '../database/daos/log_dao.dart' show RecentSource;
 import 'catalog_repository.dart';
 
 const _uuid = Uuid();
@@ -39,14 +41,38 @@ class LogRepository {
   Stream<List<FoodLogEntryItem>> watchEntryItems(String entryId) =>
       _db.logDao.watchEntryItems(entryId);
 
-  /// Active catalog foods logged before, most recent first.
-  Stream<List<FoodItem>> watchRecentFoods({int limit = 8}) =>
-      _db.logDao.watchRecentFoods(limit: limit);
+  /// Catalog foods and meals logged before, most recent first.
+  Stream<List<RecentSource>> watchRecentSources({int limit = 8}) =>
+      _db.logDao.watchRecentSources(limit: limit);
+
+  /// Catalog foods and meals ranked by how often they were logged on or after
+  /// [sinceDate] ('yyyy-MM-dd').
+  Stream<List<RecentSource>> watchFrequentSources({
+    required String sinceDate,
+    int limit = 8,
+  }) => _db.logDao.watchFrequentSources(sinceDate: sinceDate, limit: limit);
+
+  /// Servings of the latest entry for [foodItemId], or null if never logged.
+  Future<double?> lastServingsFor(String foodItemId) =>
+      _db.logDao.findLastServings(foodItemId);
+
+  /// Copies one entry onto [toDate] ('yyyy-MM-dd') as a new entry, with its
+  /// stored snapshot and meal breakdown (not recomputed from the catalog, so
+  /// it is exactly what was eaten before). Returns the new entry's id.
+  Future<String> duplicateEntry(String entryId, String toDate) async {
+    dateFromKey(toDate); // throws FormatException for a malformed key
+    return _db.transaction(() async {
+      final entry = await _db.logDao.findEntry(entryId);
+      if (entry == null) throw StateError('No log entry $entryId');
+      final items = await _db.logDao.findEntryItems(entryId);
+      return _copyEntry(entry, items, toDate, DateTime.now());
+    });
+  }
 
   /// Copies every entry of [fromDate] onto [toDate] ('yyyy-MM-dd') as new
-  /// entries, with their stored snapshots and meal breakdowns (not recomputed
-  /// from the catalog). Existing entries on [toDate] are kept. Returns how
-  /// many entries were copied.
+  /// entries, in their original order, with their stored snapshots and meal
+  /// breakdowns (not recomputed from the catalog). Existing entries on
+  /// [toDate] are kept. Returns how many entries were copied.
   Future<int> copyDay({required String fromDate, required String toDate}) {
     if (fromDate == toDate) {
       throw ArgumentError('cannot copy a day onto itself');
@@ -59,42 +85,61 @@ class LogRepository {
       ]);
       final now = DateTime.now();
       for (final e in entries) {
-        final newId = _uuid.v4();
-        await _db.logDao.insertEntry(
-          FoodLogEntriesCompanion.insert(
-            id: newId,
-            logDate: toDate,
-            createdAt: now,
-            entryType: e.entryType,
-            name: e.name,
-            calories: e.calories,
-            protein: e.protein,
-            carbs: e.carbs,
-            fat: e.fat,
-            foodItemId: Value(e.foodItemId),
-            mealId: Value(e.mealId),
-            servings: Value(e.servings),
-          ),
+        await _copyEntry(
+          e,
+          [
+            for (final i in items)
+              if (i.entryId == e.id) i,
+          ],
+          toDate,
+          now,
         );
-        final breakdown = [
-          for (final i in items)
-            if (i.entryId == e.id)
-              FoodLogEntryItemsCompanion.insert(
-                id: _uuid.v4(),
-                entryId: newId,
-                foodItemId: Value(i.foodItemId),
-                name: i.name,
-                weightG: i.weightG,
-                calories: i.calories,
-                protein: i.protein,
-                carbs: i.carbs,
-                fat: i.fat,
-              ),
-        ];
-        if (breakdown.isNotEmpty) await _db.logDao.insertEntryItems(breakdown);
       }
       return entries.length;
     });
+  }
+
+  Future<String> _copyEntry(
+    FoodLogEntry e,
+    List<FoodLogEntryItem> items,
+    String toDate,
+    DateTime createdAt,
+  ) async {
+    final newId = _uuid.v4();
+    await _db.logDao.insertEntry(
+      FoodLogEntriesCompanion.insert(
+        id: newId,
+        logDate: toDate,
+        createdAt: createdAt,
+        entryType: e.entryType,
+        name: e.name,
+        calories: e.calories,
+        protein: e.protein,
+        carbs: e.carbs,
+        fat: e.fat,
+        foodItemId: Value(e.foodItemId),
+        mealId: Value(e.mealId),
+        servings: Value(e.servings),
+        mealSlot: Value(e.mealSlot),
+      ),
+    );
+    if (items.isNotEmpty) {
+      await _db.logDao.insertEntryItems([
+        for (final i in items)
+          FoodLogEntryItemsCompanion.insert(
+            id: _uuid.v4(),
+            entryId: newId,
+            foodItemId: Value(i.foodItemId),
+            name: i.name,
+            weightG: i.weightG,
+            calories: i.calories,
+            protein: i.protein,
+            carbs: i.carbs,
+            fat: i.fat,
+          ),
+      ]);
+    }
+    return newId;
   }
 
   /// Logs [servings] of a catalog food for [logDate] ('yyyy-MM-dd').
@@ -102,6 +147,7 @@ class LogRepository {
     required String logDate,
     required FoodItem food,
     required double servings,
+    MealSlot? mealSlot,
   }) async {
     _checkServings(servings);
     final id = _uuid.v4();
@@ -119,6 +165,7 @@ class LogRepository {
         fat: totals.fat,
         foodItemId: Value(food.id),
         servings: Value(servings),
+        mealSlot: Value(mealSlot?.name),
       ),
     );
     return id;
@@ -132,6 +179,7 @@ class LogRepository {
     required Meal meal,
     required List<MealItemInput> items,
     bool updateTemplate = false,
+    MealSlot? mealSlot,
   }) async {
     if (items.isEmpty) {
       throw ArgumentError('a logged meal needs at least one item');
@@ -181,6 +229,7 @@ class LogRepository {
           carbs: total.carbs,
           fat: total.fat,
           mealId: Value(meal.id),
+          mealSlot: Value(mealSlot?.name),
         ),
       );
       await _db.logDao.insertEntryItems(snapshots);
@@ -200,6 +249,7 @@ class LogRepository {
     required String logDate,
     required String name,
     required Macros macros,
+    MealSlot? mealSlot,
   }) async {
     if (name.trim().isEmpty) {
       throw ArgumentError.value(name, 'name', 'must not be empty');
@@ -217,6 +267,7 @@ class LogRepository {
         protein: macros.protein,
         carbs: macros.carbs,
         fat: macros.fat,
+        mealSlot: Value(mealSlot?.name),
       ),
     );
     return id;
@@ -280,6 +331,15 @@ class LogRepository {
         ),
       );
     });
+  }
+
+  /// Sets the meal slot of an entry of any type.
+  Future<void> updateMealSlot(String entryId, MealSlot slot) async {
+    final changed = await _db.logDao.updateEntry(
+      entryId,
+      FoodLogEntriesCompanion(mealSlot: Value(slot.name)),
+    );
+    if (changed == 0) throw StateError('No log entry $entryId');
   }
 
   /// Moves an entry of any type to [logDate] ('yyyy-MM-dd').

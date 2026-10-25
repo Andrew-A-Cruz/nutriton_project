@@ -57,6 +57,7 @@ class UserPreferences {
   static const primaryKey = 'primary_metric';
   static const trackedKey = 'tracked_metrics';
   static const unitKey = 'display_unit';
+  static const lastBackupKey = 'last_backup_at';
   static String goalKey(Metric metric) => 'goal_${metric.name}';
 
   final SharedPreferences _prefs;
@@ -101,4 +102,14 @@ class UserPreferences {
       }
     }
   }
+
+  /// When the last export succeeded. Not part of [UserSettings], so a backup
+  /// import neither contains nor changes it.
+  DateTime? readLastBackup() {
+    final ms = _prefs.getInt(lastBackupKey);
+    return ms == null ? null : DateTime.fromMillisecondsSinceEpoch(ms);
+  }
+
+  Future<void> writeLastBackup(DateTime when) =>
+      _prefs.setInt(lastBackupKey, when.millisecondsSinceEpoch);
 }

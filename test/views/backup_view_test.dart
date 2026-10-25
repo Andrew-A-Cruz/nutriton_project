@@ -25,6 +25,7 @@ class FakeBackupFileIo implements BackupFileIo {
   Future<bool> save({
     required String fileName,
     required String contents,
+    Rect? origin,
   }) async {
     saved.add((fileName: fileName, contents: contents));
     return saveResult;
@@ -131,6 +132,8 @@ void main() {
     await settle(tester);
 
     expect(find.byKey(const Key('backup-status')), findsNothing);
+    expect(find.textContaining('Never backed up'), findsOneWidget);
+    expect(prefs.getInt(UserPreferences.lastBackupKey), isNull);
     await unmount(tester);
   });
 
@@ -142,6 +145,7 @@ void main() {
     await settle(tester);
 
     expect(find.text('Replace all data?'), findsOneWidget);
+    expect(find.textContaining('0 entries, 1 food, 0 meals'), findsOneWidget);
     expect(find.textContaining('replaces your foods'), findsOneWidget);
     await tester.tap(find.byKey(const Key('import-cancel')));
     await settle(tester);
@@ -178,9 +182,8 @@ void main() {
 
     await tester.tap(find.byKey(const Key('backup-import')));
     await settle(tester);
-    await tester.tap(find.byKey(const Key('import-confirm')));
-    await settle(tester);
 
+    expect(find.text('Replace all data?'), findsNothing);
     expect(find.byKey(const Key('backup-status')), findsOneWidget);
     expect(find.textContaining('newer version'), findsOneWidget);
     expect(await tester.runAsync(foodNames), ['Current food']);
@@ -196,6 +199,32 @@ void main() {
 
     expect(io.picks, 1);
     expect(find.text('Replace all data?'), findsNothing);
+    await unmount(tester);
+  });
+
+  testWidgets('shows the last backup day and import leaves it alone', (
+    tester,
+  ) async {
+    final twoDaysAgo = DateTime.now().subtract(const Duration(days: 2));
+    await prefs.setInt(
+      UserPreferences.lastBackupKey,
+      twoDaysAgo.millisecondsSinceEpoch,
+    );
+    io.pickResult = backupJson;
+    await openSettingsAndShow(tester, const Key('backup-import'));
+    expect(find.textContaining('Last backup: 2 days ago'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('backup-import')));
+    await settle(tester);
+    await tester.tap(find.byKey(const Key('import-confirm')));
+    await settle(tester);
+    await tester.tap(find.byKey(const Key('import-done')));
+    await settle(tester);
+
+    expect(
+      prefs.getInt(UserPreferences.lastBackupKey),
+      twoDaysAgo.millisecondsSinceEpoch,
+    );
     await unmount(tester);
   });
 }

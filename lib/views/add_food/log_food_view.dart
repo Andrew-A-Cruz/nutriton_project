@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/metrics.dart';
+import '../../core/meal_slot.dart';
 import '../../core/nutrition_math.dart';
 import '../../core/validation.dart';
 import '../../data/database/app_database.dart';
@@ -9,6 +10,7 @@ import '../../providers/infrastructure_providers.dart';
 import '../../providers/preferences_providers.dart';
 import '../../providers/today_providers.dart';
 import '../common/form_widgets.dart';
+import '../common/meal_slot_picker.dart';
 import '../home/date_header.dart';
 
 enum AmountMode { servings, weight }
@@ -18,10 +20,19 @@ enum AmountMode { servings, weight }
 /// with [servingsForWeight], so the entry is always a servings entry. Pops to
 /// the root after logging.
 class LogFoodView extends ConsumerStatefulWidget {
-  const LogFoodView({super.key, required this.food, required this.logDate});
+  const LogFoodView({
+    super.key,
+    required this.food,
+    required this.logDate,
+    this.initialServings,
+  });
 
   final FoodItem food;
   final String logDate;
+
+  /// Servings to start from, such as the amount used last time. One serving
+  /// when null.
+  final double? initialServings;
 
   @override
   ConsumerState<LogFoodView> createState() => _LogFoodViewState();
@@ -30,6 +41,7 @@ class LogFoodView extends ConsumerStatefulWidget {
 class _LogFoodViewState extends ConsumerState<LogFoodView> {
   late final TextEditingController _amount;
   AmountMode _mode = AmountMode.servings;
+  MealSlot _slot = MealSlot.forTime(DateTime.now());
   String? _error;
   String? _saveError;
   bool _saving = false;
@@ -37,7 +49,9 @@ class _LogFoodViewState extends ConsumerState<LogFoodView> {
   @override
   void initState() {
     super.initState();
-    _amount = TextEditingController(text: '1');
+    _amount = TextEditingController(
+      text: plainNumber(roundTo(widget.initialServings ?? 1, 2)),
+    );
   }
 
   @override
@@ -105,6 +119,7 @@ class _LogFoodViewState extends ConsumerState<LogFoodView> {
             logDate: widget.logDate,
             food: widget.food,
             servings: servings,
+            mealSlot: _slot,
           );
       if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
     } catch (e) {
@@ -156,17 +171,28 @@ class _LogFoodViewState extends ConsumerState<LogFoodView> {
             CupertinoFormSection.insetGrouped(
               children: [
                 CupertinoFormRow(
-                  prefix: const Text('Amount in'),
-                  child: CupertinoSlidingSegmentedControl<AmountMode>(
-                    key: const Key('log-mode'),
-                    groupValue: _mode,
-                    children: {
-                      AmountMode.servings: const Text('Servings'),
-                      AmountMode.weight: Text(_weightLabel),
-                    },
-                    onValueChanged: (mode) {
-                      if (mode != null) _setMode(mode);
-                    },
+                  // Stacked rather than side by side: with 2x text a prefix and the
+                  // control do not fit in one row.
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Amount in'),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: CupertinoSlidingSegmentedControl<AmountMode>(
+                          key: const Key('log-mode'),
+                          groupValue: _mode,
+                          children: {
+                            AmountMode.servings: const Text('Servings'),
+                            AmountMode.weight: Text(_weightLabel),
+                          },
+                          onValueChanged: (mode) {
+                            if (mode != null) _setMode(mode);
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 formRow(
@@ -180,6 +206,10 @@ class _LogFoodViewState extends ConsumerState<LogFoodView> {
                   onChanged: (_) => setState(() => _error = null),
                 ),
               ],
+            ),
+            MealSlotFormSection(
+              value: _slot,
+              onChanged: (s) => setState(() => _slot = s),
             ),
             CupertinoFormSection.insetGrouped(
               header: const Text('TOTAL FOR THIS ENTRY'),

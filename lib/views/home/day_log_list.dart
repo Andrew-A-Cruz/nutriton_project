@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/date_key.dart';
+import '../../core/meal_slot.dart';
 import '../../core/metrics.dart';
 import '../../data/database/app_database.dart';
 import '../../providers/infrastructure_providers.dart';
@@ -77,31 +78,43 @@ class _DayLogListState extends ConsumerState<DayLogList> {
       for (final e in widget.entries)
         if (!_dismissed.contains(e.id)) e,
     ];
+    final rows = <Object>[];
+    for (final slot in [...MealSlot.values, null]) {
+      final inSlot = [
+        for (final e in visible)
+          if (MealSlot.fromName(e.mealSlot) == slot) e,
+      ];
+      if (inSlot.isEmpty) continue;
+      rows.add(_SectionHeader(slot: slot, entries: inSlot));
+      rows.addAll(inSlot);
+    }
     return SliverList.builder(
-      itemCount: visible.length,
+      itemCount: rows.length,
       itemBuilder: (context, i) {
-        final entry = visible[i];
+        final row = rows[i];
+        if (row is _SectionHeader) return row;
+        final entry = row as FoodLogEntry;
         return _EntryTile(entry: entry, onDelete: () => _delete(entry.id));
       },
     );
   }
 }
 
-class _EntryTile extends StatelessWidget {
+class _EntryTile extends ConsumerWidget {
   const _EntryTile({required this.entry, required this.onDelete});
 
   final FoodLogEntry entry;
   final VoidCallback onDelete;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Dismissible(
       key: ValueKey(entry.id),
       direction: DismissDirection.endToStart,
       background: const _DeleteBackground(),
       onDismissed: (_) => onDelete(),
       child: GestureDetector(
-        onLongPress: () => _showActions(context),
+        onLongPress: () => _showActions(context, ref),
         child: CupertinoListTile(
           backgroundColor: CupertinoColors.systemBackground.resolveFrom(
             context,
@@ -115,13 +128,58 @@ class _EntryTile extends StatelessWidget {
     );
   }
 
+  /// Copies the entry onto today, with an Undo banner. Reads everything it
+  /// needs up front, because the action sheet that started it is already gone.
+  Future<void> _logAgain(BuildContext context, WidgetRef ref) async {
+    final repo = ref.read(logRepositoryProvider);
+    final overlay = Overlay.of(context, rootOverlay: true);
+    final navigator = Navigator.of(context, rootNavigator: true);
+    try {
+      final newId = await repo.duplicateEntry(
+        entry.id,
+        ref.read(todayProvider),
+      );
+      showUndoBanner(
+        overlay,
+        message: 'Logged again today',
+        onUndo: () => repo.deleteEntry(newId),
+      );
+    } catch (e) {
+      if (navigator.mounted) {
+        showCupertinoDialog<void>(
+          context: navigator.context,
+          builder: (dialogContext) => CupertinoAlertDialog(
+            content: Text('Could not log again: $e'),
+            actions: [
+              CupertinoDialogAction(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+    }
+  }
+
   /// Long-press menu, shared by every entry type.
-  void _showActions(BuildContext context) {
+  void _showActions(BuildContext context, WidgetRef ref) {
+    // Logging an entry again onto the day it is already on is pointless.
+    final canLogAgain = entry.logDate != ref.read(todayProvider);
     showCupertinoModalPopup<void>(
       context: context,
       builder: (sheetContext) => CupertinoActionSheet(
         title: Text(entry.name),
         actions: [
+          if (canLogAgain)
+            CupertinoActionSheetAction(
+              key: const Key('log-again-today'),
+              onPressed: () {
+                Navigator.of(sheetContext).pop();
+                _logAgain(context, ref);
+              },
+              child: const Text('Log again today'),
+            ),
           CupertinoActionSheetAction(
             onPressed: () {
               Navigator.of(sheetContext).pop();
@@ -255,6 +313,49 @@ class _EmptyLogStateState extends ConsumerState<EmptyLogState> {
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Heading of one meal section: its label and the calories of its entries.
+/// Entries without a slot go under "Other".
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.slot, required this.entries});
+
+  final MealSlot? slot;
+  final List<FoodLogEntry> entries;
+
+  @override
+  Widget build(BuildContext context) {
+    final id = slot?.name ?? 'other';
+    final total = entries.fold<double>(0, (sum, e) => sum + e.calories);
+    final style = TextStyle(
+      fontSize: 13,
+      fontWeight: FontWeight.w600,
+      color: CupertinoColors.secondaryLabel.resolveFrom(context),
+    );
+    return Padding(
+      key: Key('section-$id'),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
+        children: [
+          Expanded(
+            child: Text(
+              slot?.label ?? 'Other',
+              key: Key('section-label-$id'),
+              style: style,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '${Metric.calories.format(total)} kcal',
+            key: Key('section-total-$id'),
+            style: style,
+          ),
+        ],
       ),
     );
   }

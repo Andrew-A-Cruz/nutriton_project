@@ -1,4 +1,3 @@
-import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nutriton_project/core/nutrition_math.dart';
@@ -116,49 +115,197 @@ void main() {
     });
   });
 
-  group('watchRecentFoods', () {
-    test('lists each active food once, most recently logged first', () async {
-      final a = await food('Apple');
-      final b = await food('Bread');
-      final c = await food('Cheese');
-      final archived = await food('Dates');
-      Future<void> at(FoodItem f, DateTime t) => db.logDao.insertEntry(
-        FoodLogEntriesCompanion.insert(
-          id: '${f.name}-${t.microsecondsSinceEpoch}',
-          logDate: '2026-10-20',
-          createdAt: t,
-          entryType: 'food',
-          name: f.name,
-          calories: 1,
-          protein: 1,
-          carbs: 1,
-          fat: 1,
-          foodItemId: Value(f.id),
-          servings: const Value(1),
-        ),
+  group('duplicateEntry', () {
+    test('copies a food entry onto another day', () async {
+      final chicken = await food('Chicken');
+      final id = await log.logFood(
+        logDate: '2026-10-19',
+        food: chicken,
+        servings: 2,
       );
-      await at(a, DateTime(2026, 10, 1));
-      await at(b, DateTime(2026, 10, 3));
-      await at(a, DateTime(2026, 10, 5));
-      await at(c, DateTime(2026, 10, 2));
-      await at(archived, DateTime(2026, 10, 9));
-      await catalog.setFoodArchived(archived.id, archived: true);
-      // One-off entries never count.
-      await log.logAdhoc(logDate: '2026-10-20', name: 'Cake', macros: macros);
 
-      final recent = await log.watchRecentFoods().first;
-      expect([for (final f in recent) f.name], ['Apple', 'Bread', 'Cheese']);
+      final newId = await log.duplicateEntry(id, '2026-10-21');
+
+      expect(newId, isNot(id));
+      final copy = (await db.logDao.findEntry(newId))!;
+      expect(copy.logDate, '2026-10-21');
+      expect(copy.entryType, 'food');
+      expect(copy.name, 'Chicken');
+      expect(copy.servings, 2);
+      expect(copy.calories, 200);
+      expect(copy.foodItemId, chicken.id);
+      // The source stays where it was.
+      final source = (await db.logDao.findEntry(id))!;
+      expect(source.logDate, '2026-10-19');
+      expect(source.servings, 2);
+      expect(await db.logDao.findEntriesForDate('2026-10-19'), hasLength(1));
     });
 
-    test('respects the limit', () async {
-      for (final n in ['Aa', 'Bb', 'Cc']) {
-        await log.logFood(
-          logDate: '2026-10-20',
-          food: await food(n),
-          servings: 1,
-        );
-      }
-      expect(await log.watchRecentFoods(limit: 2).first, hasLength(2));
+    test('copies the snapshot, not the current catalog values', () async {
+      final chicken = await food('Chicken');
+      final id = await log.logFood(
+        logDate: '2026-10-19',
+        food: chicken,
+        servings: 1,
+      );
+      await catalog.updateFood(
+        chicken.id,
+        name: 'Chicken',
+        perServing: const Macros(calories: 999, protein: 1, carbs: 1, fat: 1),
+        servingWeightG: 100,
+      );
+
+      final newId = await log.duplicateEntry(id, '2026-10-20');
+
+      expect((await db.logDao.findEntry(newId))!.calories, 100);
+    });
+
+    test('copies a meal with its breakdown rows', () async {
+      final chicken = await food('Chicken');
+      final rice = await food('Rice');
+      final mealId = await catalog.createMeal(
+        name: 'Bowl',
+        items: [
+          MealItemInput(foodItemId: chicken.id, weightG: 100),
+          MealItemInput(foodItemId: rice.id, weightG: 200),
+        ],
+      );
+      final id = await log.logMeal(
+        logDate: '2026-10-19',
+        meal: (await catalog.findMeal(mealId))!,
+        items: [
+          MealItemInput(foodItemId: chicken.id, weightG: 100),
+          MealItemInput(foodItemId: rice.id, weightG: 150),
+        ],
+      );
+
+      final newId = await log.duplicateEntry(id, '2026-10-20');
+
+      final copy = (await db.logDao.findEntry(newId))!;
+      final source = (await db.logDao.findEntry(id))!;
+      expect(copy.entryType, 'meal');
+      expect(copy.mealId, mealId);
+      expect(copy.calories, source.calories);
+      final copied = await db.logDao.findEntryItems(newId);
+      final original = await db.logDao.findEntryItems(id);
+      expect(copied, hasLength(2));
+      expect(copied.map((i) => i.weightG).toSet(), {100, 150});
+      expect(copied.every((i) => i.entryId == newId), isTrue);
+      final originalIds = {for (final i in original) i.id};
+      expect(copied.any((i) => originalIds.contains(i.id)), isFalse);
+      // The source keeps its own rows.
+      expect(original, hasLength(2));
+    });
+
+    test('copies a one-off entry', () async {
+      final id = await log.logAdhoc(
+        logDate: '2026-10-19',
+        name: 'Cake',
+        macros: macros,
+      );
+      final newId = await log.duplicateEntry(id, '2026-10-20');
+      final copy = (await db.logDao.findEntry(newId))!;
+      expect(copy.entryType, 'adhoc');
+      expect(copy.name, 'Cake');
+      expect(copy.calories, 100);
+      expect(copy.servings, isNull);
+    });
+
+    test('the copy is the newest entry of its day', () async {
+      final id = await log.logAdhoc(
+        logDate: '2026-10-19',
+        name: 'Aa',
+        macros: macros,
+      );
+      await log.logAdhoc(logDate: '2026-10-20', name: 'Bb', macros: macros);
+      await log.duplicateEntry(id, '2026-10-20');
+      final day = await db.logDao.findEntriesForDate('2026-10-20');
+      expect([for (final e in day) e.name], ['Bb', 'Aa']);
+    });
+
+    test('can copy onto the same day', () async {
+      final id = await log.logAdhoc(
+        logDate: '2026-10-19',
+        name: 'Cake',
+        macros: macros,
+      );
+      await log.duplicateEntry(id, '2026-10-19');
+      expect(await db.logDao.findEntriesForDate('2026-10-19'), hasLength(2));
+    });
+
+    test('rejects an unknown entry and a bad date, changing nothing', () async {
+      final id = await log.logAdhoc(
+        logDate: '2026-10-19',
+        name: 'Cake',
+        macros: macros,
+      );
+      await expectLater(
+        log.duplicateEntry('missing', '2026-10-20'),
+        throwsStateError,
+      );
+      await expectLater(
+        log.duplicateEntry(id, 'tomorrow'),
+        throwsFormatException,
+      );
+      expect(await db.logDao.findEntriesForDate('2026-10-20'), isEmpty);
+      expect(await db.logDao.findEntriesForDate('2026-10-19'), hasLength(1));
+    });
+
+    test('the copy keeps its macros when the food is archived', () async {
+      final chicken = await food('Chicken');
+      final id = await log.logFood(
+        logDate: '2026-10-19',
+        food: chicken,
+        servings: 1,
+      );
+      final newId = await log.duplicateEntry(id, '2026-10-20');
+      await catalog.setFoodArchived(chicken.id, archived: true);
+      expect((await db.logDao.findEntry(newId))!.calories, 100);
+    });
+  });
+
+  group('recent and frequent sources', () {
+    test('recent lists foods and meals, newest first', () async {
+      final chicken = await food('Chicken');
+      final mealId = await catalog.createMeal(
+        name: 'Bowl',
+        items: [MealItemInput(foodItemId: chicken.id, weightG: 100)],
+      );
+      await log.logFood(logDate: '2026-10-19', food: chicken, servings: 1);
+      await log.logMeal(
+        logDate: '2026-10-19',
+        meal: (await catalog.findMeal(mealId))!,
+        items: [MealItemInput(foodItemId: chicken.id, weightG: 100)],
+      );
+      final names = [
+        for (final s in await log.watchRecentSources().first) s.name,
+      ];
+      expect(names, ['Bowl', 'Chicken']);
+    });
+
+    test('frequent honours the start date', () async {
+      final chicken = await food('Chicken');
+      await log.logFood(logDate: '2026-09-01', food: chicken, servings: 1);
+      expect(
+        await log.watchFrequentSources(sinceDate: '2026-10-01').first,
+        isEmpty,
+      );
+      expect(
+        await log.watchFrequentSources(sinceDate: '2026-09-01').first,
+        hasLength(1),
+      );
+    });
+
+    test('lastServingsFor reads the most recent entry', () async {
+      final chicken = await food('Chicken');
+      expect(await log.lastServingsFor(chicken.id), isNull);
+      await log.logFood(logDate: '2026-10-19', food: chicken, servings: 1);
+      await log.logFood(logDate: '2026-10-19', food: chicken, servings: 2.5);
+      expect(await log.lastServingsFor(chicken.id), 2.5);
+      // Editing the latest entry changes what is remembered.
+      final latest = (await db.logDao.findEntriesForDate('2026-10-19')).last;
+      await log.updateServings(latest.id, servings: 3);
+      expect(await log.lastServingsFor(chicken.id), 3);
     });
   });
 }

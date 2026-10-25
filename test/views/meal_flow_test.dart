@@ -171,7 +171,8 @@ void main() {
 
       // Home shows the one entry, at the eaten weight: 120 g = 198 kcal.
       expect(find.text('Lunch bowl'), findsOneWidget);
-      expect(find.text('198 kcal'), findsOneWidget);
+      // Once on the entry and once as its section's subtotal.
+      expect(find.text('198 kcal'), findsNWidgets(2));
       final entries = await tester.runAsync(
         () => db.logDao.watchEntriesForDate(today).first,
       );

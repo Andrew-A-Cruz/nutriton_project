@@ -91,30 +91,96 @@ class LogDao extends DatabaseAccessor<AppDatabase> with _$LogDaoMixin {
   Future<List<FoodLogEntryItem>> findItemsForEntries(List<String> entryIds) =>
       (select(foodLogEntryItems)..where((t) => t.entryId.isIn(entryIds))).get();
 
-  /// Active catalog foods that were logged as food entries, most recently
-  /// logged first, at most [limit]. A food appears once however often it was
-  /// logged. Meal entries and one-offs do not count.
-  Stream<List<FoodItem>> watchRecentFoods({int limit = 8}) {
-    final lastUsed = foodLogEntries.createdAt.max();
-    final query =
-        select(foodItems).join([
-            innerJoin(
-              foodLogEntries,
-              foodLogEntries.foodItemId.equalsExp(foodItems.id),
-            ),
-          ])
-          ..where(
-            foodItems.archived.equals(false) &
-                foodLogEntries.entryType.equals('food'),
-          )
-          ..groupBy([foodItems.id])
-          ..orderBy([
-            OrderingTerm.desc(lastUsed),
-            OrderingTerm.asc(foodItems.name),
-          ])
-          ..limit(limit);
-    return query.watch().map(
-      (rows) => [for (final r in rows) r.readTable(foodItems)],
-    );
+  /// Catalog foods and meals that were logged, most recently logged first, at
+  /// most [limit]. A source appears once however often it was logged. Archived
+  /// sources and one-off entries do not count. Re-emits on log, food and meal
+  /// writes.
+  Stream<List<RecentSource>> watchRecentSources({int limit = 8}) =>
+      _watchSources(orderBy: 'last_used DESC, last_row DESC', limit: limit);
+
+  /// Like [watchRecentSources], but ranked by how often each source was logged
+  /// on or after [sinceDate] ('yyyy-MM-dd'), newest first among equals. Sources
+  /// not logged since then are left out.
+  Stream<List<RecentSource>> watchFrequentSources({
+    required String sinceDate,
+    int limit = 8,
+  }) => _watchSources(
+    since: sinceDate,
+    orderBy: 'uses DESC, last_used DESC, last_row DESC',
+    limit: limit,
+  );
+
+  /// Servings of the latest food entry for [foodItemId], or null if it was
+  /// never logged.
+  Future<double?> findLastServings(String foodItemId) async {
+    final entry =
+        await (select(foodLogEntries)
+              ..where(
+                (t) =>
+                    t.foodItemId.equals(foodItemId) &
+                    t.entryType.equals('food') &
+                    t.servings.isNotNull(),
+              )
+              ..orderBy([
+                (t) => OrderingTerm.desc(t.createdAt),
+                (t) => OrderingTerm.desc(t.rowId),
+              ])
+              ..limit(1))
+            .getSingleOrNull();
+    return entry?.servings;
   }
+
+  Stream<List<RecentSource>> _watchSources({
+    String? since,
+    required String orderBy,
+    required int limit,
+  }) {
+    final where = since == null ? '' : 'AND e.log_date >= ?';
+    String half(String kind, String entryColumn, String table) =>
+        '''
+      SELECT '$kind' AS kind, s.id AS id, MAX(e.created_at) AS last_used,
+             MAX(e.rowid) AS last_row, COUNT(*) AS uses
+      FROM food_log_entries e JOIN $table s ON s.id = e.$entryColumn
+      WHERE e.entry_type = '$kind' AND s.archived = 0 $where
+      GROUP BY s.id''';
+    final db = attachedDatabase;
+    return customSelect(
+      '${half('food', 'food_item_id', 'food_items')} UNION ALL '
+      '${half('meal', 'meal_id', 'meals')} ORDER BY $orderBy LIMIT ?',
+      variables: [
+        if (since != null) ...[
+          Variable<String>(since),
+          Variable<String>(since),
+        ],
+        Variable<int>(limit),
+      ],
+      readsFrom: {foodLogEntries, db.foodItems, db.meals},
+    ).watch().asyncMap((rows) async {
+      final sources = <RecentSource>[];
+      for (final row in rows) {
+        final id = row.read<String>('id');
+        if (row.read<String>('kind') == 'food') {
+          final food = await db.foodDao.findById(id);
+          if (food != null) sources.add(RecentSource.food(food));
+        } else {
+          final meal = await db.mealDao.findById(id);
+          if (meal != null) sources.add(RecentSource.meal(meal));
+        }
+      }
+      return sources;
+    });
+  }
+}
+
+/// A catalog food or meal that has been logged before: exactly one of [food]
+/// and [meal] is set.
+class RecentSource {
+  const RecentSource.food(FoodItem this.food) : meal = null;
+  const RecentSource.meal(Meal this.meal) : food = null;
+
+  final FoodItem? food;
+  final Meal? meal;
+
+  String get id => food?.id ?? meal!.id;
+  String get name => food?.name ?? meal!.name;
 }

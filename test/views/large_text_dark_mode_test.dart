@@ -2,9 +2,12 @@ import 'package:drift/native.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nutriton_project/core/date_key.dart';
+import 'package:nutriton_project/core/meal_slot.dart';
 import 'package:nutriton_project/core/nutrition_math.dart';
 import 'package:nutriton_project/data/database/app_database.dart';
 import 'package:nutriton_project/data/repositories/log_repository.dart';
+import 'package:nutriton_project/data/repositories/catalog_repository.dart';
+import 'package:nutriton_project/views/common/meal_slot_picker.dart';
 import 'package:nutriton_project/views/tour/app_tour.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -148,6 +151,70 @@ void main() {
       await settle(tester);
     }
     expect(find.byKey(const Key('tour-card')), findsNothing);
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
+
+  testWidgets('meal slot picker and Home sections fit at 2x text', (
+    tester,
+  ) async {
+    stressScreen(tester);
+    late FoodItem food;
+    await tester.runAsync(() async {
+      final catalog = CatalogRepository(db);
+      final id = await catalog.createFood(
+        name: 'Rice',
+        perServing: const Macros(calories: 130, protein: 3, carbs: 28, fat: 1),
+        servingWeightG: 100,
+      );
+      food = (await catalog.findFood(id))!;
+      final log = LogRepository(db);
+      for (final slot in [...MealSlot.values, null]) {
+        await log.logFood(
+          logDate: todayKey(),
+          food: food,
+          servings: 1,
+          mealSlot: slot,
+        );
+      }
+    });
+    await tester.pumpWidget(testApp(db: db, prefs: prefs));
+    await settle(tester);
+    await tester.dragUntilVisible(
+      find.byKey(const Key('section-other')),
+      find.byType(CustomScrollView).first,
+      const Offset(0, -200),
+    );
+    expect(tester.takeException(), isNull);
+
+    // The servings dialog carries the picker too, in its compact layout.
+    await tester.dragUntilVisible(
+      find.text('Rice').first,
+      find.byType(CustomScrollView).first,
+      const Offset(0, 200),
+    );
+    await tester.tap(find.text('Rice').first);
+    await settle(tester);
+    expect(find.byType(MealSlotPicker), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.tap(find.text('Cancel'));
+    await settle(tester);
+    await unmount(tester);
+
+    // The logging screens' section on its own: all four labels are there.
+    await tester.pumpWidget(
+      CupertinoApp(
+        home: CupertinoPageScaffold(
+          child: ListView(
+            children: [MealSlotFormSection(value: null, onChanged: (_) {})],
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    for (final slot in MealSlot.values) {
+      expect(find.text(slot.label), findsOneWidget);
+    }
     expect(tester.takeException(), isNull);
     await unmount(tester);
   });

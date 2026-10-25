@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/meal_slot.dart';
 import '../../core/nutrition_math.dart';
 import '../../data/database/app_database.dart';
 import '../../providers/catalog_providers.dart';
@@ -8,6 +9,7 @@ import '../../providers/infrastructure_providers.dart';
 import '../../providers/preferences_providers.dart';
 import '../../providers/today_providers.dart';
 import '../common/form_widgets.dart';
+import '../common/meal_slot_picker.dart';
 import '../home/date_header.dart';
 import 'food_picker_page.dart';
 import 'meal_items_editor.dart';
@@ -30,6 +32,7 @@ class _MealLogViewState extends ConsumerState<MealLogView> {
   final List<MealDraftItem> _items = [];
   bool _loaded = false;
   bool _updateTemplate = false;
+  MealSlot _slot = MealSlot.forTime(DateTime.now());
   String? _itemsError;
   String? _saveError;
   bool _saving = false;
@@ -75,6 +78,7 @@ class _MealLogViewState extends ConsumerState<MealLogView> {
             meal: widget.meal,
             items: draftInputs(_items),
             updateTemplate: _updateTemplate,
+            mealSlot: _slot,
           );
       if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
     } catch (e) {
@@ -152,6 +156,10 @@ class _MealLogViewState extends ConsumerState<MealLogView> {
                       child: FormFieldError(_itemsError),
                     ),
                   MealTotals(items: _items),
+                  MealSlotFormSection(
+                    value: _slot,
+                    onChanged: (s) => setState(() => _slot = s),
+                  ),
                   CupertinoFormSection.insetGrouped(
                     footer: const Text(
                       'Off: only this log entry changes. '

@@ -79,6 +79,7 @@ The daily log. One row per logged item: a catalog food, a meal, or an adhoc entr
 | `food_item_id` | TEXT | Yes | FK → `food_items.id`, `ON DELETE SET NULL` (provenance) |
 | `meal_id` | TEXT | Yes | FK → `meals.id`, `ON DELETE SET NULL` (provenance) |
 | `servings` | REAL | Yes | Food entries only, `> 0` |
+| `meal_slot` | TEXT | Yes | Schema v3. `'breakfast'`, `'lunch'`, `'dinner'` or `'snack'` (CHECK). Null = "Other" (every row logged before v3). Home groups by it; stored by name, so backups hold a plain string |
 
 **Entry type reference:**
 

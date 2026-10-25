@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/database/app_database.dart';
+import '../../providers/infrastructure_providers.dart';
 import '../catalog/catalog_browser.dart';
 import '../catalog/food_form_view.dart';
 import '../meals/meal_log_view.dart';
@@ -11,22 +13,34 @@ enum _AddMode { catalog, adhoc }
 
 /// The Add Food sheet. Everything it logs goes to [logDate], the day Home is
 /// showing, which need not be today.
-class AddFoodView extends StatefulWidget {
+class AddFoodView extends ConsumerStatefulWidget {
   const AddFoodView({super.key, required this.logDate});
 
   final String logDate;
 
   @override
-  State<AddFoodView> createState() => _AddFoodViewState();
+  ConsumerState<AddFoodView> createState() => _AddFoodViewState();
 }
 
-class _AddFoodViewState extends State<AddFoodView> {
+class _AddFoodViewState extends ConsumerState<AddFoodView> {
   _AddMode _mode = _AddMode.catalog;
 
-  void _logFood(FoodItem food) {
-    Navigator.of(context).push(
+  /// Opens the servings screen, starting from what was used last time.
+  Future<void> _logFood(FoodItem food) async {
+    double? last;
+    try {
+      last = await ref.read(logRepositoryProvider).lastServingsFor(food.id);
+    } catch (_) {
+      // Prefilling is a convenience; fall back to one serving.
+    }
+    if (!mounted) return;
+    await Navigator.of(context).push(
       CupertinoPageRoute<void>(
-        builder: (_) => LogFoodView(food: food, logDate: widget.logDate),
+        builder: (_) => LogFoodView(
+          food: food,
+          logDate: widget.logDate,
+          initialServings: last,
+        ),
       ),
     );
   }

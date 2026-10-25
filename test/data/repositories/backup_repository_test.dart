@@ -123,6 +123,82 @@ void main() {
     },
   );
 
+  test(
+    'every table and the preferences match row for row after a round trip',
+    () async {
+      final json = await exportSource();
+      await targetRepo.importJson(json);
+
+      expect(
+        await target.select(target.foodItems).get(),
+        await source.select(source.foodItems).get(),
+      );
+      expect(
+        await target.select(target.meals).get(),
+        await source.select(source.meals).get(),
+      );
+      expect(
+        await target.select(target.mealFoodItems).get(),
+        await source.select(source.mealFoodItems).get(),
+      );
+      expect(
+        await target.select(target.foodLogEntries).get(),
+        await source.select(source.foodLogEntries).get(),
+      );
+      expect(
+        await target.select(target.foodLogEntryItems).get(),
+        await source.select(source.foodLogEntryItems).get(),
+      );
+      expect(
+        await target.select(target.scheduledMeals).get(),
+        await source.select(source.scheduledMeals).get(),
+      );
+      expect(
+        await target.select(target.scheduledMealOutcomes).get(),
+        await source.select(source.scheduledMealOutcomes).get(),
+      );
+      final restored = userPrefs.read();
+      expect(restored.primaryMetric, sourceSettings.primaryMetric);
+      expect(restored.trackedMetrics, sourceSettings.trackedMetrics);
+      expect(restored.goals, sourceSettings.goals);
+      expect(restored.displayUnit, sourceSettings.displayUnit);
+    },
+  );
+
+  test(
+    'readBackup validates without changing anything and reads the date',
+    () async {
+      await seedData(target);
+      final json = await exportSource();
+      final before = await targetRepo.exportJson();
+
+      final data = targetRepo.readBackup(json);
+
+      expect(data.logEntries, hasLength(4));
+      expect(data.exportedAt, isNotNull);
+      expect(content(await targetRepo.exportJson()), content(before));
+      expect(
+        () => targetRepo.readBackup('{"app":"nutriton","version":99}'),
+        throwsA(isA<BackupException>()),
+      );
+    },
+  );
+
+  test('a missing or invalid exportedAt is tolerated', () async {
+    final good = content(await exportSource());
+    expect(targetRepo.readBackup(jsonEncode(good)).exportedAt, isNull);
+    good['exportedAt'] = 'yesterday-ish';
+    expect(targetRepo.readBackup(jsonEncode(good)).exportedAt, isNull);
+  });
+
+  test('import leaves the last-backup time alone', () async {
+    final json = await exportSource();
+    await userPrefs.writeLastBackup(DateTime(2026, 10, 1, 9));
+    await targetRepo.importJson(json);
+    expect(userPrefs.readLastBackup(), DateTime(2026, 10, 1, 9));
+    expect(jsonDecode(json).toString(), isNot(contains('last_backup')));
+  });
+
   test('import replaces existing data instead of merging', () async {
     await seedData(target);
     await CatalogRepository(target).createFood(
