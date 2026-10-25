@@ -154,6 +154,7 @@ DATA_MODEL.md has been updated to match these changes.
 | Database | `drift`, `drift_flutter`, `drift_dev`, `build_runner` | Installed |
 | State management | `flutter_riverpod` | Installed |
 | Preferences | `shared_preferences` | Installed |
+| Reminders | `flutter_local_notifications`, `timezone`, `flutter_timezone` | Installed (M14; behind `NotificationScheduler`, no-op on desktop and web) |
 | IDs | `uuid` | Installed |
 | Date formatting | `intl` | Installed |
 | Summary charts | `fl_chart` | Installed (Milestone 7, `^1.2.0`) |

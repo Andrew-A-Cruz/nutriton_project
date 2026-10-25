@@ -144,10 +144,7 @@ void main() {
       testApp(
         db: db,
         prefs: prefs,
-        overrides: [
-          clockProvider.overrideWithValue(() => _now),
-          ...overrides,
-        ],
+        overrides: [clockProvider.overrideWithValue(() => _now), ...overrides],
       ),
     );
     await settle(tester);
@@ -389,7 +386,10 @@ void main() {
     final entries = await tester.runAsync(
       () => db.logDao.findEntriesForDate(_today),
     );
-    expect(entries!.firstWhere((e) => e.entryType == 'adhoc').name, 'Protein bar');
+    expect(
+      entries!.firstWhere((e) => e.entryType == 'adhoc').name,
+      'Protein bar',
+    );
   });
 
   _appTest('the Move button in the one-off edit sheet moves the entry', (
@@ -569,7 +569,12 @@ void main() {
       final catalog = CatalogRepository(db);
       final id = await catalog.createFood(
         name: 'Chicken breast',
-        perServing: const Macros(calories: 165, protein: 31, carbs: 0, fat: 3.6),
+        perServing: const Macros(
+          calories: 165,
+          protein: 31,
+          carbs: 0,
+          fat: 3.6,
+        ),
         servingWeightG: 100,
       );
       await LogRepository(db).logFood(

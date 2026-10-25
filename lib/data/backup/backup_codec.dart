@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart' show visibleForTesting;
 
 import '../../core/metrics.dart';
 import '../../core/nutrition_math.dart';
+import '../../core/reminder.dart';
 import '../database/app_database.dart';
 import '../preferences/user_preferences.dart';
 
@@ -232,7 +233,27 @@ class BackupCodec {
     'trackedMetrics': [for (final m in s.trackedMetrics) m.name],
     'displayUnit': s.displayUnit.name,
     'goals': {for (final e in s.goals.entries) e.key.name: e.value},
+    'reminders': [
+      for (final r in s.reminders) {'enabled': r.enabled, 'minutes': r.minutes},
+    ],
   };
+
+  /// Absent in backups made before reminders existed: all off, default times.
+  List<Reminder> _decodeReminders(Object? raw) {
+    if (raw == null) return Reminder.defaults;
+    if (raw is! List) {
+      throw BackupException('The backup has invalid reminders.');
+    }
+    return [
+      for (var i = 0; i < raw.length && i < reminderSlots; i++)
+        switch (raw[i]) {
+          {'enabled': final bool enabled, 'minutes': final int minutes}
+              when minutes >= 0 && minutes < 24 * 60 =>
+            Reminder(minutes: minutes, enabled: enabled),
+          _ => throw BackupException('The backup has invalid reminders.'),
+        },
+    ];
+  }
 
   UserSettings _decodeSettings(Object? raw) {
     if (raw is! Map<String, dynamic>) {
@@ -270,6 +291,7 @@ class BackupCodec {
       },
       goals: goalMap,
       displayUnit: unit,
+      reminders: _decodeReminders(raw['reminders']),
     );
   }
 }

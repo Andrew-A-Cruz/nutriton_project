@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/summary_math.dart';
 import 'infrastructure_providers.dart';
+import 'today_providers.dart';
 
 /// The range chosen on the Summary segmented control. Kept alive so it
 /// survives switching tabs.
@@ -30,3 +31,10 @@ final summaryReportProvider =
           .watch(summaryRepositoryProvider)
           .watchReport(endDate: query.endDate, range: query.range),
     );
+
+/// The current logging streak. Moves to the new day at midnight.
+final streakProvider = StreamProvider<int>(
+  (ref) => ref
+      .watch(summaryRepositoryProvider)
+      .watchStreak(ref.watch(todayProvider)),
+);

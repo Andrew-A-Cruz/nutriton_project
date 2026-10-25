@@ -48,6 +48,16 @@ class SummaryDao extends DatabaseAccessor<AppDatabase> with _$SummaryDaoMixin {
     );
   }
 
+  /// Every day up to [endKey] (inclusive, 'yyyy-MM-dd') that has at least
+  /// one entry, newest first, re-emitting whenever the log changes. Input for
+  /// the streak.
+  Stream<List<String>> watchLoggedDatesUpTo(String endKey) => customSelect(
+    'SELECT DISTINCT log_date FROM food_log_entries '
+    'WHERE log_date <= ? ORDER BY log_date DESC',
+    variables: [Variable.withString(endKey)],
+    readsFrom: {foodLogEntries},
+  ).watch().map((rows) => [for (final r in rows) r.read<String>('log_date')]);
+
   /// One row per day that has entries, oldest first.
   Future<List<DayTotal>> dailyTotalsForRange(String start, String end) async {
     final rows = await _dailyTotalsQuery(start, end).get();

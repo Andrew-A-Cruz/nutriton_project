@@ -162,6 +162,8 @@ Stored via `shared_preferences`, not in SQLite. Read on app launch to configure 
 | `tracked_metrics` | String list | Metric names, e.g. `["calories", "protein", "fat"]`. Always includes the primary metric; the rest are the secondaries |
 | `goal_<metric>` | Float | Daily goal per metric, e.g. `goal_calories`, `goal_protein`. Required for the primary metric, optional otherwise (key absent = no goal) |
 | `display_unit` | String | `"g"` or `"oz"`. Logging weights (weight entry, meal items) are typed and shown in this unit and stored in grams. Also the default unit for a new catalog food, which then keeps its own `food_items.display_unit` |
+| `reminder_<n>_enabled` | Bool | Daily reminder slot n (0 to 2) is on. Absent = off |
+| `reminder_<n>_minutes` | Int | Reminder slot n time, minutes after local midnight (defaults 540, 780, 1140). Both reminder keys are in the backup `preferences` as a `reminders` list, which older backups lack |
 | `onboarding_complete` | Bool | Gate for the onboarding screen |
 
 ---

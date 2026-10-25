@@ -12,6 +12,7 @@ import 'date_header.dart';
 import 'day_log_list.dart';
 import 'macro_summary.dart';
 import 'scheduled_suggestions.dart';
+import 'streak_badge.dart';
 
 /// The Today tab: date header, day totals, and the day's log.
 class HomeView extends ConsumerWidget {
@@ -26,6 +27,11 @@ class HomeView extends ConsumerWidget {
 
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
+        leading: const Align(
+          alignment: AlignmentDirectional.centerStart,
+          widthFactor: 1,
+          child: StreakBadge(),
+        ),
         middle: const Text('Food Log'),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,

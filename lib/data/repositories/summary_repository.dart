@@ -1,3 +1,4 @@
+import '../../core/streak.dart';
 import '../../core/summary_math.dart';
 import '../database/app_database.dart';
 
@@ -7,6 +8,12 @@ class SummaryRepository {
   SummaryRepository(this._db);
 
   final AppDatabase _db;
+
+  /// The current logging streak as of [today] ('yyyy-MM-dd'), re-emitting
+  /// whenever the log changes. See [currentStreak].
+  Stream<int> watchStreak(String today) => _db.summaryDao
+      .watchLoggedDatesUpTo(today)
+      .map((dates) => currentStreak(dates, today: today));
 
   /// The report for [range] ending on [endDate] ('yyyy-MM-dd', inclusive).
   /// Re-emits whenever the log changes.

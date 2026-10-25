@@ -102,6 +102,9 @@ void main() {
           )
           .first,
     );
+    // Stopping at the edge can leave it under the tab bar.
+    await tester.ensureVisible(find.byKey(target));
+    await tester.pump();
   }
 
   Future<List<String>> foodNames() async => [

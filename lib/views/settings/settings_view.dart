@@ -5,6 +5,7 @@ import '../../providers/preferences_providers.dart';
 import '../../providers/tour_providers.dart';
 import '../onboarding/preferences_form.dart';
 import 'backup_section.dart';
+import 'reminders_section.dart';
 
 /// Settings, opened from the gear on Home. Reuses the onboarding form, so the
 /// two screens cannot drift apart. Saving applies at once and pops back.
@@ -20,9 +21,19 @@ class SettingsView extends ConsumerWidget {
         child: PreferencesForm(
           initial: initial,
           submitLabel: 'Save',
-          extraSections: const [BackupSection(), _HelpSection()],
+          extraSections: const [
+            RemindersSection(),
+            BackupSection(),
+            _HelpSection(),
+          ],
           onSubmit: (settings) async {
-            await ref.read(preferencesProvider.notifier).save(settings);
+            final notifier = ref.read(preferencesProvider.notifier);
+            // Reminders save as they change, so the form's copy may be stale.
+            await notifier.save(
+              settings.copyWith(
+                reminders: ref.read(preferencesProvider).reminders,
+              ),
+            );
             if (context.mounted) Navigator.of(context).pop();
           },
         ),
