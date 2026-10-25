@@ -145,6 +145,17 @@ class $FoodItemsTable extends FoodItems
     type: DriftSqlType.double,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _barcodeMeta = const VerificationMeta(
+    'barcode',
+  );
+  @override
+  late final GeneratedColumn<String> barcode = GeneratedColumn<String>(
+    'barcode',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -159,6 +170,7 @@ class $FoodItemsTable extends FoodItems
     fiber,
     sugar,
     sodium,
+    barcode,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -261,6 +273,12 @@ class $FoodItemsTable extends FoodItems
         sodium.isAcceptableOrUnknown(data['sodium']!, _sodiumMeta),
       );
     }
+    if (data.containsKey('barcode')) {
+      context.handle(
+        _barcodeMeta,
+        barcode.isAcceptableOrUnknown(data['barcode']!, _barcodeMeta),
+      );
+    }
     return context;
   }
 
@@ -318,6 +336,10 @@ class $FoodItemsTable extends FoodItems
         DriftSqlType.double,
         data['${effectivePrefix}sodium'],
       ),
+      barcode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}barcode'],
+      ),
     );
   }
 
@@ -343,6 +365,10 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
   final double? fiber;
   final double? sugar;
   final double? sodium;
+
+  /// Optional barcode digits (EAN/UPC), set when a food is created from a
+  /// scan or typed in the food form. Null when unknown.
+  final String? barcode;
   const FoodItem({
     required this.id,
     required this.name,
@@ -356,6 +382,7 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     this.fiber,
     this.sugar,
     this.sodium,
+    this.barcode,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -377,6 +404,9 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     }
     if (!nullToAbsent || sodium != null) {
       map['sodium'] = Variable<double>(sodium);
+    }
+    if (!nullToAbsent || barcode != null) {
+      map['barcode'] = Variable<String>(barcode);
     }
     return map;
   }
@@ -401,6 +431,9 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
       sodium: sodium == null && nullToAbsent
           ? const Value.absent()
           : Value(sodium),
+      barcode: barcode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(barcode),
     );
   }
 
@@ -422,6 +455,7 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
       fiber: serializer.fromJson<double?>(json['fiber']),
       sugar: serializer.fromJson<double?>(json['sugar']),
       sodium: serializer.fromJson<double?>(json['sodium']),
+      barcode: serializer.fromJson<String?>(json['barcode']),
     );
   }
   @override
@@ -440,6 +474,7 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
       'fiber': serializer.toJson<double?>(fiber),
       'sugar': serializer.toJson<double?>(sugar),
       'sodium': serializer.toJson<double?>(sodium),
+      'barcode': serializer.toJson<String?>(barcode),
     };
   }
 
@@ -456,6 +491,7 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     Value<double?> fiber = const Value.absent(),
     Value<double?> sugar = const Value.absent(),
     Value<double?> sodium = const Value.absent(),
+    Value<String?> barcode = const Value.absent(),
   }) => FoodItem(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -469,6 +505,7 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     fiber: fiber.present ? fiber.value : this.fiber,
     sugar: sugar.present ? sugar.value : this.sugar,
     sodium: sodium.present ? sodium.value : this.sodium,
+    barcode: barcode.present ? barcode.value : this.barcode,
   );
   FoodItem copyWithCompanion(FoodItemsCompanion data) {
     return FoodItem(
@@ -488,6 +525,7 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
       fiber: data.fiber.present ? data.fiber.value : this.fiber,
       sugar: data.sugar.present ? data.sugar.value : this.sugar,
       sodium: data.sodium.present ? data.sodium.value : this.sodium,
+      barcode: data.barcode.present ? data.barcode.value : this.barcode,
     );
   }
 
@@ -505,7 +543,8 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
           ..write('archived: $archived, ')
           ..write('fiber: $fiber, ')
           ..write('sugar: $sugar, ')
-          ..write('sodium: $sodium')
+          ..write('sodium: $sodium, ')
+          ..write('barcode: $barcode')
           ..write(')'))
         .toString();
   }
@@ -524,6 +563,7 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     fiber,
     sugar,
     sodium,
+    barcode,
   );
   @override
   bool operator ==(Object other) =>
@@ -540,7 +580,8 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
           other.archived == this.archived &&
           other.fiber == this.fiber &&
           other.sugar == this.sugar &&
-          other.sodium == this.sodium);
+          other.sodium == this.sodium &&
+          other.barcode == this.barcode);
 }
 
 class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
@@ -556,6 +597,7 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
   final Value<double?> fiber;
   final Value<double?> sugar;
   final Value<double?> sodium;
+  final Value<String?> barcode;
   final Value<int> rowid;
   const FoodItemsCompanion({
     this.id = const Value.absent(),
@@ -570,6 +612,7 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     this.fiber = const Value.absent(),
     this.sugar = const Value.absent(),
     this.sodium = const Value.absent(),
+    this.barcode = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   FoodItemsCompanion.insert({
@@ -585,6 +628,7 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     this.fiber = const Value.absent(),
     this.sugar = const Value.absent(),
     this.sodium = const Value.absent(),
+    this.barcode = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -606,6 +650,7 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     Expression<double>? fiber,
     Expression<double>? sugar,
     Expression<double>? sodium,
+    Expression<String>? barcode,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -621,6 +666,7 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
       if (fiber != null) 'fiber': fiber,
       if (sugar != null) 'sugar': sugar,
       if (sodium != null) 'sodium': sodium,
+      if (barcode != null) 'barcode': barcode,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -638,6 +684,7 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     Value<double?>? fiber,
     Value<double?>? sugar,
     Value<double?>? sodium,
+    Value<String?>? barcode,
     Value<int>? rowid,
   }) {
     return FoodItemsCompanion(
@@ -653,6 +700,7 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
       fiber: fiber ?? this.fiber,
       sugar: sugar ?? this.sugar,
       sodium: sodium ?? this.sodium,
+      barcode: barcode ?? this.barcode,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -696,6 +744,9 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     if (sodium.present) {
       map['sodium'] = Variable<double>(sodium.value);
     }
+    if (barcode.present) {
+      map['barcode'] = Variable<String>(barcode.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -717,6 +768,7 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
           ..write('fiber: $fiber, ')
           ..write('sugar: $sugar, ')
           ..write('sodium: $sodium, ')
+          ..write('barcode: $barcode, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4029,6 +4081,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ScheduledMealOutcomesTable scheduledMealOutcomes =
       $ScheduledMealOutcomesTable(this);
   late final $BodyWeightsTable bodyWeights = $BodyWeightsTable(this);
+  late final Index foodItemsBarcode = Index(
+    'food_items_barcode',
+    'CREATE INDEX food_items_barcode ON food_items (barcode)',
+  );
   late final Index foodLogEntriesLogDate = Index(
     'food_log_entries_log_date',
     'CREATE INDEX food_log_entries_log_date ON food_log_entries (log_date)',
@@ -4058,6 +4114,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     scheduledMeals,
     scheduledMealOutcomes,
     bodyWeights,
+    foodItemsBarcode,
     foodLogEntriesLogDate,
     scheduledMealsStartDate,
   ];
@@ -4136,6 +4193,7 @@ typedef $$FoodItemsTableCreateCompanionBuilder =
       Value<double?> fiber,
       Value<double?> sugar,
       Value<double?> sodium,
+      Value<String?> barcode,
       Value<int> rowid,
     });
 typedef $$FoodItemsTableUpdateCompanionBuilder =
@@ -4152,6 +4210,7 @@ typedef $$FoodItemsTableUpdateCompanionBuilder =
       Value<double?> fiber,
       Value<double?> sugar,
       Value<double?> sodium,
+      Value<String?> barcode,
       Value<int> rowid,
     });
 
@@ -4292,6 +4351,11 @@ class $$FoodItemsTableFilterComposer
 
   ColumnFilters<double> get sodium => $composableBuilder(
     column: $table.sodium,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get barcode => $composableBuilder(
+    column: $table.barcode,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4439,6 +4503,11 @@ class $$FoodItemsTableOrderingComposer
     column: $table.sodium,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get barcode => $composableBuilder(
+    column: $table.barcode,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$FoodItemsTableAnnotationComposer
@@ -4489,6 +4558,9 @@ class $$FoodItemsTableAnnotationComposer
 
   GeneratedColumn<double> get sodium =>
       $composableBuilder(column: $table.sodium, builder: (column) => column);
+
+  GeneratedColumn<String> get barcode =>
+      $composableBuilder(column: $table.barcode, builder: (column) => column);
 
   Expression<T> mealFoodItemsRefs<T extends Object>(
     Expression<T> Function($$MealFoodItemsTableAnnotationComposer a) f,
@@ -4611,6 +4683,7 @@ class $$FoodItemsTableTableManager
                 Value<double?> fiber = const Value.absent(),
                 Value<double?> sugar = const Value.absent(),
                 Value<double?> sodium = const Value.absent(),
+                Value<String?> barcode = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => FoodItemsCompanion(
                 id: id,
@@ -4625,6 +4698,7 @@ class $$FoodItemsTableTableManager
                 fiber: fiber,
                 sugar: sugar,
                 sodium: sodium,
+                barcode: barcode,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -4641,6 +4715,7 @@ class $$FoodItemsTableTableManager
                 Value<double?> fiber = const Value.absent(),
                 Value<double?> sugar = const Value.absent(),
                 Value<double?> sodium = const Value.absent(),
+                Value<String?> barcode = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => FoodItemsCompanion.insert(
                 id: id,
@@ -4655,6 +4730,7 @@ class $$FoodItemsTableTableManager
                 fiber: fiber,
                 sugar: sugar,
                 sodium: sodium,
+                barcode: barcode,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

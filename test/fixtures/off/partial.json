@@ -1,0 +1,13 @@
+{
+  "code": "5000000000017",
+  "status": 1,
+  "product": {
+    "code": "5000000000017",
+    "product_name": "Plain crackers",
+    "nutriments": {
+      "energy-kcal_100g": "430",
+      "proteins_100g": "9,5",
+      "fat_100g": 12
+    }
+  }
+}

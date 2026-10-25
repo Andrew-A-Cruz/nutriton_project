@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 
 /// Saved catalog foods. Macros are stored per 1 serving, where 1 serving is
 /// [servingWeightG] grams.
+@TableIndex(name: 'food_items_barcode', columns: {#barcode})
 class FoodItems extends Table {
   TextColumn get id => text()();
   TextColumn get name => text().withLength(min: 2, max: 100)();
@@ -26,6 +27,10 @@ class FoodItems extends Table {
       real().nullable().check(sugar.isBiggerOrEqualValue(0))();
   RealColumn get sodium =>
       real().nullable().check(sodium.isBiggerOrEqualValue(0))();
+
+  /// Optional barcode digits (EAN/UPC), set when a food is created from a
+  /// scan or typed in the food form. Null when unknown.
+  TextColumn get barcode => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

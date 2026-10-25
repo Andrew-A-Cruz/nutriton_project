@@ -37,6 +37,7 @@ class CatalogRepository {
     required Macros perServing,
     required double servingWeightG,
     WeightUnit displayUnit = WeightUnit.g,
+    String? barcode,
   }) async {
     final id = _uuid.v4();
     _validateFood(name, perServing, servingWeightG);
@@ -53,6 +54,7 @@ class CatalogRepository {
         sodium: Value(perServing.sodium),
         servingWeightG: servingWeightG,
         displayUnit: Value(displayUnit.name),
+        barcode: Value(_cleanBarcode(barcode)),
       ),
     );
     return id;
@@ -64,6 +66,7 @@ class CatalogRepository {
     required Macros perServing,
     required double servingWeightG,
     WeightUnit displayUnit = WeightUnit.g,
+    String? barcode,
   }) async {
     _validateFood(name, perServing, servingWeightG);
     await _db.foodDao.updateFood(
@@ -79,8 +82,18 @@ class CatalogRepository {
         sodium: Value(perServing.sodium),
         servingWeightG: Value(servingWeightG),
         displayUnit: Value(displayUnit.name),
+        barcode: Value(_cleanBarcode(barcode)),
       ),
     );
+  }
+
+  /// The non-archived catalog food saved with [barcode], or null.
+  Future<FoodItem?> findFoodByBarcode(String barcode) =>
+      _db.foodDao.findActiveByBarcode(barcode);
+
+  static String? _cleanBarcode(String? barcode) {
+    final trimmed = barcode?.trim();
+    return trimmed == null || trimmed.isEmpty ? null : trimmed;
   }
 
   /// Archived foods leave search results but stay in past log entries.

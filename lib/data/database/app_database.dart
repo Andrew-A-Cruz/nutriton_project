@@ -38,7 +38,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -81,6 +81,11 @@ class AppDatabase extends _$AppDatabase {
       // v4 -> v5: body weight readings.
       from4To5: (m, schema) async {
         await m.createTable(schema.bodyWeights);
+      },
+      // v5 -> v6: barcode on foods; existing rows stay null.
+      from5To6: (m, schema) async {
+        await m.addColumn(schema.foodItems, schema.foodItems.barcode);
+        await m.create(schema.foodItemsBarcode);
       },
     ),
     beforeOpen: (details) async {

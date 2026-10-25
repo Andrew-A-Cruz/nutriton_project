@@ -6,7 +6,7 @@
 
 | Property | Decision |
 |---|---|
-| Storage | Local SQLite via `drift`, database file `food_log`, schema version 5 |
+| Storage | Local SQLite via `drift`, database file `food_log`, schema version 6 |
 | User preferences | `shared_preferences` (separate from SQLite) |
 | ID format | UUID v4 via `uuid` (`TEXT` primary keys) |
 | Weights | Stored in grams (`*_g`). Users pick g or oz for display only; 1 oz = 28.3495 g |
@@ -36,6 +36,7 @@ Saved catalog foods. Macros are stored per 1 serving, where 1 serving is `servin
 | `fiber` | REAL | Yes | Schema v4. `>= 0` in grams, per 1 serving. Null = not recorded, which is different from 0 (every row from before v4) |
 | `sugar` | REAL | Yes | Schema v4. `>= 0` in grams, per 1 serving. Null = not recorded |
 | `sodium` | REAL | Yes | Schema v4. `>= 0` in **milligrams**, per 1 serving. Null = not recorded |
+| `barcode` | TEXT | Yes | Schema v6. Digits of an EAN/UPC (8 to 14), saved when a food is created from a scan or typed in the food form. Indexed (`food_items_barcode`). Null = none (every row from before v6). Not unique; a scan matches the first non-archived food by name |
 
 ---
 

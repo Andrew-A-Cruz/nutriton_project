@@ -27,7 +27,7 @@ React Native would work, but nothing about this app needs it, and switching woul
 | Area | State |
 |---|---|
 | `lib/main.dart`, `lib/app.dart` | `CupertinoApp` with three real tabs: Today (Home), Catalog and Summary |
-| `lib/data/database/` | drift tables (split into `tables/`), six DAOs, repositories; schema v5 (migrations in `app_database.dart`, dumps in `drift_schemas/`); database file `food_log`; generated code current |
+| `lib/data/database/` | drift tables (split into `tables/`), six DAOs, repositories; schema v6 (migrations in `app_database.dart`, dumps in `drift_schemas/`); database file `food_log`; generated code current |
 | `lib/core/` | Pure Dart: `nutrition_math`, `date_key`, `metrics` (formatting), `validation`, `summary_math` (ranges, bucketing, averages) |
 | `lib/views/` | Onboarding, Home (date header, totals, log list), Catalog (foods and meals, search, archive), Add Food sheet (catalog by servings or grams, one-off, new food with save & log), meal builder and meal log, Summary (range picker, averages, bar chart), Settings (the onboarding form) |
 | `lib/providers/` | Riverpod providers for the database, repositories, preferences, the selected Home date, log entries, catalog lists and the Summary range and report |
@@ -40,7 +40,7 @@ React Native would work, but nothing about this app needs it, and switching woul
 | Device build | Done (M8). Release build installed and running on a physical iPhone |
 | Quick re-log | Done. Copy yesterday on an empty Home day; Recent foods strip in Add Food |
 | Scheduling | Done. Schema v2 (`scheduled_meals`, `scheduled_meal_outcomes`) with migration and test; schedule from Catalog or Add Food; Planned suggestions on Home (confirm / dismiss) |
-| Food lookup | Done. `OpenFoodFactsClient` (`lib/data/remote/`) -> `FoodLookupRepository` -> `foodLookupRepositoryProvider` -> "Look up" block on the New Food form (barcode digits or name search, tap a result to prefill). No schema change; camera barcode scanning via `mobile_scanner` (`barcode_scanner_page.dart`, Scan button hidden on Windows/Linux/web) |
+| Food lookup | Done (M16 added the `barcode` column, schema v6, and the catalog-first scan flow). `OpenFoodFactsClient` (`lib/data/remote/`) -> `FoodLookupRepository` -> `foodLookupRepositoryProvider` -> "Look up" block on the New Food form (barcode digits or name search, tap a result to prefill). Camera barcode scanning via `mobile_scanner` (`barcode_scanner_page.dart`, Scan button hidden on Windows/Linux/web) |
 | Backup | Done. `BackupCodec` (`lib/data/backup/`, pure Dart, versioned JSON) -> `BackupRepository` (export and replace-all import, one transaction each) -> `backupRepositoryProvider` / `backupFileIoProvider`; "Backup" section in Settings with Export (share sheet on iOS and Android, save dialog elsewhere) and Import (counts preview, then confirm dialog), plus a "Last backup" line. No schema change |
 | Meal sections | Done (M12). Schema v3: nullable `meal_slot` on `food_log_entries` (`MealSlot` in `lib/core/meal_slot.dart`, default by time of day). Slot picker (`MealSlotPicker`) on every logging screen and edit sheet; Home groups the day into Breakfast / Lunch / Dinner / Snack / Other with calorie subtotals, empty sections hidden. Log again, copy day and undo keep the slot. No backup format bump (nullable column) |
 

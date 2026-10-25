@@ -15,6 +15,15 @@ class FoodDao extends DatabaseAccessor<AppDatabase> with _$FoodDaoMixin {
   Future<FoodItem?> findById(String id) =>
       (select(foodItems)..where((t) => t.id.equals(id))).getSingleOrNull();
 
+  /// The non-archived food saved with [barcode], or null. If several share it,
+  /// the first by name wins.
+  Future<FoodItem?> findActiveByBarcode(String barcode) =>
+      (select(foodItems)
+            ..where((t) => t.barcode.equals(barcode) & t.archived.equals(false))
+            ..orderBy([(t) => OrderingTerm.asc(t.name)])
+            ..limit(1))
+          .getSingleOrNull();
+
   Future<int> updateFood(String id, FoodItemsCompanion changes) =>
       (update(foodItems)..where((t) => t.id.equals(id))).write(changes);
 
