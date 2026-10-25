@@ -27,12 +27,12 @@ Three ideas from the brainstorm are already built, so they are not milestones he
 | M11 | Backup: export and import | High | M | No | `share_plus`, `file_picker` |
 | M12 | Meal sections (breakfast, lunch, dinner, snacks) | Medium | M | v3 | None |
 | M13 | Fiber, sugar, sodium | Medium | M | v4 | None |
-| M14 | Streaks and reminders | Medium | M | No | `flutter_local_notifications`, `timezone` |
+| M14 | Streaks and reminders | Medium | M | No | `flutter_local_notifications`, `timezone`, `flutter_timezone` |
 | M15 | Body weight tracking | Medium | M | v5 (new table) | None |
 | M16 | Barcode scan and food lookup | High | L | v6 (barcode column) | `mobile_scanner`, `http` |
 | M17 | Planned meals (scheduling) | Medium | L | v7 (extends `scheduled_meals`) | None |
 | M18 | Home screen widget | Low–Med | L | No | `home_widget` + a Swift WidgetKit target |
-| M19 | Apple Health | Low–Med | M | No | `health` |
+| M19 | Apple Health | Low–Med | M | v8 (`body_weights.source`) | `health` |
 | M20 | Cloud sync | Low (one device) | XL | Sync metadata | `supabase_flutter` |
 | M21 | Pro unlock (monetization) | — | M | No | `purchases_flutter` |
 
@@ -42,6 +42,7 @@ Three ideas from the brainstorm are already built, so they are not milestones he
 - **M13 comes before M16.** Open Food Facts returns fiber, sugar and sodium, so a barcode lookup can fill them once the columns exist.
 - **M16 is high value but large.** It brings in the network, the camera, permissions and messy third-party data. It is placed after the cheaper wins, not because it matters less.
 - **M18 to M20 are late.** They're mostly platform plumbing, and M18 and M19 may need a paid Apple Developer account (see Open Questions).
+- **Status (October 2026):** M9 to M19 are built and merged. M18 and M19 are done only on the Dart side, and their iOS parts wait on the [manual Mac steps](#manual-mac-steps-before-the-next-ios-build).
 - **M21 is last.** Pro only has something to sell once the features it unlocks exist. Detailed in [`MONETIZATION_PLAN.md`](./MONETIZATION_PLAN.md).
 
 ---
@@ -123,7 +124,7 @@ Each milestone ends with something runnable and its tests passing, as in v1. Run
 - [x] Catalog: "Schedule…" on a meal or food (pick weekdays and a slot). *Done:* the Catalog meal action sheet and the Edit Food form (a "Schedule..." row, existing foods only) open `ScheduleMealView`, now taking a meal or a food. It has one day or repeat weekly, the date, weekdays, a meal slot (or time of day) and servings
 - [x] Home: scheduled items that haven't been logged yet appear as dimmed suggestion rows in their section. Tap to log, swipe to skip for that day. They never log automatically, per GAME_PLAN. *Done:* the separate "Planned" block is gone. `DayLogList` puts a dimmed `PlannedTile` at the end of its section (a plan with no slot goes by time of day). Tap logs it with the plan's servings into that section and writes a `logged` outcome; swipe left writes `dismissed` for that day only; long-press offers Skip or Stop repeating. A section with only planned items shows no calorie total, and the empty-day state shows only when nothing is logged or planned
 - [x] Suggestions don't count toward totals until confirmed. *Done:* suggestions are not log entries, so the macro summary, Summary, streak and reminders (which read `food_log_entries`) ignore them; tests assert it
-- [x] Repository tests: matching by weekday, a confirmed or skipped item disappears, archived sources are hidden. *Done:* also one-off dates, food plans logging with their servings and slot, meal servings scaling, the exactly-one-source rules, and the DAO CHECKs. Backup: the new columns ride on the plan rows, and `servings` defaults to 1 when missing so pre-M17 files import (format `version` stays 1); `backup_scheduling_test.dart` covers the round trip and the pre-M17 fixture
+- [x] Repository tests: matching by weekday, a confirmed or skipped item disappears, archived sources are hidden. *Done:* also one-off dates, food plans logging with their servings and slot, meal servings scaling, the exactly-one-source rules, and the DAO CHECKs. Backup: the new columns ride on the plan rows, and `servings` defaults to 1 when missing so pre-M17 files import (format `version` stays 1); `backup_scheduling_test.dart` covers the round trip and the pre-M17 fixture. Known limit: a backup that holds a food-only plan (null `meal_id`) reads as damaged in an app from before M17, the cost of keeping format `version` 1
 
 ### M18 — Home screen widget
 - [ ] Check first: App Groups provisioning with your signing setup (see Open Questions). *Not done:* needs Xcode and a Mac. The decision was to build everything first and expect provisioning to fail on the free personal team until you upgrade; nothing has been provisioned or compiled
@@ -146,6 +147,21 @@ Each milestone ends with something runnable and its tests passing, as in v1. Run
 
 ---
 
+## Manual Mac Steps Before the Next iOS Build
+
+M14 to M19 were built on Windows, with no Xcode or Android SDK. Everything native is written but has never been compiled or run on a device. Do these on a Mac, in order (the Android step needs only a machine with the Android SDK):
+
+- [ ] `cd ios && pod install`. `Podfile.lock` does not yet include `flutter_local_notifications`, `flutter_timezone`, `home_widget` or `health`
+- [ ] Build and run once on a device before the steps below, to check M14 to M17: reminder notifications and their permission prompt, camera barcode scanning, and the live Open Food Facts lookup
+- [ ] Android: build once to check the core library desugaring change in `android/app/build.gradle.kts` (M14) and that reminders survive a reboot
+- [ ] M18 widget: add the `TodayWidget` Widget Extension target and the App Groups capability (`group.com.nutriton.app`) on Runner and the widget, following [`ios/TodayWidget/README.md`](./ios/TodayWidget/README.md). Set Runner's `CODE_SIGN_ENTITLEMENTS` to `Runner/Runner.entitlements`
+- [ ] M19 Apple Health: add the HealthKit capability on Runner, following [`ios/HEALTHKIT.md`](./ios/HEALTHKIT.md)
+- [ ] If the free personal team refuses to provision App Groups or HealthKit, remove that capability (and its keys from `Runner/Runner.entitlements`) to get a building app again; the Dart side stays inert without them
+
+Until the M18 and M19 steps are done, `Runner.entitlements` is not referenced by the Xcode project, so current builds are unaffected.
+
+---
+
 ## Fixes From the October 2026 Review
 
 Problems found in a review of the built app. Do these before new milestones: the first two can lose or misplace data.
@@ -157,6 +173,7 @@ Problems found in a review of the built app. Do these before new milestones: the
 - [x] **Migration test tooling.** `schema_migration_test.dart` rebuilds v1 by hand. Set up `drift_dev make-migrations` and commit `drift_schemas/` (already planned in M12) before any further schema change. *Done:* after changing tables, bump `schemaVersion`, then run `dart run drift_dev make-migrations` and `dart run build_runner build`
 - [x] **Double-tap on Copy yesterday.** Two quick taps copy the day twice. Disable the button while the copy runs
 - [x] **Release housekeeping.** Android release builds still use the debug signing config; the `pubspec.yaml` description still reads "A new Flutter project."; the Open Food Facts User-Agent contains a personal email in a public repo (consider a project address). *Done:* release builds sign with `android/key.properties` when it exists (create it and the keystore before a Play release; it is git-ignored), and the User-Agent now gives the repo URL
+- [x] **Food form overflow at 2x text.** Found while building M13: the New and Edit Food forms overflowed by 100 px at 2x text, because each form row put its label beside the field and left the field about 40 px. *Done:* `formRow` (`views/common/form_widgets.dart`) puts the label above the field at large text sizes, as the goal fields in the preferences form already did. This covers every form built with it (food, one-off entry, entry edit sheets, meal builder, schedule). The New and Edit Food forms, with every metric tracked, are now in `large_text_dark_mode_test.dart`
 
 ---
 
@@ -266,7 +283,7 @@ Decide each one before its milestone starts:
 1. **Backup format (M11).** *Proposed:* JSON. Copying the SQLite file is simpler, but a file from an older build can't be safely opened by a newer one without running migrations on import, and you can't read or edit it. JSON costs about a day more.
 2. **Slot times (M12).** The 10:30 / 15:00 / 20:00 cutoffs are a guess. Should they be adjustable in Settings, or are fixed times fine?
 3. **Null vs 0 for new nutrients (M13).** *Proposed:* null means not recorded, so old foods don't claim 0 mg of sodium. The cost is the coverage text in the UI.
-4. **Paid Apple Developer account (M18, M19).** Your current builds use a free personal team. Free teams may not be able to provision App Groups (M18) or HealthKit (M19), and their builds expire after 7 days. Check what your team can provision before starting either milestone. If it can't, these two wait or are dropped.
+4. **Paid Apple Developer account (M18, M19).** Your current builds use a free personal team. Free teams may not be able to provision App Groups (M18) or HealthKit (M19), and their builds expire after 7 days. Check what your team can provision before starting either milestone. If it can't, these two wait or are dropped. *Decided (October 2026):* the team is a free personal team. Build the Dart side and the platform files anyway, and expect provisioning to fail until the account is upgraded. See [Manual Mac Steps](#manual-mac-steps-before-the-next-ios-build).
 5. **Cloud sync (M20).** Is a second device or a web version actually planned? If not, M20 can be cut.
 6. **Monetization (M21).** Price, the free/Pro split, and whether sync is Pro or a subscription. See [`MONETIZATION_PLAN.md`](./MONETIZATION_PLAN.md#open-questions).
 7. **CSV export (backlog).** A raw CSV of your own log is data portability, which argues for free (Principle 1). The Pro "shareable reports" already list "a PDF or CSV of a date range". *Proposed:* the plain CSV is free, and Pro keeps the formatted PDF report.
