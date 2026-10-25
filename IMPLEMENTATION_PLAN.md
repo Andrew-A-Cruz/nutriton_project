@@ -41,6 +41,7 @@ React Native would work, but nothing about this app needs it, and switching woul
 | Quick re-log | Done. Copy yesterday on an empty Home day; Recent foods strip in Add Food |
 | Scheduling | Done (M17 extended it to foods, slots and servings at schema v7). Schema v2 (`scheduled_meals`, `scheduled_meal_outcomes`) with migration and test; schedule a meal or food from Catalog, Edit Food or Add Food; planned items show dimmed inside their meal section on Home (tap to log, swipe to skip) |
 | Food lookup | Done (M16 added the `barcode` column, schema v6, and the catalog-first scan flow). `OpenFoodFactsClient` (`lib/data/remote/`) -> `FoodLookupRepository` -> `foodLookupRepositoryProvider` -> "Look up" block on the New Food form (barcode digits or name search, tap a result to prefill). Camera barcode scanning via `mobile_scanner` (`barcode_scanner_page.dart`, Scan button hidden on Windows/Linux/web) |
+| Home screen widget | Dart side done (M18), iOS target manual. `buildWidgetSnapshot` (`lib/core/widget_snapshot.dart`) -> `WidgetSync` -> `WidgetPublisher` (`lib/data/widget/`; `HomeWidgetPublisher` on iOS, App Group `group.com.nutriton.app`) -> `widgetPlanProvider` watched from the root. SwiftUI WidgetKit sources, plists and entitlements are in `ios/TodayWidget/` and `ios/Runner/Runner.entitlements`, uncompiled and not in `project.pbxproj`; App Groups on a free Apple team is unverified |
 | Backup | Done. `BackupCodec` (`lib/data/backup/`, pure Dart, versioned JSON) -> `BackupRepository` (export and replace-all import, one transaction each) -> `backupRepositoryProvider` / `backupFileIoProvider`; "Backup" section in Settings with Export (share sheet on iOS and Android, save dialog elsewhere) and Import (counts preview, then confirm dialog), plus a "Last backup" line. No schema change |
 | Meal sections | Done (M12). Schema v3: nullable `meal_slot` on `food_log_entries` (`MealSlot` in `lib/core/meal_slot.dart`, default by time of day). Slot picker (`MealSlotPicker`) on every logging screen and edit sheet; Home groups the day into Breakfast / Lunch / Dinner / Snack / Other with calorie subtotals, empty sections hidden. Log again, copy day and undo keep the slot. No backup format bump (nullable column) |
 
@@ -155,6 +156,7 @@ DATA_MODEL.md has been updated to match these changes.
 | State management | `flutter_riverpod` | Installed |
 | Preferences | `shared_preferences` | Installed |
 | Reminders | `flutter_local_notifications`, `timezone`, `flutter_timezone` | Installed (M14; behind `NotificationScheduler`, no-op on desktop and web) |
+| Home screen widget | `home_widget` | Installed (M18; behind `WidgetPublisher`, no-op except on iOS; needs the manual Xcode target in `ios/TodayWidget/README.md`) |
 | IDs | `uuid` | Installed |
 | Date formatting | `intl` | Installed |
 | Summary charts | `fl_chart` | Installed (Milestone 7, `^1.2.0`) |
