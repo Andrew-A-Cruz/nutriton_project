@@ -66,6 +66,12 @@ void main() {
     await tapSubmitPreferences(tester);
     await settle(tester);
 
+    // The error is under the goal, far above the submit button.
+    await scrollPreferencesTo(
+      tester,
+      find.text('Enter a daily goal for Calories'),
+      delta: -200,
+    );
     expect(find.text('Enter a daily goal for Calories'), findsOneWidget);
     expect(find.text('Set up Nutriton'), findsOneWidget);
     expect(prefs.getBool('onboarding_complete'), isNull);

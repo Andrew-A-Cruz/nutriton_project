@@ -1,5 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/body_weight.dart';
 import '../../core/metrics.dart';
 import '../../core/nutrition_math.dart';
 import '../../core/reminder.dart';
@@ -13,6 +14,7 @@ class UserSettings {
     Set<Metric> trackedMetrics = const {},
     Map<Metric, double> goals = const {},
     this.displayUnit = WeightUnit.g,
+    this.bodyWeightUnit = BodyWeightUnit.kg,
     List<Reminder> reminders = Reminder.defaults,
   }) : trackedMetrics = {...trackedMetrics, primaryMetric},
        goals = Map.unmodifiable(goals),
@@ -31,6 +33,9 @@ class UserSettings {
   final Map<Metric, double> goals;
   final WeightUnit displayUnit;
 
+  /// Unit for body weight, separate from the food [displayUnit].
+  final BodyWeightUnit bodyWeightUnit;
+
   /// Always [reminderSlots] long, all off until the user turns them on.
   final List<Reminder> reminders;
 
@@ -48,6 +53,7 @@ class UserSettings {
     Set<Metric>? trackedMetrics,
     Map<Metric, double>? goals,
     WeightUnit? displayUnit,
+    BodyWeightUnit? bodyWeightUnit,
     List<Reminder>? reminders,
   }) => UserSettings(
     onboardingComplete: onboardingComplete ?? this.onboardingComplete,
@@ -55,6 +61,7 @@ class UserSettings {
     trackedMetrics: trackedMetrics ?? this.trackedMetrics,
     goals: goals ?? this.goals,
     displayUnit: displayUnit ?? this.displayUnit,
+    bodyWeightUnit: bodyWeightUnit ?? this.bodyWeightUnit,
     reminders: reminders ?? this.reminders,
   );
 }
@@ -68,6 +75,7 @@ class UserPreferences {
   static const primaryKey = 'primary_metric';
   static const trackedKey = 'tracked_metrics';
   static const unitKey = 'display_unit';
+  static const bodyWeightUnitKey = 'body_weight_unit';
   static const lastBackupKey = 'last_backup_at';
   static String goalKey(Metric metric) => 'goal_${metric.name}';
   static String reminderEnabledKey(int slot) => 'reminder_${slot}_enabled';
@@ -96,6 +104,11 @@ class UserPreferences {
       displayUnit:
           WeightUnit.values.asNameMap()[_prefs.getString(unitKey)] ??
           WeightUnit.g,
+      bodyWeightUnit:
+          BodyWeightUnit.values.asNameMap()[_prefs.getString(
+            bodyWeightUnitKey,
+          )] ??
+          BodyWeightUnit.kg,
       reminders: [
         for (var i = 0; i < reminderSlots; i++)
           Reminder(
@@ -118,6 +131,7 @@ class UserPreferences {
       for (final m in settings.trackedMetrics) m.name,
     ]);
     await _prefs.setString(unitKey, settings.displayUnit.name);
+    await _prefs.setString(bodyWeightUnitKey, settings.bodyWeightUnit.name);
     for (var i = 0; i < reminderSlots; i++) {
       await _prefs.setBool(
         reminderEnabledKey(i),

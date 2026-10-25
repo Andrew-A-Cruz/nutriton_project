@@ -13,6 +13,7 @@ import 'day_log_list.dart';
 import 'macro_summary.dart';
 import 'scheduled_suggestions.dart';
 import 'streak_badge.dart';
+import 'weigh_in_row.dart';
 
 /// The Today tab: date header, day totals, and the day's log.
 class HomeView extends ConsumerWidget {
@@ -90,6 +91,7 @@ class HomeView extends ConsumerWidget {
                 child: MacroSummary(entries: entries, settings: settings),
               ),
             ),
+            SliverToBoxAdapter(child: WeighInRow(date: date)),
             SliverToBoxAdapter(child: ScheduledSuggestions(date: date)),
             if (entriesAsync.hasError)
               SliverFillRemaining(

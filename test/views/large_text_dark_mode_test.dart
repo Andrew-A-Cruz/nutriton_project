@@ -6,6 +6,7 @@ import 'package:nutriton_project/core/meal_slot.dart';
 import 'package:nutriton_project/core/metrics.dart';
 import 'package:nutriton_project/core/nutrition_math.dart';
 import 'package:nutriton_project/data/database/app_database.dart';
+import 'package:nutriton_project/data/repositories/body_weight_repository.dart';
 import 'package:nutriton_project/data/repositories/log_repository.dart';
 import 'package:nutriton_project/data/repositories/catalog_repository.dart';
 import 'package:nutriton_project/views/common/meal_slot_picker.dart';
@@ -65,6 +66,10 @@ void main() {
       name: 'Yesterday',
       macros: const Macros(calories: 800, protein: 20, carbs: 60, fat: 10),
     );
+    // Body weight: the Home row and the Summary chart.
+    final weights = BodyWeightRepository(db);
+    await weights.setWeight(todayKey(), 1234.5 / 10);
+    await weights.setWeight(addDays(todayKey(), -1), 124.1);
   }
 
   testWidgets('Home and Summary fit at 2x text in dark mode', (tester) async {
@@ -74,11 +79,20 @@ void main() {
     await settle(tester);
 
     expect(find.text('Food Log'), findsOneWidget);
+    // At 2x text the row sits below the first screenful.
+    await tester.dragUntilVisible(
+      find.byKey(const Key('weigh-in-value')),
+      find.byType(CustomScrollView),
+      const Offset(0, -100),
+    );
     await tester.tap(find.byIcon(CupertinoIcons.chart_bar_fill));
     await settle(tester);
     for (final segment in ['Day', 'Week', 'Month', '6M', 'Year']) {
       await tester.tap(find.text(segment).last);
       await settle(tester);
+      if (segment != 'Day') {
+        expect(find.byKey(const Key('weight-chart')), findsOneWidget);
+      }
     }
     expect(tester.takeException(), isNull);
     await unmount(tester);

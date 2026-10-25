@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 
+import '../../core/body_weight.dart';
 import '../../core/metrics.dart';
 import '../../core/nutrition_math.dart';
 import '../../core/validation.dart';
@@ -35,6 +36,7 @@ class _PreferencesFormState extends State<PreferencesForm> {
   late Metric _primary = widget.initial.primaryMetric;
   late final Set<Metric> _tracked = {...widget.initial.trackedMetrics};
   late WeightUnit _unit = widget.initial.displayUnit;
+  late BodyWeightUnit _bodyUnit = widget.initial.bodyWeightUnit;
   late final Map<Metric, TextEditingController> _goals = {
     for (final m in Metric.values)
       m: TextEditingController(
@@ -85,6 +87,7 @@ class _PreferencesFormState extends State<PreferencesForm> {
         trackedMetrics: _tracked,
         goals: goals,
         displayUnit: _unit,
+        bodyWeightUnit: _bodyUnit,
       ),
     );
   }
@@ -222,6 +225,28 @@ class _PreferencesFormState extends State<PreferencesForm> {
                   },
                   onValueChanged: (u) {
                     if (u != null) setState(() => _unit = u);
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+        CupertinoFormSection.insetGrouped(
+          header: const Text('BODY WEIGHT IN'),
+          footer: const Text('Kept apart from the food unit above.'),
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: SizedBox(
+                width: double.infinity,
+                child: CupertinoSlidingSegmentedControl<BodyWeightUnit>(
+                  key: const Key('body-weight-unit'),
+                  groupValue: _bodyUnit,
+                  children: {
+                    for (final u in BodyWeightUnit.values) u: Text(u.name),
+                  },
+                  onValueChanged: (u) {
+                    if (u != null) setState(() => _bodyUnit = u);
                   },
                 ),
               ),
