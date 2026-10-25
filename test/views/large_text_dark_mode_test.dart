@@ -9,6 +9,7 @@ import 'package:nutriton_project/data/database/app_database.dart';
 import 'package:nutriton_project/data/repositories/body_weight_repository.dart';
 import 'package:nutriton_project/data/repositories/log_repository.dart';
 import 'package:nutriton_project/data/repositories/catalog_repository.dart';
+import 'package:nutriton_project/views/catalog/food_form_view.dart';
 import 'package:nutriton_project/views/common/meal_slot_picker.dart';
 import 'package:nutriton_project/views/tour/app_tour.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -278,5 +279,53 @@ void main() {
     expect(find.byKey(const Key('average-sodium')), findsOneWidget);
     expect(tester.takeException(), isNull);
     await unmount(tester);
+  });
+
+  testWidgets('New and Edit Food fit at 2x text', (tester) async {
+    stressScreen(tester);
+    final allMetrics = await tester.runAsync(
+      () => mockPreferences({
+        'onboarding_complete': true,
+        'primary_metric': 'calories',
+        'tracked_metrics': [for (final m in Metric.values) m.name],
+      }),
+    );
+    final food = await tester.runAsync(() async {
+      final catalog = CatalogRepository(db);
+      final id = await catalog.createFood(
+        name: 'A very long food name that should wrap cleanly onto more lines',
+        perServing: const Macros(
+          calories: 1234.5,
+          protein: 80.25,
+          carbs: 120,
+          fat: 40.75,
+          fiber: 12.5,
+          sugar: 30,
+          sodium: 2300,
+        ),
+        servingWeightG: 250,
+        barcode: '01234567890128',
+      );
+      return catalog.findFood(id);
+    });
+
+    for (final existing in [null, food]) {
+      await tester.pumpWidget(
+        testScreen(
+          db: db,
+          prefs: allMetrics!,
+          home: FoodFormView(existing: existing),
+        ),
+      );
+      await settle(tester);
+      expect(tester.takeException(), isNull);
+      // Scroll to the end so every row is built and laid out.
+      for (var i = 0; i < 12; i++) {
+        await tester.drag(find.byType(Scrollable).first, const Offset(0, -300));
+        await tester.pump();
+        expect(tester.takeException(), isNull);
+      }
+      await unmount(tester);
+    }
   });
 }

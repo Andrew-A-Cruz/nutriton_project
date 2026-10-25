@@ -31,7 +31,9 @@ class FormFieldError extends StatelessWidget {
 }
 
 /// One labelled input in a [CupertinoFormSection], with its error underneath.
-CupertinoFormRow formRow({
+/// At large text sizes the label goes above the field, since beside it the
+/// label leaves the field almost no width.
+Widget formRow({
   required Key fieldKey,
   required String label,
   required TextEditingController controller,
@@ -41,31 +43,56 @@ CupertinoFormRow formRow({
   bool numeric = true,
   ValueChanged<String>? onChanged,
 }) {
-  return CupertinoFormRow(
-    prefix: Text(label),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        CupertinoTextField(
-          key: fieldKey,
-          controller: controller,
-          placeholder: placeholder,
-          textAlign: TextAlign.end,
-          onChanged: onChanged,
-          keyboardType: numeric
-              ? const TextInputType.numberWithOptions(decimal: true)
-              : TextInputType.text,
-          suffix: suffix == null
-              ? null
-              : Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: Text(suffix),
-                ),
+  return Builder(
+    builder: (context) {
+      final stackLabel = MediaQuery.textScalerOf(context).scale(10) > 15;
+      return CupertinoFormRow(
+        prefix: stackLabel ? null : Text(label),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (stackLabel)
+              Align(alignment: Alignment.centerLeft, child: Text(label)),
+            _formField(
+              fieldKey: fieldKey,
+              controller: controller,
+              placeholder: placeholder,
+              suffix: suffix,
+              numeric: numeric,
+              onChanged: onChanged,
+            ),
+            FormFieldError(error),
+          ],
         ),
-        FormFieldError(error),
-      ],
-    ),
+      );
+    },
+  );
+}
+
+CupertinoTextField _formField({
+  required Key fieldKey,
+  required TextEditingController controller,
+  String? placeholder,
+  String? suffix,
+  bool numeric = true,
+  ValueChanged<String>? onChanged,
+}) {
+  return CupertinoTextField(
+    key: fieldKey,
+    controller: controller,
+    placeholder: placeholder,
+    textAlign: TextAlign.end,
+    onChanged: onChanged,
+    keyboardType: numeric
+        ? const TextInputType.numberWithOptions(decimal: true)
+        : TextInputType.text,
+    suffix: suffix == null
+        ? null
+        : Padding(
+            padding: const EdgeInsets.only(right: 6),
+            child: Text(suffix),
+          ),
   );
 }
 
