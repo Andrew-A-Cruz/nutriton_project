@@ -16,6 +16,8 @@ class UserSettings {
     this.displayUnit = WeightUnit.g,
     this.bodyWeightUnit = BodyWeightUnit.kg,
     List<Reminder> reminders = Reminder.defaults,
+    this.healthWriteNutrition = false,
+    this.healthReadWeight = false,
   }) : trackedMetrics = {...trackedMetrics, primaryMetric},
        goals = Map.unmodifiable(goals),
        reminders = List.unmodifiable([
@@ -39,6 +41,12 @@ class UserSettings {
   /// Always [reminderSlots] long, all off until the user turns them on.
   final List<Reminder> reminders;
 
+  /// Whether each day's nutrition totals are written to Apple Health.
+  final bool healthWriteNutrition;
+
+  /// Whether body weight is read from Apple Health.
+  final bool healthReadWeight;
+
   /// Tracked metrics other than the primary one, in [Metric.values] order.
   List<Metric> get secondaryMetrics => [
     for (final m in Metric.values)
@@ -55,6 +63,8 @@ class UserSettings {
     WeightUnit? displayUnit,
     BodyWeightUnit? bodyWeightUnit,
     List<Reminder>? reminders,
+    bool? healthWriteNutrition,
+    bool? healthReadWeight,
   }) => UserSettings(
     onboardingComplete: onboardingComplete ?? this.onboardingComplete,
     primaryMetric: primaryMetric ?? this.primaryMetric,
@@ -63,6 +73,8 @@ class UserSettings {
     displayUnit: displayUnit ?? this.displayUnit,
     bodyWeightUnit: bodyWeightUnit ?? this.bodyWeightUnit,
     reminders: reminders ?? this.reminders,
+    healthWriteNutrition: healthWriteNutrition ?? this.healthWriteNutrition,
+    healthReadWeight: healthReadWeight ?? this.healthReadWeight,
   );
 }
 
@@ -76,6 +88,8 @@ class UserPreferences {
   static const trackedKey = 'tracked_metrics';
   static const unitKey = 'display_unit';
   static const bodyWeightUnitKey = 'body_weight_unit';
+  static const healthWriteNutritionKey = 'health_write_nutrition';
+  static const healthReadWeightKey = 'health_read_weight';
   static const lastBackupKey = 'last_backup_at';
   static String goalKey(Metric metric) => 'goal_${metric.name}';
   static String reminderEnabledKey(int slot) => 'reminder_${slot}_enabled';
@@ -118,6 +132,8 @@ class UserPreferences {
             enabled: _prefs.getBool(reminderEnabledKey(i)) ?? false,
           ),
       ],
+      healthWriteNutrition: _prefs.getBool(healthWriteNutritionKey) ?? false,
+      healthReadWeight: _prefs.getBool(healthReadWeightKey) ?? false,
     );
   }
 
@@ -139,6 +155,11 @@ class UserPreferences {
       );
       await _prefs.setInt(reminderMinutesKey(i), settings.reminders[i].minutes);
     }
+    await _prefs.setBool(
+      healthWriteNutritionKey,
+      settings.healthWriteNutrition,
+    );
+    await _prefs.setBool(healthReadWeightKey, settings.healthReadWeight);
     for (final m in Metric.values) {
       final goal = settings.goalFor(m);
       if (goal == null) {

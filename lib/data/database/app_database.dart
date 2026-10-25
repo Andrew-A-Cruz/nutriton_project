@@ -38,7 +38,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -81,6 +81,30 @@ class AppDatabase extends _$AppDatabase {
       // v4 -> v5: body weight readings.
       from4To5: (m, schema) async {
         await m.createTable(schema.bodyWeights);
+      },
+      // v5 -> v6: barcode on foods; existing rows stay null.
+      from5To6: (m, schema) async {
+        await m.addColumn(schema.foodItems, schema.foodItems.barcode);
+        await m.create(schema.foodItemsBarcode);
+      },
+      // v6 -> v7: plans may be a food instead of a meal (meal_id becomes
+      // nullable, so the table is rebuilt), with a slot and servings. Existing
+      // plans keep their ids, so outcomes still point at them.
+      from6To7: (m, schema) async {
+        await m.alterTable(
+          TableMigration(
+            schema.scheduledMeals,
+            newColumns: [
+              schema.scheduledMeals.foodItemId,
+              schema.scheduledMeals.mealSlot,
+              schema.scheduledMeals.servings,
+            ],
+          ),
+        );
+      },
+      // v7 -> v8: where a body weight came from; existing rows are manual.
+      from7To8: (m, schema) async {
+        await m.addColumn(schema.bodyWeights, schema.bodyWeights.source);
       },
     ),
     beforeOpen: (details) async {

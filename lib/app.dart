@@ -1,8 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'providers/health_providers.dart';
 import 'providers/preferences_providers.dart';
 import 'providers/reminder_providers.dart';
+import 'providers/widget_providers.dart';
 import 'views/catalog/catalog_view.dart';
 import 'views/home/home_view.dart';
 import 'views/onboarding/onboarding_view.dart';
@@ -27,6 +29,11 @@ class _RootGate extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Keeps reminder notifications planned while the app is open.
     ref.watch(reminderPlanProvider);
+    // Keeps the home screen widget's figures current.
+    ref.watch(widgetPlanProvider);
+    // Keeps Apple Health in line with the log and body weight, when opted in.
+    ref.watch(healthNutritionPlanProvider);
+    ref.watch(healthWeightPlanProvider);
     final onboarded = ref.watch(
       preferencesProvider.select((s) => s.onboardingComplete),
     );

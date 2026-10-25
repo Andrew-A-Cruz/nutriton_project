@@ -1,20 +1,29 @@
 import 'package:drift/drift.dart';
 
 import '../app_database.dart';
+import '../tables/food_items.dart';
 import '../tables/meals.dart';
 import '../tables/scheduled_meals.dart';
 
 part 'scheduled_meal_dao.g.dart';
 
-/// A scheduled meal that is still waiting for the user on one day.
+/// A scheduled meal or food that is still waiting for the user on one day.
+/// Exactly one of [meal] and [food] is set.
 class PendingScheduledMeal {
-  const PendingScheduledMeal({required this.schedule, required this.meal});
+  const PendingScheduledMeal({required this.schedule, this.meal, this.food})
+    : assert((meal == null) != (food == null));
 
   final ScheduledMeal schedule;
-  final Meal meal;
+  final Meal? meal;
+  final FoodItem? food;
+
+  /// The planned meal's or food's name.
+  String get name => (meal?.name ?? food?.name)!;
 }
 
-@DriftAccessor(tables: [ScheduledMeals, ScheduledMealOutcomes, Meals])
+@DriftAccessor(
+  tables: [ScheduledMeals, ScheduledMealOutcomes, Meals, FoodItems],
+)
 class ScheduledMealDao extends DatabaseAccessor<AppDatabase>
     with _$ScheduledMealDaoMixin {
   ScheduledMealDao(super.attachedDatabase);
@@ -31,6 +40,11 @@ class ScheduledMealDao extends DatabaseAccessor<AppDatabase>
 
   Future<List<ScheduledMeal>> findSchedulesForMeal(String mealId) =>
       (select(scheduledMeals)..where((t) => t.mealId.equals(mealId))).get();
+
+  Future<List<ScheduledMeal>> findSchedulesForFood(String foodItemId) =>
+      (select(
+        scheduledMeals,
+      )..where((t) => t.foodItemId.equals(foodItemId))).get();
 
   Future<void> insertOutcome(ScheduledMealOutcomesCompanion outcome) =>
       into(scheduledMealOutcomes).insert(outcome);
@@ -51,7 +65,7 @@ class ScheduledMealDao extends DatabaseAccessor<AppDatabase>
           .write(ScheduledMealOutcomesCompanion(entryId: Value(entryId)));
 
   /// Plans due on [date] ('yyyy-MM-dd') that have no outcome for that day yet,
-  /// oldest plan first. [weekdayBit] is the bit of [date]'s weekday (see
+  /// oldest plan first; plans whose meal or food is archived are left out. [weekdayBit] is the bit of [date]'s weekday (see
   /// `weekdayBit`). A one-off is due on its start date; a repeating plan on
   /// matching weekdays from its start date on.
   Stream<List<PendingScheduledMeal>> watchPendingForDate(
@@ -60,7 +74,11 @@ class ScheduledMealDao extends DatabaseAccessor<AppDatabase>
   ) {
     final query =
         select(scheduledMeals).join([
-            innerJoin(meals, meals.id.equalsExp(scheduledMeals.mealId)),
+            leftOuterJoin(meals, meals.id.equalsExp(scheduledMeals.mealId)),
+            leftOuterJoin(
+              foodItems,
+              foodItems.id.equalsExp(scheduledMeals.foodItemId),
+            ),
             leftOuterJoin(
               scheduledMealOutcomes,
               scheduledMealOutcomes.scheduledMealId.equalsExp(
@@ -71,6 +89,9 @@ class ScheduledMealDao extends DatabaseAccessor<AppDatabase>
           ])
           ..where(
             scheduledMealOutcomes.id.isNull() &
+                ((meals.id.isNotNull() & meals.archived.equals(false)) |
+                    (foodItems.id.isNotNull() &
+                        foodItems.archived.equals(false))) &
                 ((scheduledMeals.weekdays.isNull() &
                         scheduledMeals.startDate.equals(date)) |
                     (scheduledMeals.weekdays.isNotNull() &
@@ -88,7 +109,8 @@ class ScheduledMealDao extends DatabaseAccessor<AppDatabase>
         for (final r in rows)
           PendingScheduledMeal(
             schedule: r.readTable(scheduledMeals),
-            meal: r.readTable(meals),
+            meal: r.readTableOrNull(meals),
+            food: r.readTableOrNull(foodItems),
           ),
       ],
     );

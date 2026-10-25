@@ -76,6 +76,9 @@ void main() {
       .controller!
       .text;
 
+  String fieldText(WidgetTester tester, String key) =>
+      tester.widget<CupertinoTextField>(find.byKey(Key(key))).controller!.text;
+
   testWidgets('scan button is shown only where scanning is supported', (
     tester,
   ) async {
@@ -99,7 +102,11 @@ void main() {
 
     expect(barcodeText(tester), '12345678');
     expect(looked.single, contains('12345678'));
-    expect(find.byKey(const Key('lookup-result-0')), findsOneWidget);
+    // A scan fills the form for review; nothing is saved.
+    expect(fieldText(tester, 'food-name'), 'Soda');
+    expect(fieldText(tester, 'food-calories'), '42');
+    expect(fieldText(tester, 'food-barcode'), '12345678');
+    expect(await db.select(db.foodItems).get(), isEmpty);
     await unmount(tester);
   });
 

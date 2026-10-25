@@ -110,7 +110,7 @@ class CatalogView extends ConsumerWidget {
                 ),
               );
             },
-            child: const Text('Schedule meal'),
+            child: const Text('Schedule...'),
           ),
           CupertinoActionSheetAction(
             onPressed: () {

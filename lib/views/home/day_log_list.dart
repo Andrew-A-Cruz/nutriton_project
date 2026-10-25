@@ -6,20 +6,30 @@ import '../../core/meal_slot.dart';
 import '../../core/metrics.dart';
 import '../../data/database/app_database.dart';
 import '../../providers/infrastructure_providers.dart';
+import '../../data/repositories/schedule_repository.dart';
 import '../../providers/log_providers.dart';
 import '../../providers/today_providers.dart';
 import 'edit_entry_sheets.dart';
 import 'entry_sheets.dart';
+import 'scheduled_suggestions.dart';
 import 'undo_banner.dart';
 
 /// The day's entries as a sliver. Swipe left to delete (with a short Undo
 /// banner); tap a food entry to edit its servings, a meal entry to see its
 /// breakdown or a one-off entry to edit it; long-press any entry to move it to
-/// another day.
+/// another day. Planned items for [date] that are not yet logged sit dimmed at
+/// the end of their meal section (see [PlannedTile]).
 class DayLogList extends ConsumerStatefulWidget {
-  const DayLogList({super.key, required this.entries});
+  const DayLogList({
+    super.key,
+    required this.entries,
+    this.planned = const [],
+    this.date = '',
+  });
 
   final List<FoodLogEntry> entries;
+  final List<PendingScheduledMeal> planned;
+  final String date;
 
   @override
   ConsumerState<DayLogList> createState() => _DayLogListState();
@@ -30,6 +40,9 @@ class _DayLogListState extends ConsumerState<DayLogList> {
   /// hidden at once, because a dismissed Dismissible must leave the tree on the
   /// frame it is dismissed.
   final _dismissed = <String>{};
+
+  /// The same for planned items swiped away to skip them.
+  final _skipped = <String>{};
 
   Future<void> _delete(String id) async {
     // Read everything the banner needs now: this list is gone once the last
@@ -78,21 +91,41 @@ class _DayLogListState extends ConsumerState<DayLogList> {
       for (final e in widget.entries)
         if (!_dismissed.contains(e.id)) e,
     ];
+    final now = DateTime.now();
+    final planned = [
+      for (final p in widget.planned)
+        if (!_skipped.contains(p.schedule.id)) p,
+    ];
     final rows = <Object>[];
     for (final slot in [...MealSlot.values, null]) {
       final inSlot = [
         for (final e in visible)
           if (MealSlot.fromName(e.mealSlot) == slot) e,
       ];
-      if (inSlot.isEmpty) continue;
+      // A plan without a slot is filed by the time of day, so it never lands
+      // under "Other".
+      final plannedInSlot = [
+        for (final p in planned)
+          if (ScheduleRepository.slotOf(p.schedule, now) == slot) p,
+      ];
+      if (inSlot.isEmpty && plannedInSlot.isEmpty) continue;
       rows.add(_SectionHeader(slot: slot, entries: inSlot));
       rows.addAll(inSlot);
+      rows.addAll(plannedInSlot);
     }
     return SliverList.builder(
       itemCount: rows.length,
       itemBuilder: (context, i) {
         final row = rows[i];
         if (row is _SectionHeader) return row;
+        if (row is PendingScheduledMeal) {
+          return PlannedTile(
+            key: Key('planned-row-${row.schedule.id}'),
+            item: row,
+            date: widget.date,
+            onSkipped: () => setState(() => _skipped.add(row.schedule.id)),
+          );
+        }
         final entry = row as FoodLogEntry;
         return _EntryTile(entry: entry, onDelete: () => _delete(entry.id));
       },
@@ -330,6 +363,8 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final id = slot?.name ?? 'other';
     final total = entries.fold<double>(0, (sum, e) => sum + e.calories);
+    // A section holding only planned items has no total yet.
+    final showTotal = entries.isNotEmpty;
     final style = TextStyle(
       fontSize: 13,
       fontWeight: FontWeight.w600,
@@ -349,12 +384,14 @@ class _SectionHeader extends StatelessWidget {
               style: style,
             ),
           ),
-          const SizedBox(width: 8),
-          Text(
-            '${Metric.calories.format(total)} kcal',
-            key: Key('section-total-$id'),
-            style: style,
-          ),
+          if (showTotal) ...[
+            const SizedBox(width: 8),
+            Text(
+              '${Metric.calories.format(total)} kcal',
+              key: Key('section-total-$id'),
+              style: style,
+            ),
+          ],
         ],
       ),
     );

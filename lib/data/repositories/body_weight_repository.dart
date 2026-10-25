@@ -16,12 +16,22 @@ class BodyWeightRepository {
     return _db.bodyWeightDao.upsertForDate(logDate, kg, DateTime.now());
   }
 
+  /// Stores weights read from the health store; see
+  /// [BodyWeightDao.importHealthReadings]. Safe to repeat.
+  Future<int> importHealthReadings(List<WeightReading> readings) =>
+      _db.bodyWeightDao.importHealthReadings(readings, DateTime.now());
+
   Future<void> clearWeight(String logDate) =>
       _db.bodyWeightDao.deleteForDate(logDate);
 
   /// The reading for [logDate] in kilograms, or null. Re-emits on every write.
   Stream<double?> watchWeight(String logDate) =>
       _db.bodyWeightDao.watchForDate(logDate).map((r) => r?.weightKg);
+
+  /// Where the reading for [logDate] came from, or null when there is none.
+  Stream<WeightSource?> watchSource(String logDate) => _db.bodyWeightDao
+      .watchForDate(logDate)
+      .map((r) => r == null ? null : WeightSource.fromDb(r.source));
 
   /// Readings from [startDate] to [endDate] inclusive, oldest first.
   Stream<List<WeightReading>> watchRange(String startDate, String endDate) =>

@@ -37,11 +37,13 @@ Widget testScreen({
   required AppDatabase db,
   required SharedPreferences prefs,
   required Widget home,
+  List<Override> overrides = const [],
 }) {
   return ProviderScope(
     overrides: [
       databaseProvider.overrideWithValue(db),
       sharedPreferencesProvider.overrideWithValue(prefs),
+      ...overrides,
     ],
     child: CupertinoApp(home: home),
   );

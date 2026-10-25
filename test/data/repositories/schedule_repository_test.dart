@@ -34,7 +34,7 @@ void main() {
 
   test('confirm logs the meal snapshot and hides the suggestion', () async {
     final id = await repo.scheduleOnce(mealId: mealId, date: '2026-10-21');
-    expect((await pending('2026-10-21')).single.meal.name, 'Lunch');
+    expect((await pending('2026-10-21')).single.name, 'Lunch');
 
     final entryId = await repo.confirm(id, date: '2026-10-21');
 

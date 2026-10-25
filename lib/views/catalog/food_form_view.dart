@@ -5,10 +5,12 @@ import '../../core/metrics.dart';
 import '../../core/nutrition_math.dart';
 import '../../core/validation.dart';
 import '../../data/database/app_database.dart';
-import '../../providers/food_lookup_providers.dart';
+import '../../data/repositories/food_lookup_repository.dart';
 import '../../providers/infrastructure_providers.dart';
+import '../../providers/log_providers.dart';
 import '../../providers/preferences_providers.dart';
 import '../common/form_widgets.dart';
+import '../meals/schedule_meal_view.dart';
 import 'food_lookup_section.dart';
 
 /// Creates or edits a catalog food. Pops with the saved [FoodItem], or with
@@ -36,10 +38,14 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
   late final TextEditingController _carbs;
   late final TextEditingController _fat;
   late final TextEditingController _weight;
+  late final TextEditingController _barcode;
   late final OptionalNutrientFields _extras;
   late WeightUnit _unit;
   late final WeightUnit _initialUnit;
   late final String _initialWeightText;
+
+  /// What the last lookup could not fill, shown above the form.
+  String? _lookupNotice;
 
   Map<String, String> _errors = const {};
   String? _saveError;
@@ -71,11 +77,20 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
         ? ''
         : _weightText(existing.servingWeightG, _unit);
     _weight = TextEditingController(text: _initialWeightText);
+    _barcode = TextEditingController(text: existing?.barcode ?? '');
   }
 
   @override
   void dispose() {
-    for (final c in [_name, _calories, _protein, _carbs, _fat, _weight]) {
+    for (final c in [
+      _name,
+      _calories,
+      _protein,
+      _carbs,
+      _fat,
+      _weight,
+      _barcode,
+    ]) {
       c.dispose();
     }
     _extras.dispose();
@@ -117,9 +132,32 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
       _fat.text = _macroText(result.perServing.fat);
       _extras.setFrom(result.perServing);
       _weight.text = _weightText(result.servingWeightG, _unit);
+      final code = result.barcode;
+      if (code != null) _barcode.text = code;
+      _lookupNotice = _noticeFor(result);
       _errors = const {};
     });
   }
+
+  /// Tells the user what a prefill left out, so nothing looks complete when it
+  /// is not.
+  static String? _noticeFor(FoodLookupResult result) {
+    final notes = [
+      if (!result.hasNutrition)
+        'Open Food Facts has no nutrition facts for this product. Enter them '
+            'by hand.',
+      if (result.hasNutrition && !result.hasServingSize)
+        'No serving size is listed, so the values are per 100 g.',
+    ];
+    return notes.isEmpty ? null : notes.join(' ');
+  }
+
+  /// Keeps a scanned code with the food, whether or not the lookup finds it.
+  void _keepBarcode(String code) => setState(() => _barcode.text = code);
+
+  /// A scan matched a catalog food. Add Food goes straight to logging it;
+  /// otherwise the lookup section says it already exists.
+  void _useCatalogFood(FoodItem food) => Navigator.of(context).pop(food);
 
   Set<Metric> get _tracked => ref.read(preferencesProvider).trackedMetrics;
 
@@ -131,6 +169,11 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
       'carbs': nonNegativeNumber(_carbs.text),
       'fat': nonNegativeNumber(_fat.text),
       'weight': _weightUnchanged ? null : positiveNumber(_weight.text),
+      'barcode': _barcode.text.trim().isEmpty
+          ? null
+          : FoodLookupRepository.normalizeBarcode(_barcode.text) == null
+          ? 'Enter 8 to 14 digits, or leave empty'
+          : null,
     };
     return {
       for (final entry in checks.entries)
@@ -161,6 +204,7 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
       _tracked,
     );
     final catalog = ref.read(catalogRepositoryProvider);
+    final barcode = FoodLookupRepository.normalizeBarcode(_barcode.text);
 
     setState(() => _saving = true);
     try {
@@ -171,6 +215,7 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
           perServing: perServing,
           servingWeightG: grams,
           displayUnit: _unit,
+          barcode: barcode,
         );
       } else {
         id = existing.id;
@@ -180,6 +225,7 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
           perServing: perServing,
           servingWeightG: grams,
           displayUnit: _unit,
+          barcode: barcode,
         );
       }
       final food = await catalog.findFood(id);
@@ -220,7 +266,19 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.only(bottom: 32),
           children: [
-            if (existing == null) FoodLookupSection(onPick: _applyLookup),
+            if (existing == null)
+              FoodLookupSection(
+                onPick: _applyLookup,
+                onBarcode: _keepBarcode,
+                onCatalogMatch: widget.offerLogAfterSave
+                    ? _useCatalogFood
+                    : null,
+              ),
+            if (_lookupNotice != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                child: Text(_lookupNotice!, key: const Key('lookup-notice')),
+              ),
             CupertinoFormSection.insetGrouped(
               header: const Text('FOOD'),
               children: [
@@ -302,6 +360,40 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
                 ),
               ],
             ),
+            CupertinoFormSection.insetGrouped(
+              header: const Text('BARCODE'),
+              footer: const Text(
+                'Optional. A scan of this code finds the food in your catalog.',
+              ),
+              children: [
+                formRow(
+                  fieldKey: const Key('food-barcode'),
+                  label: 'Barcode',
+                  controller: _barcode,
+                  error: _errors['barcode'],
+                  placeholder: 'Optional',
+                  numeric: false,
+                ),
+              ],
+            ),
+            if (existing != null)
+              CupertinoFormSection.insetGrouped(
+                children: [
+                  CupertinoListTile(
+                    key: const Key('food-schedule'),
+                    title: const Text('Schedule...'),
+                    trailing: const CupertinoListTileChevron(),
+                    onTap: () => Navigator.of(context).push(
+                      CupertinoPageRoute<void>(
+                        builder: (_) => ScheduleMealView(
+                          food: existing,
+                          initialDate: ref.read(selectedDateProvider),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             if (_saveError != null)
               Padding(
                 padding: const EdgeInsets.all(16),

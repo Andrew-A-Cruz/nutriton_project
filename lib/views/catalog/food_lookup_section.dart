@@ -2,22 +2,38 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/metrics.dart';
+import '../../data/database/app_database.dart';
+import '../../data/repositories/food_lookup_repository.dart';
 import '../../providers/food_lookup_providers.dart';
+import '../../providers/infrastructure_providers.dart';
 import 'barcode_scanner_page.dart';
 
 /// "Look up" block for the new-food form: a barcode field and a name search
 /// that list Open Food Facts products. Tapping a result calls [onPick] so the
 /// form can prefill; nothing is saved here.
+///
+/// A barcode (typed or scanned) is looked up in the catalog first, with no
+/// network call. A catalog hit goes to [onCatalogMatch], or shows a message
+/// when that is null. A scanned code that Open Food Facts knows goes straight
+/// to [onPick]. [onBarcode] gets every valid barcode looked up, so the form
+/// can keep it when the food is saved.
 class FoodLookupSection extends ConsumerStatefulWidget {
-  const FoodLookupSection({super.key, required this.onPick});
+  const FoodLookupSection({
+    super.key,
+    required this.onPick,
+    this.onCatalogMatch,
+    this.onBarcode,
+  });
 
   final ValueChanged<FoodLookupResult> onPick;
+  final ValueChanged<FoodItem>? onCatalogMatch;
+  final ValueChanged<String>? onBarcode;
 
   @override
   ConsumerState<FoodLookupSection> createState() => _FoodLookupSectionState();
 }
 
-enum _Status { idle, loading, notFound, error, results }
+enum _Status { idle, loading, notFound, error, results, inCatalog }
 
 class _FoodLookupSectionState extends ConsumerState<FoodLookupSection> {
   final _barcode = TextEditingController();
@@ -26,6 +42,8 @@ class _FoodLookupSectionState extends ConsumerState<FoodLookupSection> {
   _Status _status = _Status.idle;
   String? _error;
   List<FoodLookupResult> _results = const [];
+  String? _notFound;
+  FoodItem? _catalogFood;
 
   /// Bumped per request so a slow, older reply cannot overwrite a newer one.
   int _request = 0;
@@ -37,15 +55,29 @@ class _FoodLookupSectionState extends ConsumerState<FoodLookupSection> {
     super.dispose();
   }
 
-  Future<void> _run(Future<List<FoodLookupResult>> Function() fetch) async {
+  Future<void> _run(
+    Future<List<FoodLookupResult>> Function() fetch, {
+    String? notFound,
+    bool autoPick = false,
+  }) async {
     final id = ++_request;
     setState(() {
       _status = _Status.loading;
       _error = null;
+      _notFound = notFound;
     });
     try {
       final results = await fetch();
       if (!mounted || id != _request) return;
+      if (autoPick && results.length == 1) {
+        // A scan has one answer: fill the form for review, nothing is saved.
+        setState(() {
+          _results = results;
+          _status = _Status.results;
+        });
+        widget.onPick(results.single);
+        return;
+      }
       setState(() {
         _results = results;
         _status = results.isEmpty ? _Status.notFound : _Status.results;
@@ -65,11 +97,46 @@ class _FoodLookupSectionState extends ConsumerState<FoodLookupSection> {
     }
   }
 
-  void _lookupBarcode() => _run(() async {
-    final repo = ref.read(foodLookupRepositoryProvider);
-    final product = await repo.findByBarcode(_barcode.text);
-    return product == null ? const [] : [product];
-  });
+  Future<void> _lookupBarcode({bool scanned = false}) async {
+    final code = FoodLookupRepository.normalizeBarcode(_barcode.text);
+    if (code != null) {
+      // Local first: a food already in the catalog needs no network call.
+      final id = ++_request;
+      FoodItem? local;
+      try {
+        local = await ref
+            .read(catalogRepositoryProvider)
+            .findFoodByBarcode(code);
+      } catch (_) {
+        // Fall through to the online lookup.
+      }
+      if (!mounted || id != _request) return;
+      if (local != null) {
+        final callback = widget.onCatalogMatch;
+        if (callback != null) {
+          callback(local);
+        } else {
+          setState(() {
+            _catalogFood = local;
+            _status = _Status.inCatalog;
+          });
+        }
+        return;
+      }
+      widget.onBarcode?.call(code);
+    }
+    await _run(
+      () async {
+        final repo = ref.read(foodLookupRepositoryProvider);
+        final product = await repo.findByBarcode(_barcode.text);
+        return product == null ? const [] : [product];
+      },
+      notFound:
+          'No product with that barcode in Open Food Facts. Enter the '
+          'details by hand; the barcode is kept with the food.',
+      autoPick: scanned,
+    );
+  }
 
   /// Opens the camera, then fills the barcode field and looks it up. A null
   /// result (cancelled) leaves everything as it was.
@@ -77,7 +144,7 @@ class _FoodLookupSectionState extends ConsumerState<FoodLookupSection> {
     final code = await ref.read(barcodeScannerProvider)(context);
     if (!mounted || code == null || code.isEmpty) return;
     _barcode.text = code;
-    _lookupBarcode();
+    await _lookupBarcode(scanned: true);
   }
 
   void _search() => _run(
@@ -99,7 +166,7 @@ class _FoodLookupSectionState extends ConsumerState<FoodLookupSection> {
           numeric: true,
           buttonKey: const Key('lookup-barcode-go'),
           buttonLabel: 'Find',
-          onGo: _lookupBarcode,
+          onGo: () => _lookupBarcode(),
           onScan: ref.watch(barcodeScanSupportedProvider) ? _scan : null,
         ),
         _field(
@@ -171,13 +238,24 @@ class _FoodLookupSectionState extends ConsumerState<FoodLookupSection> {
             ),
           ),
         ];
-      case _Status.notFound:
-        return const [
+      case _Status.inCatalog:
+        return [
           Padding(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             child: Text(
-              'No match found. Try another search or enter it by hand.',
-              key: Key('lookup-not-found'),
+              'Already in your catalog as "${_catalogFood?.name}".',
+              key: const Key('lookup-in-catalog'),
+            ),
+          ),
+        ];
+      case _Status.notFound:
+        return [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              _notFound ??
+                  'No match found. Try another search or enter it by hand.',
+              key: const Key('lookup-not-found'),
             ),
           ),
         ];

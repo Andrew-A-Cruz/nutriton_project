@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/database/app_database.dart';
 import '../../providers/log_providers.dart';
 import '../../providers/preferences_providers.dart';
+import '../../providers/schedule_providers.dart';
 import '../add_food/add_food_view.dart';
 import '../settings/settings_view.dart';
 import '../tour/app_tour.dart';
@@ -11,7 +12,6 @@ import 'copy_day_sheet.dart';
 import 'date_header.dart';
 import 'day_log_list.dart';
 import 'macro_summary.dart';
-import 'scheduled_suggestions.dart';
 import 'streak_badge.dart';
 import 'weigh_in_row.dart';
 
@@ -25,6 +25,11 @@ class HomeView extends ConsumerWidget {
     final settings = ref.watch(preferencesProvider);
     final entriesAsync = ref.watch(dayEntriesProvider(date));
     final entries = entriesAsync.value ?? const <FoodLogEntry>[];
+    // Planned items still waiting for a tap; they sit in their meal section and
+    // do not count toward the totals above.
+    final planned =
+        ref.watch(pendingScheduledProvider(date)).value ??
+        const <PendingScheduledMeal>[];
 
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
@@ -92,7 +97,6 @@ class HomeView extends ConsumerWidget {
               ),
             ),
             SliverToBoxAdapter(child: WeighInRow(date: date)),
-            SliverToBoxAdapter(child: ScheduledSuggestions(date: date)),
             if (entriesAsync.hasError)
               SliverFillRemaining(
                 hasScrollBody: false,
@@ -105,13 +109,13 @@ class HomeView extends ConsumerWidget {
                 hasScrollBody: false,
                 child: Center(child: CupertinoActivityIndicator()),
               )
-            else if (entries.isEmpty)
+            else if (entries.isEmpty && planned.isEmpty)
               SliverFillRemaining(
                 hasScrollBody: false,
                 child: EmptyLogState(date: date),
               )
             else
-              DayLogList(entries: entries),
+              DayLogList(entries: entries, planned: planned, date: date),
           ],
         ),
       ),
