@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nutriton_project/core/metrics.dart';
 import 'package:nutriton_project/core/nutrition_math.dart';
 import 'package:nutriton_project/core/summary_math.dart';
 
@@ -259,6 +260,63 @@ void main() {
 
       expect(report.daysLogged, 4);
       expect(report.averages!.calories, 400);
+    });
+  });
+
+  group('optional nutrients in summaries', () {
+    test('an average is null when no day recorded the nutrient', () {
+      final avg = averageOverLoggedDays(const [
+        Macros(calories: 100),
+        Macros(calories: 300),
+      ])!;
+      expect(avg.calories, 200);
+      expect(avg.sodium, isNull);
+    });
+
+    test('days without the nutrient count as 0 in the average', () {
+      final avg = averageOverLoggedDays(const [
+        Macros(calories: 100, sodium: 600),
+        Macros(calories: 100),
+      ])!;
+      expect(avg.sodium, 300);
+      expect(avg.fiber, isNull);
+    });
+
+    test('the report adds up coverage inside the window only', () {
+      const sodium = Metric.sodium;
+      final report = buildSummaryReport(
+        endKey: '2026-10-20',
+        range: SummaryRange.week,
+        days: const [
+          DayTotal(
+            logDate: '2026-10-19',
+            totals: Macros(calories: 500, sodium: 900),
+            coverage: {sodium: Coverage(recorded: 1, total: 2)},
+          ),
+          DayTotal(
+            logDate: '2026-10-20',
+            totals: Macros(calories: 700, sodium: 300),
+            coverage: {sodium: Coverage(recorded: 2, total: 3)},
+          ),
+          DayTotal(
+            logDate: '2026-09-01',
+            totals: Macros(calories: 900),
+            coverage: {sodium: Coverage(recorded: 0, total: 4)},
+          ),
+        ],
+      );
+      expect(report.coverage[sodium]!.recorded, 3);
+      expect(report.coverage[sodium]!.total, 5);
+      expect(report.averages!.sodium, 600);
+    });
+
+    test('coverage is empty when the source did not count', () {
+      final report = buildSummaryReport(
+        endKey: '2026-10-20',
+        range: SummaryRange.week,
+        days: [day('2026-10-20', 500)],
+      );
+      expect(report.coverage, isEmpty);
     });
   });
 }

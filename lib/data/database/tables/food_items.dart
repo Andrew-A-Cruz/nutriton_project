@@ -18,6 +18,15 @@ class FoodItems extends Table {
       .withDefault(const Constant('g'))();
   BoolColumn get archived => boolean().withDefault(const Constant(false))();
 
+  /// Optional nutrients: null means not recorded, which is not the same as 0.
+  /// Sodium is in milligrams, fiber and sugar in grams.
+  RealColumn get fiber =>
+      real().nullable().check(fiber.isBiggerOrEqualValue(0))();
+  RealColumn get sugar =>
+      real().nullable().check(sugar.isBiggerOrEqualValue(0))();
+  RealColumn get sodium =>
+      real().nullable().check(sodium.isBiggerOrEqualValue(0))();
+
   @override
   Set<Column> get primaryKey => {id};
 }

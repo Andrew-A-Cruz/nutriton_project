@@ -95,23 +95,37 @@ final _submitPreferences = find.byKey(const Key('submit-preferences'));
 
 /// Scrolls the preferences form (onboarding or Settings) until its submit
 /// button is built.
-Future<void> scrollPreferencesToEnd(WidgetTester tester) async {
-  await tester.scrollUntilVisible(
-    _submitPreferences,
-    200,
-    // The text fields contain their own Scrollables, so take the list's first.
-    scrollable: find
-        .descendant(
-          of: find.byType(ListView),
-          matching: find.byType(Scrollable),
-        )
-        .first,
-  );
+Future<void> scrollPreferencesToEnd(WidgetTester tester) =>
+    scrollPreferencesTo(tester, _submitPreferences);
+
+/// Scrolls the preferences form until [target] is built and on screen. A
+/// negative [delta] scrolls back up.
+Future<void> scrollPreferencesTo(
+  WidgetTester tester,
+  Finder target, {
+  double delta = 200,
+}) async {
+  // The text fields contain their own Scrollables, so take the list's first.
+  final scrollable = find
+      .descendant(of: find.byType(ListView), matching: find.byType(Scrollable))
+      .first;
+  await tester.scrollUntilVisible(target, delta, scrollable: scrollable);
 }
 
 /// Scrolls the preferences form until its submit button is built, then taps it.
 Future<void> tapSubmitPreferences(WidgetTester tester) async {
   await scrollPreferencesToEnd(tester);
+  // Stopping at the edge can leave the button under the tab bar.
+  await tester.drag(
+    find
+        .descendant(
+          of: find.byType(ListView),
+          matching: find.byType(Scrollable),
+        )
+        .first,
+    const Offset(0, -80),
+  );
+  await tester.pump();
   await tester.tap(_submitPreferences);
 }
 

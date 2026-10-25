@@ -35,7 +35,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -51,6 +51,28 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(
           schema.foodLogEntries,
           schema.foodLogEntries.mealSlot,
+        );
+      },
+      // v3 -> v4: fiber, sugar and sodium; existing rows stay null (not
+      // recorded).
+      from3To4: (m, schema) async {
+        await m.addColumn(schema.foodItems, schema.foodItems.fiber);
+        await m.addColumn(schema.foodItems, schema.foodItems.sugar);
+        await m.addColumn(schema.foodItems, schema.foodItems.sodium);
+        await m.addColumn(schema.foodLogEntries, schema.foodLogEntries.fiber);
+        await m.addColumn(schema.foodLogEntries, schema.foodLogEntries.sugar);
+        await m.addColumn(schema.foodLogEntries, schema.foodLogEntries.sodium);
+        await m.addColumn(
+          schema.foodLogEntryItems,
+          schema.foodLogEntryItems.fiber,
+        );
+        await m.addColumn(
+          schema.foodLogEntryItems,
+          schema.foodLogEntryItems.sugar,
+        );
+        await m.addColumn(
+          schema.foodLogEntryItems,
+          schema.foodLogEntryItems.sodium,
         );
       },
     ),

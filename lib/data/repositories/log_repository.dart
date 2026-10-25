@@ -117,6 +117,9 @@ class LogRepository {
         protein: e.protein,
         carbs: e.carbs,
         fat: e.fat,
+        fiber: Value(e.fiber),
+        sugar: Value(e.sugar),
+        sodium: Value(e.sodium),
         foodItemId: Value(e.foodItemId),
         mealId: Value(e.mealId),
         servings: Value(e.servings),
@@ -136,6 +139,9 @@ class LogRepository {
             protein: i.protein,
             carbs: i.carbs,
             fat: i.fat,
+            fiber: Value(i.fiber),
+            sugar: Value(i.sugar),
+            sodium: Value(i.sodium),
           ),
       ]);
     }
@@ -163,6 +169,9 @@ class LogRepository {
         protein: totals.protein,
         carbs: totals.carbs,
         fat: totals.fat,
+        fiber: Value(totals.fiber),
+        sugar: Value(totals.sugar),
+        sodium: Value(totals.sodium),
         foodItemId: Value(food.id),
         servings: Value(servings),
         mealSlot: Value(mealSlot?.name),
@@ -212,6 +221,9 @@ class LogRepository {
             protein: macros.protein,
             carbs: macros.carbs,
             fat: macros.fat,
+            fiber: Value(macros.fiber),
+            sugar: Value(macros.sugar),
+            sodium: Value(macros.sodium),
           ),
         );
       }
@@ -228,6 +240,9 @@ class LogRepository {
           protein: total.protein,
           carbs: total.carbs,
           fat: total.fat,
+          fiber: Value(total.fiber),
+          sugar: Value(total.sugar),
+          sodium: Value(total.sodium),
           mealId: Value(meal.id),
           mealSlot: Value(mealSlot?.name),
         ),
@@ -267,6 +282,9 @@ class LogRepository {
         protein: macros.protein,
         carbs: macros.carbs,
         fat: macros.fat,
+        fiber: Value(macros.fiber),
+        sugar: Value(macros.sugar),
+        sodium: Value(macros.sodium),
         mealSlot: Value(mealSlot?.name),
       ),
     );
@@ -298,6 +316,9 @@ class LogRepository {
           protein: Value(totals.protein),
           carbs: Value(totals.carbs),
           fat: Value(totals.fat),
+          fiber: Value(totals.fiber),
+          sugar: Value(totals.sugar),
+          sodium: Value(totals.sodium),
         ),
       );
     });
@@ -328,6 +349,9 @@ class LogRepository {
           protein: Value(macros.protein),
           carbs: Value(macros.carbs),
           fat: Value(macros.fat),
+          fiber: Value(macros.fiber),
+          sugar: Value(macros.sugar),
+          sodium: Value(macros.sodium),
         ),
       );
     });
@@ -429,6 +453,9 @@ class LogRepository {
     protein: food.protein,
     carbs: food.carbs,
     fat: food.fat,
+    fiber: food.fiber,
+    sugar: food.sugar,
+    sodium: food.sodium,
   );
 
   static Macros _macrosOfEntry(FoodLogEntry entry) => Macros(
@@ -436,6 +463,9 @@ class LogRepository {
     protein: entry.protein,
     carbs: entry.carbs,
     fat: entry.fat,
+    fiber: entry.fiber,
+    sugar: entry.sugar,
+    sodium: entry.sodium,
   );
 
   static Macros _macrosOfSnapshot(FoodLogEntryItemsCompanion item) => Macros(
@@ -443,5 +473,8 @@ class LogRepository {
     protein: item.protein.value,
     carbs: item.carbs.value,
     fat: item.fat.value,
+    fiber: item.fiber.value,
+    sugar: item.sugar.value,
+    sodium: item.sodium.value,
   );
 }

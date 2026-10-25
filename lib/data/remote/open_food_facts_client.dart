@@ -143,7 +143,9 @@ class OpenFoodFactsClient {
 
 /// Converts one Open Food Facts product map. Returns null when it has no name.
 /// Nutriments are per 100 g; they are scaled to `serving_quantity` grams when
-/// that is present and positive, otherwise to 100 g. Missing nutrients are 0.
+/// that is present and positive, otherwise to 100 g. Missing energy and macros
+/// are 0. Missing fiber, sugar and sodium are null (not recorded). Sodium comes
+/// in grams and is converted to mg; with only `salt_100g`, sodium is salt / 2.5.
 FoodLookupResult? parseOffProduct(
   Map<String, dynamic> product, {
   String? fallbackBarcode,
@@ -173,6 +175,15 @@ FoodLookupResult? parseOffProduct(
 
   double scaled(double? per100, int places) =>
       roundTo((per100 ?? 0) * scale, places);
+  double? scaledOrNull(double? per100, int places) =>
+      per100 == null ? null : roundTo(per100 * scale, places);
+
+  final sodiumG =
+      _number(n['sodium_100g']) ??
+      switch (_number(n['salt_100g'])) {
+        final double salt => salt / saltPerSodium,
+        null => null,
+      };
 
   return FoodLookupResult(
     name: name,
@@ -183,12 +194,18 @@ FoodLookupResult? parseOffProduct(
       protein: scaled(protein, 1),
       carbs: scaled(carbs, 1),
       fat: scaled(fat, 1),
+      fiber: scaledOrNull(_number(n['fiber_100g']), 1),
+      sugar: scaledOrNull(_number(n['sugars_100g']), 1),
+      sodium: scaledOrNull(sodiumG == null ? null : sodiumG * 1000, 0),
     ),
     servingWeightG: grams,
     hasServingSize: hasServing,
     hasNutrition: hasNutrition,
   );
 }
+
+/// Grams of salt (NaCl) per gram of sodium.
+const saltPerSodium = 2.5;
 
 double? _kjToKcal(double? kj) => kj == null ? null : kj / 4.184;
 

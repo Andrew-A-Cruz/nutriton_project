@@ -89,6 +89,36 @@ class _PreferencesFormState extends State<PreferencesForm> {
     );
   }
 
+  CupertinoFormSection _trackSection({
+    required String header,
+    required String footer,
+    required Iterable<Metric> metrics,
+  }) {
+    return CupertinoFormSection.insetGrouped(
+      header: Text(header),
+      footer: Text(footer),
+      children: [
+        for (final m in metrics)
+          CupertinoListTile(
+            title: Text(m.label),
+            trailing: CupertinoSwitch(
+              key: Key('track-${m.name}'),
+              value: _tracked.contains(m),
+              onChanged: m == _primary
+                  ? null
+                  : (on) => setState(() {
+                      if (on) {
+                        _tracked.add(m);
+                      } else {
+                        _tracked.remove(m);
+                      }
+                    }),
+            ),
+          ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // At large text sizes a goal's label goes above its field, since beside
@@ -103,7 +133,8 @@ class _PreferencesFormState extends State<PreferencesForm> {
           header: const Text('PRIMARY METRIC'),
           footer: const Text('Shown large on the Today screen.'),
           children: [
-            for (final m in Metric.values)
+            // Fiber, sugar and sodium can be tracked but not made primary.
+            for (final m in Metric.values.where((m) => !m.isOptional))
               CupertinoListTile(
                 key: Key('primary-${m.name}'),
                 title: Text(m.label),
@@ -117,28 +148,10 @@ class _PreferencesFormState extends State<PreferencesForm> {
               ),
           ],
         ),
-        CupertinoFormSection.insetGrouped(
-          header: const Text('TRACK'),
-          footer: const Text('The primary metric is always tracked.'),
-          children: [
-            for (final m in Metric.values)
-              CupertinoListTile(
-                title: Text(m.label),
-                trailing: CupertinoSwitch(
-                  key: Key('track-${m.name}'),
-                  value: _tracked.contains(m),
-                  onChanged: m == _primary
-                      ? null
-                      : (on) => setState(() {
-                          if (on) {
-                            _tracked.add(m);
-                          } else {
-                            _tracked.remove(m);
-                          }
-                        }),
-                ),
-              ),
-          ],
+        _trackSection(
+          header: 'TRACK',
+          footer: 'The primary metric is always tracked.',
+          metrics: Metric.values.where((m) => !m.isOptional),
         ),
         CupertinoFormSection.insetGrouped(
           header: const Text('DAILY GOALS'),
@@ -183,6 +196,15 @@ class _PreferencesFormState extends State<PreferencesForm> {
                 ),
               ),
           ],
+        ),
+        // After the goals, so the common layout stays short. A goal row for a
+        // newly tracked nutrient appears at the end of the goals above.
+        _trackSection(
+          header: 'ALSO TRACK',
+          footer:
+              'Optional on each food. Totals count a missing value as 0 and '
+              'say how many entries recorded it.',
+          metrics: Metric.optional,
         ),
         CupertinoFormSection.insetGrouped(
           // The label is the header, not a row prefix: at large text sizes a

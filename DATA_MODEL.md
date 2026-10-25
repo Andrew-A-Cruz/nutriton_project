@@ -6,7 +6,7 @@
 
 | Property | Decision |
 |---|---|
-| Storage | Local SQLite via `drift`, database file `food_log`, schema version 2 |
+| Storage | Local SQLite via `drift`, database file `food_log`, schema version 4 |
 | User preferences | `shared_preferences` (separate from SQLite) |
 | ID format | UUID v4 via `uuid` (`TEXT` primary keys) |
 | Weights | Stored in grams (`*_g`). Users pick g or oz for display only; 1 oz = 28.3495 g |
@@ -32,6 +32,9 @@ Saved catalog foods. Macros are stored per 1 serving, where 1 serving is `servin
 | `serving_weight_g` | REAL | No | `> 0` (used as a divisor) |
 | `display_unit` | TEXT | No | `'g'` or `'oz'`, default `'g'`. Display only. This is the food's own unit: the catalog list and food form show the serving weight in it. Logging inputs (weight entry, meal items) use the user's display-unit setting instead |
 | `archived` | BOOL | No | Default `false`. Archived foods leave search but remain referenced by past entries |
+| `fiber` | REAL | Yes | Schema v4. `>= 0` in grams, per 1 serving. Null = not recorded, which is different from 0 (every row from before v4) |
+| `sugar` | REAL | Yes | Schema v4. `>= 0` in grams, per 1 serving. Null = not recorded |
+| `sodium` | REAL | Yes | Schema v4. `>= 0` in **milligrams**, per 1 serving. Null = not recorded |
 
 ---
 
@@ -80,6 +83,9 @@ The daily log. One row per logged item: a catalog food, a meal, or an adhoc entr
 | `meal_id` | TEXT | Yes | FK → `meals.id`, `ON DELETE SET NULL` (provenance) |
 | `servings` | REAL | Yes | Food entries only, `> 0` |
 | `meal_slot` | TEXT | Yes | Schema v3. `'breakfast'`, `'lunch'`, `'dinner'` or `'snack'` (CHECK). Null = "Other" (every row logged before v3). Home groups by it; stored by name, so backups hold a plain string |
+| `fiber` | REAL | Yes | Schema v4. `>= 0` in grams, resolved total (copied from the food when logged). Null = not recorded, which is different from 0 (every row from before v4) |
+| `sugar` | REAL | Yes | Schema v4. `>= 0` in grams, resolved total (copied from the food when logged). Null = not recorded |
+| `sodium` | REAL | Yes | Schema v4. `>= 0` in **milligrams**, resolved total (copied from the food when logged). Null = not recorded |
 
 **Entry type reference:**
 
@@ -108,6 +114,9 @@ The breakdown of a logged meal, as it was actually eaten. This can differ from t
 | `protein` | REAL | No | `>= 0` |
 | `carbs` | REAL | No | `>= 0` |
 | `fat` | REAL | No | `>= 0` |
+| `fiber` | REAL | Yes | Schema v4. `>= 0` in grams, resolved for `weight_g`. Null = not recorded, which is different from 0 (every row from before v4) |
+| `sugar` | REAL | Yes | Schema v4. `>= 0` in grams, resolved for `weight_g`. Null = not recorded |
+| `sodium` | REAL | Yes | Schema v4. `>= 0` in **milligrams**, resolved for `weight_g`. Null = not recorded |
 
 ---
 
@@ -268,7 +277,7 @@ lib/
 │   ├── nutrition_math.dart          # pure functions: scaling, sums, g <-> oz
 │   ├── date_key.dart                # DateTime <-> 'yyyy-MM-dd'
 │   ├── weekdays.dart                # weekday bitmasks for scheduled meals
-│   └── metrics.dart                 # enum Metric { calories, protein, carbs, fat }
+│   └── metrics.dart                 # enum Metric { calories, protein, carbs, fat, fiber, sugar, sodium }
 ├── data/
 │   ├── database/
 │   │   ├── app_database.dart        # drift DB definition (file: food_log)

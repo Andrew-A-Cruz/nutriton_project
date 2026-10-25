@@ -8,6 +8,7 @@
 library;
 
 import 'date_key.dart';
+import 'metrics.dart';
 import 'nutrition_math.dart';
 
 /// The Summary View ranges. [days] counts the end day, so a week ending today
@@ -34,11 +35,19 @@ enum BucketSize { day, week, month }
 
 /// Totals for one day that has at least one entry.
 class DayTotal {
-  const DayTotal({required this.logDate, required this.totals});
+  const DayTotal({
+    required this.logDate,
+    required this.totals,
+    this.coverage = const {},
+  });
 
   /// 'yyyy-MM-dd'.
   final String logDate;
   final Macros totals;
+
+  /// For each optional metric, how many of the day's entries recorded it.
+  /// Empty when the source did not count.
+  final Map<Metric, Coverage> coverage;
 }
 
 /// One bar: the days from [startKey] to [endKey] inclusive.
@@ -73,6 +82,7 @@ class SummaryReport {
     required this.daysLogged,
     required this.averages,
     required this.buckets,
+    this.coverage = const {},
   });
 
   final SummaryRange range;
@@ -91,6 +101,10 @@ class SummaryReport {
 
   /// Bars for the chart, oldest first. Empty for [SummaryRange.day].
   final List<Bucket> buckets;
+
+  /// For each optional metric, how many of the range's entries recorded it.
+  /// Empty when the source did not count.
+  final Map<Metric, Coverage> coverage;
 }
 
 /// The first day of a window of [days] days ending on [endKey], inclusive.
@@ -112,11 +126,16 @@ SummaryReport buildSummaryReport({
 }) {
   final start = windowStart(endKey, range.days);
   final byDay = <String, Macros>{};
+  final coverage = <Metric, Coverage>{};
   for (final day in days) {
     if (day.logDate.compareTo(start) < 0 || day.logDate.compareTo(endKey) > 0) {
       continue;
     }
     byDay[day.logDate] = (byDay[day.logDate] ?? Macros.zero) + day.totals;
+    day.coverage.forEach((metric, c) {
+      coverage[metric] =
+          (coverage[metric] ?? const Coverage(recorded: 0, total: 0)) + c;
+    });
   }
 
   // A one-day range has no trend to chart, so it gets no bars.
@@ -138,10 +157,13 @@ SummaryReport buildSummaryReport({
     daysLogged: byDay.length,
     averages: averageOverLoggedDays(byDay.values),
     buckets: buckets,
+    coverage: coverage,
   );
 }
 
-/// Mean of [days], one value per logged day. Null when there are none.
+/// Mean of [days], one value per logged day. Null when there are none. An
+/// optional nutrient is null in the result when no day recorded it; otherwise
+/// days without it count as 0.
 Macros? averageOverLoggedDays(Iterable<Macros> days) {
   var count = 0;
   var total = Macros.zero;
@@ -155,6 +177,9 @@ Macros? averageOverLoggedDays(Iterable<Macros> days) {
     protein: total.protein / count,
     carbs: total.carbs / count,
     fat: total.fat / count,
+    fiber: total.fiber == null ? null : total.fiber! / count,
+    sugar: total.sugar == null ? null : total.sugar! / count,
+    sodium: total.sodium == null ? null : total.sodium! / count,
   );
 }
 

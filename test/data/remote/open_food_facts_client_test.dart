@@ -38,6 +38,58 @@ void main() {
       expect(r.perServing.fat, 6);
     });
 
+    test('maps fiber, sugars and sodium, converting sodium to mg', () {
+      final r = parseOffProduct({
+        'product_name': 'Granola',
+        'serving_quantity': 40,
+        'nutriments': {
+          'energy-kcal_100g': 450,
+          'fiber_100g': 7.5,
+          'sugars_100g': 20,
+          'sodium_100g': 0.25,
+        },
+      })!;
+      expect(r.perServing.fiber, 3);
+      expect(r.perServing.sugar, 8);
+      expect(r.perServing.sodium, 100);
+    });
+
+    test('derives sodium from salt when sodium is missing', () {
+      final r = parseOffProduct({
+        'product_name': 'Crisps',
+        'nutriments': {'energy-kcal_100g': 500, 'salt_100g': 1.25},
+      })!;
+      // 1.25 g salt / 2.5 = 0.5 g sodium = 500 mg per 100 g.
+      expect(r.perServing.sodium, 500);
+    });
+
+    test('sodium wins over salt when both are present', () {
+      final r = parseOffProduct({
+        'product_name': 'Crisps',
+        'nutriments': {'sodium_100g': 0.4, 'salt_100g': 5},
+      })!;
+      expect(r.perServing.sodium, 400);
+    });
+
+    test('missing fiber, sugars and sodium are null, not 0', () {
+      final r = parseOffProduct({
+        'product_name': 'Rice',
+        'nutriments': {'energy-kcal_100g': 130},
+      })!;
+      expect(r.perServing.fiber, isNull);
+      expect(r.perServing.sugar, isNull);
+      expect(r.perServing.sodium, isNull);
+    });
+
+    test('a listed 0 is kept as 0', () {
+      final r = parseOffProduct({
+        'product_name': 'Water',
+        'nutriments': {'sodium_100g': 0, 'sugars_100g': '0'},
+      })!;
+      expect(r.perServing.sodium, 0);
+      expect(r.perServing.sugar, 0);
+    });
+
     test('uses 100 g when serving_quantity is missing, zero or junk', () {
       for (final q in [null, 0, '', 'abc', -5]) {
         final r = parseOffProduct({

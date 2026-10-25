@@ -90,7 +90,13 @@ class _ReportBody extends StatelessWidget {
               )
             else
               for (final m in metrics)
-                _AverageRow(metric: m, amount: m.amountIn(averages)),
+                _AverageRow(
+                  metric: m,
+                  amount: m.amountIn(averages),
+                  coverageHint: report.coverage[m] == null
+                      ? null
+                      : coverageText(m, report.coverage[m]!),
+                ),
             const SizedBox(height: 8),
             Text(
               'Days logged: ${report.daysLogged} of ${report.totalDays}',
@@ -129,28 +135,50 @@ class _ReportBody extends StatelessWidget {
 }
 
 class _AverageRow extends StatelessWidget {
-  const _AverageRow({required this.metric, required this.amount});
+  const _AverageRow({
+    required this.metric,
+    required this.amount,
+    this.coverageHint,
+  });
 
   final Metric metric;
   final double amount;
+  final String? coverageHint;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: Text(metric.label, style: const TextStyle(fontSize: 15)),
+          Row(
+            children: [
+              Expanded(
+                child: Text(metric.label, style: const TextStyle(fontSize: 15)),
+              ),
+              Flexible(
+                child: Text(
+                  '${metric.format(amount)} ${metric.unit}',
+                  key: Key('average-${metric.name}'),
+                  textAlign: TextAlign.end,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
           ),
-          Flexible(
-            child: Text(
-              '${metric.format(amount)} ${metric.unit}',
-              key: Key('average-${metric.name}'),
-              textAlign: TextAlign.end,
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          if (coverageHint != null)
+            Text(
+              coverageHint!,
+              key: Key('coverage-${metric.name}'),
+              style: TextStyle(
+                fontSize: 13,
+                color: CupertinoColors.secondaryLabel.resolveFrom(context),
+              ),
             ),
-          ),
         ],
       ),
     );

@@ -2,9 +2,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/meal_slot.dart';
+import '../../core/metrics.dart';
 import '../../core/nutrition_math.dart';
 import '../../core/validation.dart';
 import '../../providers/infrastructure_providers.dart';
+import '../../providers/preferences_providers.dart';
 import '../common/form_widgets.dart';
 import '../common/meal_slot_picker.dart';
 
@@ -25,6 +27,7 @@ class _AdhocFoodFormState extends ConsumerState<AdhocFoodForm> {
   final _protein = TextEditingController();
   final _carbs = TextEditingController();
   final _fat = TextEditingController();
+  final _extras = OptionalNutrientFields();
 
   Map<String, String> _errors = const {};
   String? _saveError;
@@ -36,8 +39,11 @@ class _AdhocFoodFormState extends ConsumerState<AdhocFoodForm> {
     for (final c in [_name, _calories, _protein, _carbs, _fat]) {
       c.dispose();
     }
+    _extras.dispose();
     super.dispose();
   }
+
+  Set<Metric> get _tracked => ref.read(preferencesProvider).trackedMetrics;
 
   Map<String, String> _validate() {
     final checks = {
@@ -50,6 +56,7 @@ class _AdhocFoodFormState extends ConsumerState<AdhocFoodForm> {
     return {
       for (final entry in checks.entries)
         if (entry.value != null) entry.key: entry.value!,
+      ..._extras.validate(_tracked),
     };
   }
 
@@ -68,11 +75,14 @@ class _AdhocFoodFormState extends ConsumerState<AdhocFoodForm> {
           .logAdhoc(
             logDate: widget.logDate,
             name: _name.text,
-            macros: Macros(
-              calories: parseNumber(_calories.text)!,
-              protein: parseNumber(_protein.text)!,
-              carbs: parseNumber(_carbs.text)!,
-              fat: parseNumber(_fat.text)!,
+            macros: _extras.applyTo(
+              Macros(
+                calories: parseNumber(_calories.text)!,
+                protein: parseNumber(_protein.text)!,
+                carbs: parseNumber(_carbs.text)!,
+                fat: parseNumber(_fat.text)!,
+              ),
+              _tracked,
             ),
             mealSlot: _slot,
           );
@@ -89,6 +99,7 @@ class _AdhocFoodFormState extends ConsumerState<AdhocFoodForm> {
 
   @override
   Widget build(BuildContext context) {
+    final tracked = ref.watch(preferencesProvider).trackedMetrics;
     return ListView(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: const EdgeInsets.only(bottom: 32),
@@ -134,6 +145,11 @@ class _AdhocFoodFormState extends ConsumerState<AdhocFoodForm> {
               controller: _fat,
               error: _errors['fat'],
               suffix: 'g',
+            ),
+            ..._extras.rows(
+              keyPrefix: 'adhoc',
+              tracked: tracked,
+              errors: _errors,
             ),
           ],
         ),

@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 
 import '../../core/metrics.dart';
 import '../../core/nutrition_math.dart';
+import '../../core/validation.dart';
 
 /// A weight in the user's display unit, e.g. '100 g' or '3.5 oz'.
 String formatWeight(double grams, WeightUnit unit) {
@@ -66,4 +67,88 @@ CupertinoFormRow formRow({
       ],
     ),
   );
+}
+
+/// The optional nutrient inputs (fiber, sugar, sodium) of a food form. A field
+/// shows only for a metric the user tracks and may be left empty, which stores
+/// null (not recorded). A value for a metric that is not tracked is kept as it
+/// was, so hiding a field never erases data.
+class OptionalNutrientFields {
+  OptionalNutrientFields({Macros? initial})
+    : _initial = {
+        for (final m in Metric.optional)
+          m: initial == null ? null : m.recordedAmountIn(initial),
+      },
+      _controllers = {
+        for (final m in Metric.optional)
+          m: TextEditingController(text: _textOf(initial, m)),
+      };
+
+  static String _textOf(Macros? macros, Metric metric) {
+    final value = macros == null ? null : metric.recordedAmountIn(macros);
+    return value == null ? '' : plainNumber(value);
+  }
+
+  final Map<Metric, double?> _initial;
+  final Map<Metric, TextEditingController> _controllers;
+
+  void dispose() {
+    for (final c in _controllers.values) {
+      c.dispose();
+    }
+  }
+
+  /// Fills the fields from [macros] (a lookup result); not recorded clears.
+  void setFrom(Macros macros) {
+    for (final m in Metric.optional) {
+      _controllers[m]!.text = _textOf(macros, m);
+    }
+  }
+
+  /// Errors for the tracked fields that hold something other than a
+  /// non-negative number, keyed by [Metric.name].
+  Map<String, String> validate(Set<Metric> tracked) => {
+    for (final m in Metric.optional)
+      if (tracked.contains(m) && _controllers[m]!.text.trim().isNotEmpty)
+        if (nonNegativeNumber(_controllers[m]!.text) case final String error)
+          m.name: error,
+  };
+
+  /// The value to store for [metric]: the typed number or null for a tracked
+  /// field, the starting value for one that is not tracked. Call after
+  /// [validate].
+  double? valueFor(Metric metric, Set<Metric> tracked) {
+    if (!tracked.contains(metric)) return _initial[metric];
+    final text = _controllers[metric]!.text;
+    return text.trim().isEmpty ? null : parseNumber(text);
+  }
+
+  /// [base] with the three optional nutrients filled in from the fields.
+  Macros applyTo(Macros base, Set<Metric> tracked) => Macros(
+    calories: base.calories,
+    protein: base.protein,
+    carbs: base.carbs,
+    fat: base.fat,
+    fiber: valueFor(Metric.fiber, tracked),
+    sugar: valueFor(Metric.sugar, tracked),
+    sodium: valueFor(Metric.sodium, tracked),
+  );
+
+  /// One optional row per tracked metric, keyed '[keyPrefix]-fiber' etc.
+  List<Widget> rows({
+    required String keyPrefix,
+    required Set<Metric> tracked,
+    required Map<String, String> errors,
+  }) => [
+    for (final m in Metric.optional)
+      if (tracked.contains(m))
+        formRow(
+          fieldKey: Key('$keyPrefix-${m.name}'),
+          label: m.label,
+          controller: _controllers[m]!,
+          error: errors[m.name],
+          placeholder: 'Optional',
+          suffix: m.unit,
+        ),
+  ];
 }

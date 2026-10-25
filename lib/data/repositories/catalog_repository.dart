@@ -48,6 +48,9 @@ class CatalogRepository {
         protein: perServing.protein,
         carbs: perServing.carbs,
         fat: perServing.fat,
+        fiber: Value(perServing.fiber),
+        sugar: Value(perServing.sugar),
+        sodium: Value(perServing.sodium),
         servingWeightG: servingWeightG,
         displayUnit: Value(displayUnit.name),
       ),
@@ -71,6 +74,9 @@ class CatalogRepository {
         protein: Value(perServing.protein),
         carbs: Value(perServing.carbs),
         fat: Value(perServing.fat),
+        fiber: Value(perServing.fiber),
+        sugar: Value(perServing.sugar),
+        sodium: Value(perServing.sodium),
         servingWeightG: Value(servingWeightG),
         displayUnit: Value(displayUnit.name),
       ),
@@ -153,6 +159,9 @@ class CatalogRepository {
       protein: food.protein,
       carbs: food.carbs,
       fat: food.fat,
+      fiber: food.fiber,
+      sugar: food.sugar,
+      sodium: food.sodium,
     ),
     servingWeightG: food.servingWeightG,
     weightG: weightG,
@@ -171,13 +180,17 @@ class CatalogRepository {
     }
   }
 
-  /// Throws unless every macro is finite and >= 0.
+  /// Throws unless every macro is finite and >= 0. The optional nutrients may
+  /// be null (not recorded).
   static void validateMacros(Macros macros) {
     for (final v in [
       macros.calories,
       macros.protein,
       macros.carbs,
       macros.fat,
+      ?macros.fiber,
+      ?macros.sugar,
+      ?macros.sodium,
     ]) {
       if (!v.isFinite || v < 0) {
         throw ArgumentError('macro values must be finite and >= 0');

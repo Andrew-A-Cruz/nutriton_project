@@ -74,6 +74,12 @@ void main() {
     await tapSubmitPreferences(tester);
     await settle(tester);
 
+    // The error is under the goal, far above the button.
+    await scrollPreferencesTo(
+      tester,
+      find.byKey(const Key('goal-calories')),
+      delta: -200,
+    );
     expect(find.text('Enter a number greater than 0'), findsWidgets);
     expect(prefs.getDouble('goal_calories'), 2000);
     expect(find.byKey(const Key('goal-calories')), findsOneWidget);
@@ -90,6 +96,11 @@ void main() {
     await tapSubmitPreferences(tester);
     await settle(tester);
 
+    await scrollPreferencesTo(
+      tester,
+      find.byKey(const Key('goal-calories')),
+      delta: -200,
+    );
     expect(find.text('Enter a number greater than 0'), findsWidgets);
     expect(prefs.getDouble('goal_calories'), 2000);
     expect(find.byKey(const Key('goal-calories')), findsOneWidget);

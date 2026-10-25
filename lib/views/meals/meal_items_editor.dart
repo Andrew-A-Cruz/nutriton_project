@@ -1,10 +1,12 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/metrics.dart';
 import '../../core/nutrition_math.dart';
 import '../../core/validation.dart';
 import '../../data/database/app_database.dart';
 import '../../data/repositories/catalog_repository.dart';
+import '../../providers/preferences_providers.dart';
 import '../common/form_widgets.dart';
 
 /// One food row while a meal is being edited. Owns its weight field, which
@@ -183,13 +185,13 @@ class MealItemsEditor extends StatelessWidget {
 }
 
 /// Running totals for the rows in a meal.
-class MealTotals extends StatelessWidget {
+class MealTotals extends ConsumerWidget {
   const MealTotals({super.key, required this.items});
 
   final List<MealDraftItem> items;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final totals = draftTotals(items);
     return CupertinoFormSection.insetGrouped(
       header: const Text('TOTAL'),
@@ -199,7 +201,12 @@ class MealTotals extends StatelessWidget {
             '${Metric.calories.format(totals.calories)} kcal',
             key: const Key('meal-total-calories'),
           ),
-          subtitle: Text(formatMacroLine(totals)),
+          subtitle: Text(
+            formatMacroLine(
+              totals,
+              tracked: ref.watch(preferencesProvider).trackedMetrics,
+            ),
+          ),
         ),
       ],
     );

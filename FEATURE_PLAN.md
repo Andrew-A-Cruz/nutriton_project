@@ -25,12 +25,12 @@ Three ideas from the brainstorm are already built, so they are not milestones he
 | M9 | Recent and frequent foods | High | S | No | None |
 | M10 | Log again and copy day | High | S | No | None |
 | M11 | Backup: export and import | High | M | No | `share_plus`, `file_picker` |
-| M12 | Meal sections (breakfast, lunch, dinner, snacks) | Medium | M | v2 (first migration) | None |
-| M13 | Fiber, sugar, sodium | Medium | M | v3 | None |
+| M12 | Meal sections (breakfast, lunch, dinner, snacks) | Medium | M | v3 | None |
+| M13 | Fiber, sugar, sodium | Medium | M | v4 | None |
 | M14 | Streaks and reminders | Medium | M | No | `flutter_local_notifications`, `timezone` |
-| M15 | Body weight tracking | Medium | M | v4 (new table) | None |
-| M16 | Barcode scan and food lookup | High | L | v5 (barcode column) | `mobile_scanner`, `http` |
-| M17 | Planned meals (scheduling) | Medium | L | v6 (new table) | None |
+| M15 | Body weight tracking | Medium | M | v5 (new table) | None |
+| M16 | Barcode scan and food lookup | High | L | v6 (barcode column) | `mobile_scanner`, `http` |
+| M17 | Planned meals (scheduling) | Medium | L | v7 (new table) | None |
 | M18 | Home screen widget | Low–Med | L | No | `home_widget` + a Swift WidgetKit target |
 | M19 | Apple Health | Low–Med | M | No | `health` |
 | M20 | Cloud sync | Low (one device) | XL | Sync metadata | `supabase_flutter` |
@@ -88,13 +88,13 @@ Each milestone ends with something runnable and its tests passing, as in v1. Run
 - [x] Migration test from v2 to v3 with real-looking rows (and v1 to v3); widget test for grouping
 
 ### M13 — Fiber, sugar, sodium
-- [ ] `Metric`: add `fiber (g)`, `sugar (g)` and `sodium (mg)`. Sodium is the first metric not in grams, so check every place that assumes `g` (`formatMacroLine`, form suffixes)
-- [ ] `Macros`: add the three fields. Because the class is used everywhere, the compiler finds each place that builds one
-- [ ] Schema v4: nullable `fiber`, `sugar` and `sodium` on `food_items`, `food_log_entries` and `food_log_entry_items`. Null means "not recorded" and is different from 0
-- [ ] Sums and averages treat null as 0 but report coverage, e.g. "sodium recorded for 3 of 5 entries" on Home and Summary
-- [ ] Forms: the three fields show only for metrics the user tracks, and are optional
-- [ ] `formatMacroLine` shows only tracked metrics; check that 2x text still fits
-- [ ] Migration test v3 to v4; `nutrition_math` tests for null handling
+- [x] `Metric`: add `fiber (g)`, `sugar (g)` and `sodium (mg)`. Sodium is the first metric not in grams, so check every place that assumes `g` (`formatMacroLine`, form suffixes). *Done:* the unit comes from `Metric.unit`; `Metric.format` shows mg as a whole number. Fiber, sugar and sodium also appear in the onboarding and Settings primary/track/goal lists, with their units
+- [x] `Macros`: add the three fields (nullable). Because the class is used everywhere, the compiler finds each place that builds one
+- [x] Schema v4: nullable `fiber`, `sugar` and `sodium` on `food_items`, `food_log_entries` and `food_log_entry_items`. Null means "not recorded" and is different from 0
+- [x] Sums and averages treat null as 0 but report coverage, e.g. "sodium recorded for 3 of 5 entries" on Home and Summary. *Done:* `Coverage` / `coverageOf` in `nutrition_math.dart` and `coverageText` in `metrics.dart`; the hint shows only when coverage is partial (some, not all, entries). A total stays null until some entry records it
+- [x] Forms: the three fields show only for metrics the user tracks, and are optional. *Done:* new food, edit food, one-off entry and edit one-off sheet (`OptionalNutrientFields`). Hiding a field never erases a stored value
+- [x] `formatMacroLine` shows only tracked metrics; check that 2x text still fits. *Done with a deviation:* calories, protein, carbs and fat are always shown, as before; fiber, sugar and sodium are added only when tracked and recorded. The line already wraps, and the large-text test covers it
+- [x] Migration test v3 to v4; `nutrition_math` tests for null handling. Also: v1 and v2 to v4, a real v3 file on disk, a pre-M13 backup importing with nulls (`test/data/backup/backup_nutrients_test.dart`), and Open Food Facts mapping of `fiber_100g`, `sugars_100g` and `sodium_100g` (sodium converted from g to mg, or `salt_100g / 2.5`). Backup `version` stays 1 (nullable columns)
 
 ### M14 — Streaks and reminders
 - [ ] Streak: the number of consecutive days with at least one entry, ending today (or yesterday, if today is still empty). Shown as a small badge in the Home header. A pure function in `core/` plus one `SummaryDao` query
@@ -246,12 +246,13 @@ Ideas that aren't milestones yet. They aren't ordered: when one is picked up, gi
 
 | Version | Milestone | Change |
 |---|---|---|
-| 1 | v1 | Current schema |
-| 2 | M12 | `food_log_entries.meal_slot` (nullable) |
-| 3 | M13 | `fiber`, `sugar`, `sodium` (nullable) on `food_items`, `food_log_entries`, `food_log_entry_items` |
-| 4 | M15 | New `body_weights` table |
-| 5 | M16 | `food_items.barcode` (nullable, indexed) |
-| 6 | M17 | New `scheduled_items` table |
+| 1 | v1 | The v1 schema |
+| 2 | Scheduling (before M9) | New `scheduled_meals` and `scheduled_meal_outcomes` tables |
+| 3 | M12 | `food_log_entries.meal_slot` (nullable) |
+| 4 | M13 | `fiber`, `sugar`, `sodium` (nullable) on `food_items`, `food_log_entries`, `food_log_entry_items` |
+| 5 | M15 | New `body_weights` table |
+| 6 | M16 | `food_items.barcode` (nullable, indexed) |
+| 7 | M17 | New `scheduled_items` table |
 
 Each step gets a drift migration test (`make-migrations`) and an update to `DATA_MODEL.md` and the backup format.
 
