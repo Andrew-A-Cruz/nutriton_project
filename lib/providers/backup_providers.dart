@@ -19,3 +19,20 @@ final backupRepositoryProvider = Provider<BackupRepository>(
 final backupFileIoProvider = Provider<BackupFileIo>(
   (ref) => const FilePickerBackupFileIo(),
 );
+
+/// When the last export succeeded, or null if never. Lives outside
+/// `UserSettings`, so importing a backup does not touch it.
+class LastBackupNotifier extends Notifier<DateTime?> {
+  @override
+  DateTime? build() => ref.watch(userPreferencesProvider).readLastBackup();
+
+  Future<void> markNow() async {
+    final now = DateTime.now();
+    state = now;
+    await ref.read(userPreferencesProvider).writeLastBackup(now);
+  }
+}
+
+final lastBackupProvider = NotifierProvider<LastBackupNotifier, DateTime?>(
+  LastBackupNotifier.new,
+);

@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/metrics.dart';
+import '../../core/meal_slot.dart';
 import '../../core/nutrition_math.dart';
 import '../../core/validation.dart';
 import '../../data/database/app_database.dart';
@@ -9,6 +10,7 @@ import '../../providers/infrastructure_providers.dart';
 import '../../providers/preferences_providers.dart';
 import '../../providers/today_providers.dart';
 import '../common/form_widgets.dart';
+import '../common/meal_slot_picker.dart';
 import '../home/date_header.dart';
 
 enum AmountMode { servings, weight }
@@ -39,6 +41,7 @@ class LogFoodView extends ConsumerStatefulWidget {
 class _LogFoodViewState extends ConsumerState<LogFoodView> {
   late final TextEditingController _amount;
   AmountMode _mode = AmountMode.servings;
+  MealSlot _slot = MealSlot.forTime(DateTime.now());
   String? _error;
   String? _saveError;
   bool _saving = false;
@@ -116,6 +119,7 @@ class _LogFoodViewState extends ConsumerState<LogFoodView> {
             logDate: widget.logDate,
             food: widget.food,
             servings: servings,
+            mealSlot: _slot,
           );
       if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
     } catch (e) {
@@ -167,17 +171,28 @@ class _LogFoodViewState extends ConsumerState<LogFoodView> {
             CupertinoFormSection.insetGrouped(
               children: [
                 CupertinoFormRow(
-                  prefix: const Text('Amount in'),
-                  child: CupertinoSlidingSegmentedControl<AmountMode>(
-                    key: const Key('log-mode'),
-                    groupValue: _mode,
-                    children: {
-                      AmountMode.servings: const Text('Servings'),
-                      AmountMode.weight: Text(_weightLabel),
-                    },
-                    onValueChanged: (mode) {
-                      if (mode != null) _setMode(mode);
-                    },
+                  // Stacked rather than side by side: with 2x text a prefix and the
+                  // control do not fit in one row.
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Amount in'),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: CupertinoSlidingSegmentedControl<AmountMode>(
+                          key: const Key('log-mode'),
+                          groupValue: _mode,
+                          children: {
+                            AmountMode.servings: const Text('Servings'),
+                            AmountMode.weight: Text(_weightLabel),
+                          },
+                          onValueChanged: (mode) {
+                            if (mode != null) _setMode(mode);
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 formRow(
@@ -191,6 +206,10 @@ class _LogFoodViewState extends ConsumerState<LogFoodView> {
                   onChanged: (_) => setState(() => _error = null),
                 ),
               ],
+            ),
+            MealSlotFormSection(
+              value: _slot,
+              onChanged: (s) => setState(() => _slot = s),
             ),
             CupertinoFormSection.insetGrouped(
               header: const Text('TOTAL FOR THIS ENTRY'),

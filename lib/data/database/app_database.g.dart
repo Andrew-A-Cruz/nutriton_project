@@ -1344,6 +1344,18 @@ class $FoodLogEntriesTable extends FoodLogEntries
     type: DriftSqlType.double,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _mealSlotMeta = const VerificationMeta(
+    'mealSlot',
+  );
+  @override
+  late final GeneratedColumn<String> mealSlot = GeneratedColumn<String>(
+    'meal_slot',
+    aliasedName,
+    true,
+    check: () => mealSlot.isIn(['breakfast', 'lunch', 'dinner', 'snack']),
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1358,6 +1370,7 @@ class $FoodLogEntriesTable extends FoodLogEntries
     foodItemId,
     mealId,
     servings,
+    mealSlot,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1461,6 +1474,12 @@ class $FoodLogEntriesTable extends FoodLogEntries
         servings.isAcceptableOrUnknown(data['servings']!, _servingsMeta),
       );
     }
+    if (data.containsKey('meal_slot')) {
+      context.handle(
+        _mealSlotMeta,
+        mealSlot.isAcceptableOrUnknown(data['meal_slot']!, _mealSlotMeta),
+      );
+    }
     return context;
   }
 
@@ -1518,6 +1537,10 @@ class $FoodLogEntriesTable extends FoodLogEntries
         DriftSqlType.double,
         data['${effectivePrefix}servings'],
       ),
+      mealSlot: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}meal_slot'],
+      ),
     );
   }
 
@@ -1546,6 +1569,9 @@ class FoodLogEntry extends DataClass implements Insertable<FoodLogEntry> {
 
   /// Food entries only.
   final double? servings;
+
+  /// 'breakfast' | 'lunch' | 'dinner' | 'snack'; null shows under "Other".
+  final String? mealSlot;
   const FoodLogEntry({
     required this.id,
     required this.logDate,
@@ -1559,6 +1585,7 @@ class FoodLogEntry extends DataClass implements Insertable<FoodLogEntry> {
     this.foodItemId,
     this.mealId,
     this.servings,
+    this.mealSlot,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1580,6 +1607,9 @@ class FoodLogEntry extends DataClass implements Insertable<FoodLogEntry> {
     }
     if (!nullToAbsent || servings != null) {
       map['servings'] = Variable<double>(servings);
+    }
+    if (!nullToAbsent || mealSlot != null) {
+      map['meal_slot'] = Variable<String>(mealSlot);
     }
     return map;
   }
@@ -1604,6 +1634,9 @@ class FoodLogEntry extends DataClass implements Insertable<FoodLogEntry> {
       servings: servings == null && nullToAbsent
           ? const Value.absent()
           : Value(servings),
+      mealSlot: mealSlot == null && nullToAbsent
+          ? const Value.absent()
+          : Value(mealSlot),
     );
   }
 
@@ -1625,6 +1658,7 @@ class FoodLogEntry extends DataClass implements Insertable<FoodLogEntry> {
       foodItemId: serializer.fromJson<String?>(json['foodItemId']),
       mealId: serializer.fromJson<String?>(json['mealId']),
       servings: serializer.fromJson<double?>(json['servings']),
+      mealSlot: serializer.fromJson<String?>(json['mealSlot']),
     );
   }
   @override
@@ -1643,6 +1677,7 @@ class FoodLogEntry extends DataClass implements Insertable<FoodLogEntry> {
       'foodItemId': serializer.toJson<String?>(foodItemId),
       'mealId': serializer.toJson<String?>(mealId),
       'servings': serializer.toJson<double?>(servings),
+      'mealSlot': serializer.toJson<String?>(mealSlot),
     };
   }
 
@@ -1659,6 +1694,7 @@ class FoodLogEntry extends DataClass implements Insertable<FoodLogEntry> {
     Value<String?> foodItemId = const Value.absent(),
     Value<String?> mealId = const Value.absent(),
     Value<double?> servings = const Value.absent(),
+    Value<String?> mealSlot = const Value.absent(),
   }) => FoodLogEntry(
     id: id ?? this.id,
     logDate: logDate ?? this.logDate,
@@ -1672,6 +1708,7 @@ class FoodLogEntry extends DataClass implements Insertable<FoodLogEntry> {
     foodItemId: foodItemId.present ? foodItemId.value : this.foodItemId,
     mealId: mealId.present ? mealId.value : this.mealId,
     servings: servings.present ? servings.value : this.servings,
+    mealSlot: mealSlot.present ? mealSlot.value : this.mealSlot,
   );
   FoodLogEntry copyWithCompanion(FoodLogEntriesCompanion data) {
     return FoodLogEntry(
@@ -1689,6 +1726,7 @@ class FoodLogEntry extends DataClass implements Insertable<FoodLogEntry> {
           : this.foodItemId,
       mealId: data.mealId.present ? data.mealId.value : this.mealId,
       servings: data.servings.present ? data.servings.value : this.servings,
+      mealSlot: data.mealSlot.present ? data.mealSlot.value : this.mealSlot,
     );
   }
 
@@ -1706,7 +1744,8 @@ class FoodLogEntry extends DataClass implements Insertable<FoodLogEntry> {
           ..write('fat: $fat, ')
           ..write('foodItemId: $foodItemId, ')
           ..write('mealId: $mealId, ')
-          ..write('servings: $servings')
+          ..write('servings: $servings, ')
+          ..write('mealSlot: $mealSlot')
           ..write(')'))
         .toString();
   }
@@ -1725,6 +1764,7 @@ class FoodLogEntry extends DataClass implements Insertable<FoodLogEntry> {
     foodItemId,
     mealId,
     servings,
+    mealSlot,
   );
   @override
   bool operator ==(Object other) =>
@@ -1741,7 +1781,8 @@ class FoodLogEntry extends DataClass implements Insertable<FoodLogEntry> {
           other.fat == this.fat &&
           other.foodItemId == this.foodItemId &&
           other.mealId == this.mealId &&
-          other.servings == this.servings);
+          other.servings == this.servings &&
+          other.mealSlot == this.mealSlot);
 }
 
 class FoodLogEntriesCompanion extends UpdateCompanion<FoodLogEntry> {
@@ -1757,6 +1798,7 @@ class FoodLogEntriesCompanion extends UpdateCompanion<FoodLogEntry> {
   final Value<String?> foodItemId;
   final Value<String?> mealId;
   final Value<double?> servings;
+  final Value<String?> mealSlot;
   final Value<int> rowid;
   const FoodLogEntriesCompanion({
     this.id = const Value.absent(),
@@ -1771,6 +1813,7 @@ class FoodLogEntriesCompanion extends UpdateCompanion<FoodLogEntry> {
     this.foodItemId = const Value.absent(),
     this.mealId = const Value.absent(),
     this.servings = const Value.absent(),
+    this.mealSlot = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   FoodLogEntriesCompanion.insert({
@@ -1786,6 +1829,7 @@ class FoodLogEntriesCompanion extends UpdateCompanion<FoodLogEntry> {
     this.foodItemId = const Value.absent(),
     this.mealId = const Value.absent(),
     this.servings = const Value.absent(),
+    this.mealSlot = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        logDate = Value(logDate),
@@ -1809,6 +1853,7 @@ class FoodLogEntriesCompanion extends UpdateCompanion<FoodLogEntry> {
     Expression<String>? foodItemId,
     Expression<String>? mealId,
     Expression<double>? servings,
+    Expression<String>? mealSlot,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1824,6 +1869,7 @@ class FoodLogEntriesCompanion extends UpdateCompanion<FoodLogEntry> {
       if (foodItemId != null) 'food_item_id': foodItemId,
       if (mealId != null) 'meal_id': mealId,
       if (servings != null) 'servings': servings,
+      if (mealSlot != null) 'meal_slot': mealSlot,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1841,6 +1887,7 @@ class FoodLogEntriesCompanion extends UpdateCompanion<FoodLogEntry> {
     Value<String?>? foodItemId,
     Value<String?>? mealId,
     Value<double?>? servings,
+    Value<String?>? mealSlot,
     Value<int>? rowid,
   }) {
     return FoodLogEntriesCompanion(
@@ -1856,6 +1903,7 @@ class FoodLogEntriesCompanion extends UpdateCompanion<FoodLogEntry> {
       foodItemId: foodItemId ?? this.foodItemId,
       mealId: mealId ?? this.mealId,
       servings: servings ?? this.servings,
+      mealSlot: mealSlot ?? this.mealSlot,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1899,6 +1947,9 @@ class FoodLogEntriesCompanion extends UpdateCompanion<FoodLogEntry> {
     if (servings.present) {
       map['servings'] = Variable<double>(servings.value);
     }
+    if (mealSlot.present) {
+      map['meal_slot'] = Variable<String>(mealSlot.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1920,6 +1971,7 @@ class FoodLogEntriesCompanion extends UpdateCompanion<FoodLogEntry> {
           ..write('foodItemId: $foodItemId, ')
           ..write('mealId: $mealId, ')
           ..write('servings: $servings, ')
+          ..write('mealSlot: $mealSlot, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4827,6 +4879,7 @@ typedef $$FoodLogEntriesTableCreateCompanionBuilder =
       Value<String?> foodItemId,
       Value<String?> mealId,
       Value<double?> servings,
+      Value<String?> mealSlot,
       Value<int> rowid,
     });
 typedef $$FoodLogEntriesTableUpdateCompanionBuilder =
@@ -4843,6 +4896,7 @@ typedef $$FoodLogEntriesTableUpdateCompanionBuilder =
       Value<String?> foodItemId,
       Value<String?> mealId,
       Value<double?> servings,
+      Value<String?> mealSlot,
       Value<int> rowid,
     });
 
@@ -5003,6 +5057,11 @@ class $$FoodLogEntriesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get mealSlot => $composableBuilder(
+    column: $table.mealSlot,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$FoodItemsTableFilterComposer get foodItemId {
     final $$FoodItemsTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -5160,6 +5219,11 @@ class $$FoodLogEntriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get mealSlot => $composableBuilder(
+    column: $table.mealSlot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$FoodItemsTableOrderingComposer get foodItemId {
     final $$FoodItemsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -5245,6 +5309,9 @@ class $$FoodLogEntriesTableAnnotationComposer
 
   GeneratedColumn<double> get servings =>
       $composableBuilder(column: $table.servings, builder: (column) => column);
+
+  GeneratedColumn<String> get mealSlot =>
+      $composableBuilder(column: $table.mealSlot, builder: (column) => column);
 
   $$FoodItemsTableAnnotationComposer get foodItemId {
     final $$FoodItemsTableAnnotationComposer composer = $composerBuilder(
@@ -5392,6 +5459,7 @@ class $$FoodLogEntriesTableTableManager
                 Value<String?> foodItemId = const Value.absent(),
                 Value<String?> mealId = const Value.absent(),
                 Value<double?> servings = const Value.absent(),
+                Value<String?> mealSlot = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => FoodLogEntriesCompanion(
                 id: id,
@@ -5406,6 +5474,7 @@ class $$FoodLogEntriesTableTableManager
                 foodItemId: foodItemId,
                 mealId: mealId,
                 servings: servings,
+                mealSlot: mealSlot,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -5422,6 +5491,7 @@ class $$FoodLogEntriesTableTableManager
                 Value<String?> foodItemId = const Value.absent(),
                 Value<String?> mealId = const Value.absent(),
                 Value<double?> servings = const Value.absent(),
+                Value<String?> mealSlot = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => FoodLogEntriesCompanion.insert(
                 id: id,
@@ -5436,6 +5506,7 @@ class $$FoodLogEntriesTableTableManager
                 foodItemId: foodItemId,
                 mealId: mealId,
                 servings: servings,
+                mealSlot: mealSlot,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

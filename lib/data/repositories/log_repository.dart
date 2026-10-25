@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/date_key.dart';
+import '../../core/meal_slot.dart';
 import '../../core/nutrition_math.dart';
 import '../database/app_database.dart';
 import '../database/daos/log_dao.dart' show RecentSource;
@@ -119,6 +120,7 @@ class LogRepository {
         foodItemId: Value(e.foodItemId),
         mealId: Value(e.mealId),
         servings: Value(e.servings),
+        mealSlot: Value(e.mealSlot),
       ),
     );
     if (items.isNotEmpty) {
@@ -145,6 +147,7 @@ class LogRepository {
     required String logDate,
     required FoodItem food,
     required double servings,
+    MealSlot? mealSlot,
   }) async {
     _checkServings(servings);
     final id = _uuid.v4();
@@ -162,6 +165,7 @@ class LogRepository {
         fat: totals.fat,
         foodItemId: Value(food.id),
         servings: Value(servings),
+        mealSlot: Value(mealSlot?.name),
       ),
     );
     return id;
@@ -175,6 +179,7 @@ class LogRepository {
     required Meal meal,
     required List<MealItemInput> items,
     bool updateTemplate = false,
+    MealSlot? mealSlot,
   }) async {
     if (items.isEmpty) {
       throw ArgumentError('a logged meal needs at least one item');
@@ -224,6 +229,7 @@ class LogRepository {
           carbs: total.carbs,
           fat: total.fat,
           mealId: Value(meal.id),
+          mealSlot: Value(mealSlot?.name),
         ),
       );
       await _db.logDao.insertEntryItems(snapshots);
@@ -243,6 +249,7 @@ class LogRepository {
     required String logDate,
     required String name,
     required Macros macros,
+    MealSlot? mealSlot,
   }) async {
     if (name.trim().isEmpty) {
       throw ArgumentError.value(name, 'name', 'must not be empty');
@@ -260,6 +267,7 @@ class LogRepository {
         protein: macros.protein,
         carbs: macros.carbs,
         fat: macros.fat,
+        mealSlot: Value(mealSlot?.name),
       ),
     );
     return id;
@@ -323,6 +331,15 @@ class LogRepository {
         ),
       );
     });
+  }
+
+  /// Sets the meal slot of an entry of any type.
+  Future<void> updateMealSlot(String entryId, MealSlot slot) async {
+    final changed = await _db.logDao.updateEntry(
+      entryId,
+      FoodLogEntriesCompanion(mealSlot: Value(slot.name)),
+    );
+    if (changed == 0) throw StateError('No log entry $entryId');
   }
 
   /// Moves an entry of any type to [logDate] ('yyyy-MM-dd').

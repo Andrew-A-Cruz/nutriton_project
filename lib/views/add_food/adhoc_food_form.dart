@@ -1,10 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/meal_slot.dart';
 import '../../core/nutrition_math.dart';
 import '../../core/validation.dart';
 import '../../providers/infrastructure_providers.dart';
 import '../common/form_widgets.dart';
+import '../common/meal_slot_picker.dart';
 
 /// Logs a one-off food for [logDate]. Nothing is written to the catalog.
 /// Pops to the root after logging.
@@ -27,6 +29,7 @@ class _AdhocFoodFormState extends ConsumerState<AdhocFoodForm> {
   Map<String, String> _errors = const {};
   String? _saveError;
   bool _saving = false;
+  MealSlot _slot = MealSlot.forTime(DateTime.now());
 
   @override
   void dispose() {
@@ -71,6 +74,7 @@ class _AdhocFoodFormState extends ConsumerState<AdhocFoodForm> {
               carbs: parseNumber(_carbs.text)!,
               fat: parseNumber(_fat.text)!,
             ),
+            mealSlot: _slot,
           );
       if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
     } catch (e) {
@@ -132,6 +136,10 @@ class _AdhocFoodFormState extends ConsumerState<AdhocFoodForm> {
               suffix: 'g',
             ),
           ],
+        ),
+        MealSlotFormSection(
+          value: _slot,
+          onChanged: (s) => setState(() => _slot = s),
         ),
         Padding(
           padding: const EdgeInsets.all(16),

@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/backup_labels.dart';
 import '../../data/repositories/backup_repository.dart';
 import '../../providers/backup_providers.dart';
 import '../../providers/preferences_providers.dart';
@@ -27,19 +28,30 @@ class _BackupSectionState extends ConsumerState<BackupSection> {
     });
   }
 
+  final _exportKey = GlobalKey();
+
   Future<void> _export() async {
     if (_busy) return;
     setState(() => _busy = true);
     _setStatus(null);
     try {
+      // Where the iPad share popover points.
+      final box = _exportKey.currentContext?.findRenderObject();
+      final origin = box is RenderBox
+          ? box.localToGlobal(Offset.zero) & box.size
+          : null;
       final json = await ref.read(backupRepositoryProvider).exportJson();
       final saved = await ref
           .read(backupFileIoProvider)
           .save(
             fileName: BackupRepository.fileNameFor(DateTime.now()),
             contents: json,
+            origin: origin,
           );
-      if (saved) _setStatus('Backup saved.');
+      if (saved) {
+        await ref.read(lastBackupProvider.notifier).markNow();
+        _setStatus('Backup saved.');
+      }
     } on Exception {
       _setStatus('Could not save the backup.', error: true);
     } finally {
@@ -54,13 +66,25 @@ class _BackupSectionState extends ConsumerState<BackupSection> {
     try {
       final contents = await ref.read(backupFileIoProvider).pick();
       if (contents == null || !mounted) return;
+      final repo = ref.read(backupRepositoryProvider);
+      // Decode first, so a bad file shows its error without asking anything.
+      final data = repo.readBackup(contents);
+      final summary = backupSummary(
+        entries: data.logEntries.length,
+        foods: data.foodItems.length,
+        meals: data.meals.length,
+        plans: data.scheduledMeals.length,
+        exportedAt: data.exportedAt,
+      );
       final confirmed = await showCupertinoDialog<bool>(
         context: context,
         builder: (context) => CupertinoAlertDialog(
           title: const Text('Replace all data?'),
-          content: const Text(
+          content: Text(
+            'This file has $summary.\n\n'
             'Importing replaces your foods, meals, log, plans and settings '
-            'with the contents of this file. This cannot be undone.',
+            'with its contents. This cannot be undone.',
+            key: const Key('import-summary'),
           ),
           actions: [
             CupertinoDialogAction(
@@ -78,7 +102,7 @@ class _BackupSectionState extends ConsumerState<BackupSection> {
         ),
       );
       if (confirmed != true || !mounted) return;
-      await ref.read(backupRepositoryProvider).importJson(contents);
+      await repo.restore(data);
       ref.invalidate(preferencesProvider);
       if (!mounted) return;
       await showCupertinoDialog<void>(
@@ -112,7 +136,11 @@ class _BackupSectionState extends ConsumerState<BackupSection> {
     return CupertinoFormSection.insetGrouped(
       header: const Text('BACKUP'),
       footer: status == null
-          ? const Text('Export saves everything to a JSON file.')
+          ? Text(
+              'Export saves everything to a JSON file.\n'
+              '${lastBackupLabel(ref.watch(lastBackupProvider), DateTime.now())}',
+              key: const Key('backup-last'),
+            )
           : Text(
               status,
               key: const Key('backup-status'),
@@ -121,11 +149,14 @@ class _BackupSectionState extends ConsumerState<BackupSection> {
               ),
             ),
       children: [
-        CupertinoListTile(
-          key: const Key('backup-export'),
-          title: const Text('Export data'),
-          trailing: const CupertinoListTileChevron(),
-          onTap: _busy ? null : _export,
+        KeyedSubtree(
+          key: _exportKey,
+          child: CupertinoListTile(
+            key: const Key('backup-export'),
+            title: const Text('Export data'),
+            trailing: const CupertinoListTileChevron(),
+            onTap: _busy ? null : _export,
+          ),
         ),
         CupertinoListTile(
           key: const Key('backup-import'),

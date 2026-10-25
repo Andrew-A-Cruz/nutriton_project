@@ -2,12 +2,14 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/metrics.dart';
+import '../../core/meal_slot.dart';
 import '../../core/validation.dart';
 import '../../data/database/app_database.dart';
 import '../../providers/infrastructure_providers.dart';
 import '../../providers/log_providers.dart';
 import '../../providers/preferences_providers.dart';
 import '../common/form_widgets.dart';
+import '../common/meal_slot_picker.dart';
 
 /// Edits the serving count of a logged food entry.
 class EditServingsDialog extends ConsumerStatefulWidget {
@@ -25,6 +27,7 @@ class _EditServingsDialogState extends ConsumerState<EditServingsDialog> {
   );
   String? _error;
   bool _saving = false;
+  late MealSlot? _slot = MealSlot.fromName(widget.entry.mealSlot);
 
   @override
   void dispose() {
@@ -46,6 +49,12 @@ class _EditServingsDialogState extends ConsumerState<EditServingsDialog> {
       await ref
           .read(logRepositoryProvider)
           .updateServings(widget.entry.id, servings: value);
+      final slot = _slot;
+      if (slot != null && slot.name != widget.entry.mealSlot) {
+        await ref
+            .read(logRepositoryProvider)
+            .updateMealSlot(widget.entry.id, slot);
+      }
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
       if (mounted) {
@@ -74,6 +83,12 @@ class _EditServingsDialogState extends ConsumerState<EditServingsDialog> {
             autofocus: true,
             textAlign: TextAlign.center,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          ),
+          const SizedBox(height: 12),
+          MealSlotPicker(
+            compact: true,
+            value: _slot,
+            onChanged: (s) => setState(() => _slot = s),
           ),
           if (_error != null)
             Padding(
@@ -104,13 +119,34 @@ class _EditServingsDialogState extends ConsumerState<EditServingsDialog> {
 }
 
 /// Lists what was actually eaten in a logged meal, from its breakdown rows.
-class MealBreakdownSheet extends ConsumerWidget {
+class MealBreakdownSheet extends ConsumerStatefulWidget {
   const MealBreakdownSheet({super.key, required this.entry});
 
   final FoodLogEntry entry;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MealBreakdownSheet> createState() => _MealBreakdownSheetState();
+}
+
+class _MealBreakdownSheetState extends ConsumerState<MealBreakdownSheet> {
+  late MealSlot? _slot = MealSlot.fromName(widget.entry.mealSlot);
+
+  /// The sheet is read-only, so a slot change is saved at once.
+  Future<void> _setSlot(MealSlot slot) async {
+    final previous = _slot;
+    setState(() => _slot = slot);
+    try {
+      await ref
+          .read(logRepositoryProvider)
+          .updateMealSlot(widget.entry.id, slot);
+    } catch (_) {
+      if (mounted) setState(() => _slot = previous);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final entry = widget.entry;
     final items = ref.watch(entryItemsProvider(entry.id));
     final unit = ref.watch(preferencesProvider.select((s) => s.displayUnit));
 
@@ -154,6 +190,10 @@ class MealBreakdownSheet extends ConsumerWidget {
                   ),
                 ],
               ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: MealSlotPicker(value: _slot, onChanged: _setSlot),
             ),
             Expanded(
               child: items.when(

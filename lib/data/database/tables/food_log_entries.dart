@@ -37,6 +37,11 @@ class FoodLogEntries extends Table {
   RealColumn get servings =>
       real().nullable().check(servings.isBiggerThanValue(0))();
 
+  /// 'breakfast' | 'lunch' | 'dinner' | 'snack'; null shows under "Other".
+  TextColumn get mealSlot => text().nullable().check(
+    mealSlot.isIn(['breakfast', 'lunch', 'dinner', 'snack']),
+  )();
+
   @override
   Set<Column> get primaryKey => {id};
 }

@@ -69,32 +69,32 @@ Each milestone ends with something runnable and its tests passing, as in v1. Run
 - [x] Repository tests: meal breakdown rows are copied, the source day is unchanged, copying an empty day is a no-op
 
 ### M11 — Backup: export and import
-- [ ] Format: a single JSON file `{ "format": 1, "schemaVersion": n, "exportedAt", "preferences": {…}, "tables": {…} }`. JSON is chosen over copying the SQLite file because it stays readable across schema versions (see Open Questions)
-- [ ] `BackupRepository.export()` reads every table plus `UserSettings` into the JSON. Settings shares it through the share sheet (`share_plus`), so it can go to Files, AirDrop or email
-- [ ] `BackupRepository.import(file)` validates the format and version, shows counts ("212 entries, 48 foods, 6 meals"), then replaces all data in one transaction after a destructive-action confirm
-- [ ] An import from an older `schemaVersion` is supported by mapping missing columns to their defaults. One from a newer version is refused with a clear message
-- [ ] A "Last backup: n days ago" line in Settings, stored in preferences
-- [ ] Tests: an export then import round trip gives identical rows; a corrupt file or one from a newer version changes nothing
+- [x] Format: a single JSON file `{ "app": "nutriton", "version": 1, "exportedAt", "food_items": […], "meals": […], …, "preferences": {…} }`, one array per table with drift's generated row JSON. JSON is chosen over copying the SQLite file because it stays readable across schema versions. The `version` field plus the upgrade pipeline in `BackupCodec` (`_upgrades`) replaces the originally planned `format` / `schemaVersion` / `tables` layout
+- [x] `BackupRepository.exportJson()` reads every table plus `UserSettings` in one transaction. Settings shares it through the share sheet (`share_plus`) on iOS and Android, so it can go to Files, AirDrop or email; desktop and web keep the `file_picker` save dialog (behind `BackupFileIo`)
+- [x] `BackupRepository.readBackup(json)` validates the file and returns `BackupData` (nothing is changed); Settings shows counts ("212 entries, 48 foods, 6 meals", plus plans and the export date) in a destructive-action confirm, then `restore(data)` replaces all data in one transaction
+- [x] An import from an older `version` is upgraded step by step, with missing columns mapped to their defaults. One from a newer version is refused with a clear message
+- [x] A "Last backup: n days ago" line in Settings, stored in preferences (`last_backup_at`, not part of the backup itself)
+- [x] Tests: an export then import round trip gives identical rows and preferences; a corrupt file or one from a newer version changes nothing
 
 **Done when:** you can export on the phone, delete the app, reinstall and import with nothing lost. Do this once by hand before starting M12.
 
 ### M12 — Meal sections
 - [x] **Migration setup** (first time, reused by every later schema change): dump the current schema with `dart run drift_dev make-migrations`, commit `drift_schemas/`, and add the generated migration test. *Done in the October 2026 fixes:* `build.yaml`, `drift_schemas/app_database/` (v1 and v2) and `test/drift/app_database/` exist; scheduling already took v2, so meal sections bump `schemaVersion` to 3
-- [ ] Add a nullable `meal_slot` column to `food_log_entries`: `'breakfast' | 'lunch' | 'dinner' | 'snack'`. Existing rows stay null and show under "Other"
-- [ ] Default slot when logging, by time of day: before 10:30 breakfast, before 15:00 lunch, before 20:00 dinner, otherwise snack. The user can change it in the Add sheet and in the entry edit sheet
-- [ ] Home log list: grouped sections with a calorie subtotal per section. Empty sections are hidden
-- [ ] Log again (M10) keeps the slot. Copy day keeps each entry's slot
-- [ ] Backup format: add the column (M11 maps it to null for older files)
-- [ ] Migration test from v1 to v2 with real-looking rows; widget test for grouping
+- [x] Add a nullable `meal_slot` column to `food_log_entries`: `'breakfast' | 'lunch' | 'dinner' | 'snack'`. Existing rows stay null and show under "Other"
+- [x] Default slot when logging, by time of day: before 10:30 breakfast, before 15:00 lunch, before 20:00 dinner, otherwise snack. The user can change it in the Add sheet and in the entry edit sheet
+- [x] Home log list: grouped sections with a calorie subtotal per section. Empty sections are hidden
+- [x] Log again (M10) keeps the slot. Copy day keeps each entry's slot
+- [x] Backup format: no bump needed. `meal_slot` is a nullable column, so a file from before M12 imports with null and one with an invalid slot is refused by the CHECK rule (tests in `test/data/backup/backup_meal_slot_test.dart`)
+- [x] Migration test from v2 to v3 with real-looking rows (and v1 to v3); widget test for grouping
 
 ### M13 — Fiber, sugar, sodium
 - [ ] `Metric`: add `fiber (g)`, `sugar (g)` and `sodium (mg)`. Sodium is the first metric not in grams, so check every place that assumes `g` (`formatMacroLine`, form suffixes)
 - [ ] `Macros`: add the three fields. Because the class is used everywhere, the compiler finds each place that builds one
-- [ ] Schema v3: nullable `fiber`, `sugar` and `sodium` on `food_items`, `food_log_entries` and `food_log_entry_items`. Null means "not recorded" and is different from 0
+- [ ] Schema v4: nullable `fiber`, `sugar` and `sodium` on `food_items`, `food_log_entries` and `food_log_entry_items`. Null means "not recorded" and is different from 0
 - [ ] Sums and averages treat null as 0 but report coverage, e.g. "sodium recorded for 3 of 5 entries" on Home and Summary
 - [ ] Forms: the three fields show only for metrics the user tracks, and are optional
 - [ ] `formatMacroLine` shows only tracked metrics; check that 2x text still fits
-- [ ] Migration test v2 to v3; `nutrition_math` tests for null handling
+- [ ] Migration test v3 to v4; `nutrition_math` tests for null handling
 
 ### M14 — Streaks and reminders
 - [ ] Streak: the number of consecutive days with at least one entry, ending today (or yesterday, if today is still empty). Shown as a small badge in the Home header. A pure function in `core/` plus one `SummaryDao` query
@@ -103,14 +103,14 @@ Each milestone ends with something runnable and its tests passing, as in v1. Run
 - [ ] Tests: streak edge cases (gaps, today empty, month boundary); scheduling logic behind an interface so it can be faked
 
 ### M15 — Body weight tracking
-- [ ] New table `body_weights`: `log_date` (unique), `weight_kg`, `created_at`. Schema v4
+- [ ] New table `body_weights`: `log_date` (unique), `weight_kg`, `created_at`. Schema v5
 - [ ] Preference `body_weight_unit`: `kg` or `lb`. This is separate from the food `display_unit`, since people often weigh food in grams and themselves in pounds
 - [ ] Home: a "Weigh in" row on the selected date (one value per day, editing replaces it)
 - [ ] Summary: a weight line chart for the range, with a 7-day moving average to smooth out daily noise, next to average calories
 - [ ] Backup format and the migration test include the new table
 
 ### M16 — Barcode scan and food lookup
-- [ ] Schema v5: nullable, indexed `barcode` column on `food_items`
+- [ ] Schema v6: nullable, indexed `barcode` column on `food_items`
 - [ ] Scan button on the new-food form (`mobile_scanner`). Add `NSCameraUsageDescription` to `ios/Runner/Info.plist`
 - [ ] Look up the barcode locally first: if it is already a catalog food, go straight to the log flow, with no network call
 - [ ] Otherwise call Open Food Facts (`/api/v2/product/{barcode}`) with an identifying `User-Agent`, as their terms ask. Map the per-100 g nutriments, and the serving size when present, into a prefilled food form. The user always reviews the form before saving
@@ -119,7 +119,7 @@ Each milestone ends with something runnable and its tests passing, as in v1. Run
 - [ ] Tests: the mapper against saved JSON fixtures (complete, partial, kJ-only); the HTTP client behind an interface
 
 ### M17 — Planned meals (scheduling)
-- [ ] Table `scheduled_items`: `meal_id` or `food_item_id`, `meal_slot`, `weekdays` (bitmask), `servings`, `active`. Schema v6
+- [ ] Table `scheduled_items`: `meal_id` or `food_item_id`, `meal_slot`, `weekdays` (bitmask), `servings`, `active`. Schema v7
 - [ ] Catalog: "Schedule…" on a meal or food (pick weekdays and a slot)
 - [ ] Home: scheduled items that haven't been logged yet appear as dimmed suggestion rows in their section. Tap to log, swipe to skip for that day. They never log automatically, per GAME_PLAN
 - [ ] Suggestions don't count toward totals until confirmed

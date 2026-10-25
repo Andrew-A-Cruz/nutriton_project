@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/date_key.dart';
+import '../../core/meal_slot.dart';
 import '../../core/weekdays.dart';
 import '../database/app_database.dart';
 import '../database/daos/scheduled_meal_dao.dart';
@@ -82,6 +83,7 @@ class ScheduleRepository {
       final entryId = await LogRepository(_db).logMeal(
         logDate: date,
         meal: meal,
+        mealSlot: MealSlot.forTime(DateTime.now()),
         items: [
           for (final r in rows)
             MealItemInput(foodItemId: r.food.id, weightG: r.link.weightG),

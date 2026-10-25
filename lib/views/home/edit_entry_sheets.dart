@@ -3,11 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/date_key.dart';
 import '../../core/metrics.dart';
+import '../../core/meal_slot.dart';
 import '../../core/nutrition_math.dart';
 import '../../core/validation.dart';
 import '../../data/database/app_database.dart';
 import '../../providers/infrastructure_providers.dart';
 import '../common/form_widgets.dart';
+import '../common/meal_slot_picker.dart';
 
 /// Edits the name and macros of a one-off entry. Can also hand off to the
 /// "Move to another day" picker.
@@ -36,6 +38,7 @@ class _EditAdhocSheetState extends ConsumerState<EditAdhocSheet> {
   Map<String, String> _errors = const {};
   String? _saveError;
   bool _saving = false;
+  late MealSlot? _slot = MealSlot.fromName(widget.entry.mealSlot);
 
   @override
   void dispose() {
@@ -81,6 +84,7 @@ class _EditAdhocSheetState extends ConsumerState<EditAdhocSheet> {
               fat: parseNumber(_fat.text)!,
             ),
           );
+      await _applySlot(ref, widget.entry, _slot);
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
       if (mounted) {
@@ -188,6 +192,10 @@ class _EditAdhocSheetState extends ConsumerState<EditAdhocSheet> {
                         ),
                       ),
                     ),
+                  MealSlotFormSection(
+                    value: _slot,
+                    onChanged: (s) => setState(() => _slot = s),
+                  ),
                   CupertinoButton(
                     key: const Key('adhoc-edit-move'),
                     onPressed: _move,
@@ -315,4 +323,14 @@ class _MoveEntryPickerState extends ConsumerState<_MoveEntryPicker> {
       ),
     );
   }
+}
+
+/// Writes [slot] to [entry] if it was changed from the stored one.
+Future<void> _applySlot(
+  WidgetRef ref,
+  FoodLogEntry entry,
+  MealSlot? slot,
+) async {
+  if (slot == null || slot.name == entry.mealSlot) return;
+  await ref.read(logRepositoryProvider).updateMealSlot(entry.id, slot);
 }

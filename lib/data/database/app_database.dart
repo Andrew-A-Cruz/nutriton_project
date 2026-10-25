@@ -35,7 +35,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -45,6 +45,13 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(schema.scheduledMeals);
         await m.createTable(schema.scheduledMealOutcomes);
         await m.create(schema.scheduledMealsStartDate);
+      },
+      // v2 -> v3: meal sections; existing rows stay null (shown as Other).
+      from2To3: (m, schema) async {
+        await m.addColumn(
+          schema.foodLogEntries,
+          schema.foodLogEntries.mealSlot,
+        );
       },
     ),
     beforeOpen: (details) async {
