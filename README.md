@@ -23,6 +23,30 @@ flutter analyze
 flutter test
 ```
 
+## Android
+
+Requires JDK 17 and the Android SDK (API 36, build-tools 36, NDK 28.2.13676358; Gradle fetches anything missing). The minimum supported version is Android 8.0 (API 26).
+
+```sh
+flutter build apk --release        # to install on a device
+flutter build appbundle --release  # to upload to Google Play
+```
+
+Without `android/key.properties`, release builds use the debug key, which Google Play rejects. To sign for Play, create a keystore once and keep it and its passwords backed up outside the repo; both are git-ignored:
+
+```sh
+keytool -genkey -v -keystore android/app/upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+```
+
+Then create `android/key.properties`. `storeFile` is relative to `android/app`:
+
+```properties
+storeFile=upload-keystore.jks
+storePassword=...
+keyAlias=upload
+keyPassword=...
+```
+
 ## Layout
 
 ```
