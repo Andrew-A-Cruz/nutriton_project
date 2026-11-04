@@ -156,6 +156,8 @@ M14 to M19 were built on Windows, with no Xcode or Android SDK. Everything nativ
 - [x] Android: build once to check the core library desugaring change in `android/app/build.gradle.kts` (M14) and that reminders survive a reboot *Done:* a release build ran on an API 36 emulator. Onboarding, saving a food across restarts, reminders (permission prompt, firing, surviving a reboot), the scanner opening the camera, the Open Food Facts barcode lookup and the backup share sheet all worked. Actually decoding a barcode and running on a physical phone are still untested. The build needed `minSdk` 26 (for `health`) and the `INTERNET` permission in the main manifest, without which release lookups had no network access
 - [ ] M18 widget: add the `TodayWidget` Widget Extension target and the App Groups capability (`group.com.nutriton.app`) on Runner and the widget, following [`ios/TodayWidget/README.md`](./ios/TodayWidget/README.md). Set Runner's `CODE_SIGN_ENTITLEMENTS` to `Runner/Runner.entitlements`
 - [ ] M19 Apple Health: add the HealthKit capability on Runner, following [`ios/HEALTHKIT.md`](./ios/HEALTHKIT.md)
+- [ ] Privacy manifest: add `ios/Runner/PrivacyInfo.xcprivacy` to the Runner target (drag it into the Runner group with "Add to targets: Runner" ticked). It declares no tracking, no collected data and UserDefaults access (reason `CA92.1`). Check the build's privacy report (Product > Archive, then Generate Privacy Report) for any API a plugin uses without its own manifest
+- [ ] Automatic backups: check that the Backups folder shows under On My iPhone > Nutriton in the Files app (`UIFileSharingEnabled` and `LSSupportsOpeningDocumentsInPlace` were added to `Info.plist`)
 - [ ] If the free personal team refuses to provision App Groups or HealthKit, remove that capability (and its keys from `Runner/Runner.entitlements`) to get a building app again; the Dart side stays inert without them
 
 Until the M18 and M19 steps are done, `Runner.entitlements` is not referenced by the Xcode project, so current builds are unaffected.
@@ -192,10 +194,10 @@ Ideas that aren't milestones yet. They aren't ordered: when one is picked up, gi
 | Serving presets | Medium | M | Yes (new table) | Free |
 | Siri Shortcuts / App Intents | Low–Med | L | No | Pro candidate (see Open Questions) |
 
-- [ ] **Quick add.** Log a number of calories (optionally with macros) with no name, e.g. a restaurant estimate. Stored as a one-off entry named "Quick add", so no schema change
-- [ ] **Recipes with a cooked weight.** A meal records the raw ingredients, but batch cooking changes the weight (a pot of chili loses water). A recipe stores its ingredients plus the total cooked weight, so "200 g of chili" logs 200 / cooked weight of the recipe's totals. Either a `cooked_weight_g` column on `meals` or a separate recipe type; decide when planning it
-- [ ] **Favorites.** A `favorite` flag on `food_items` and `meals`, shown as a star in the catalog and pinned at the top of the Add Food sheet, above Recent
-- [ ] **Duplicate a catalog food.** "Duplicate" in the food action sheet opens the food form prefilled with "<name> copy", for variants like a different brand or size
+- [x] **Quick add.** Log a number of calories (optionally with macros) with no name, e.g. a restaurant estimate. Stored as a one-off entry named "Quick add", so no schema change *Done:* a "Quick add" mode in Add Food (calories required, macros optional and blank as 0, an optional label)
+- [x] **Recipes with a cooked weight.** A meal records the raw ingredients, but batch cooking changes the weight (a pot of chili loses water). A recipe stores its ingredients plus the total cooked weight, so "200 g of chili" logs 200 / cooked weight of the recipe's totals. Either a `cooked_weight_g` column on `meals` or a separate recipe type; decide when planning it *Done:* schema v9 `meals.cooked_weight_g`. The meal builder has an optional Cooked weight; logging a recipe asks for the portion eaten and multiplies the items by portion / cooked weight (`recipePortion`). The template keeps the whole batch. Recipes cannot be scheduled, since a plan logs a whole template
+- [x] **Favorites.** A `favorite` flag on `food_items` and `meals`, shown as a star in the catalog and pinned at the top of the Add Food sheet, above Recent *Done:* schema v9 `favorite` on both tables; a star on every catalog row; a Favorites strip above Recent in Add Food
+- [x] **Duplicate a catalog food.** "Duplicate" in the food action sheet opens the food form prefilled with "<name> copy", for variants like a different brand or size *Done:* "Duplicate..." in the Edit Food form (the Catalog's tap on a food opens that form, so there is no separate action sheet). The barcode is not copied
 - [ ] **Serving presets.** Named portions per food, such as "1 cup = 240 g" or "1 slice = 28 g", in a new `food_servings` table. The log-by-weight input offers them alongside g/oz. Open Food Facts' `serving_size` text can seed one preset
 - [ ] **Siri Shortcuts / App Intents.** "Log my usual breakfast" or "How many calories are left?" from Siri, Spotlight or the Action button. Needs a Swift App Intents target and a platform channel, like M18
 
@@ -209,9 +211,9 @@ Ideas that aren't milestones yet. They aren't ordered: when one is picked up, gi
 | Calendar of logged days | Medium | M | No | Free |
 | Top foods | Medium | M | No | Free |
 
-- [ ] **Movable Summary end date.** Summary always ends today. Add ‹ › arrows that step by one range (the previous week, the previous month), plus a "Today" button to return. `summary_math` already takes `endDate`
+- [x] **Movable Summary end date.** Summary always ends today. Add ‹ › arrows that step by one range (the previous week, the previous month), plus a "Today" button to return. `summary_math` already takes `endDate` *Done:* `summaryEndProvider`; the body weight card follows the same end day
 - [ ] **Macro split chart.** The share of calories from protein, carbs and fat (4 / 4 / 9 kcal per g) for the day on Home and for the range on Summary, as a ring or stacked bar
-- [ ] **Over/under goal on the chart.** Color each Summary bar by whether it is within, over or under the goal (with a tolerance such as ±10%), and show "n days on target" under the averages
+- [x] **Over/under goal on the chart.** Color each Summary bar by whether it is within, over or under the goal (with a tolerance such as ±10%), and show "n days on target" under the averages *Done:* blue / green / red for under / within ±10% / over (`goalStatus`), with a legend; "On target ... n of m logged days" under the averages
 - [ ] **Calendar of logged days.** A month grid, reachable by tapping the Home date, with a dot on logged days and tinted days over or under goal. Tapping a day jumps Home there. It doubles as a "go to date" picker
 - [ ] **Top foods.** For the Summary range, the foods and meals that contributed most to the primary metric, by total and by how often they were logged. One `GROUP BY` over `food_log_entries` (meal breakdown rows counted per food)
 
@@ -237,7 +239,7 @@ Ideas that aren't milestones yet. They aren't ordered: when one is picked up, gi
 | Undo last action | Medium | M | No | Free |
 | CSV export of the log | Medium | S | No | See Open Questions |
 
-- [ ] **Automatic backups.** Write a backup to the app's Documents folder after the day's first entry, at most once a week, keeping the newest few. Turning on `UIFileSharingEnabled` and `LSSupportsOpeningDocumentsInPlace` makes that folder visible in the Files app, and Restore can list those files without the file picker. Free, by Principle 1 of the monetization plan
+- [x] **Automatic backups.** Write a backup to the app's Documents folder after the day's first entry, at most once a week, keeping the newest few. Turning on `UIFileSharingEnabled` and `LSSupportsOpeningDocumentsInPlace` makes that folder visible in the Files app, and Restore can list those files without the file picker. Free, by Principle 1 of the monetization plan *Done:* a Backups folder in Documents, written after the day's first entry when the last is 7 or more days old, keeping the newest 5 (`core/auto_backup.dart`, `AutoBackupRunner`). Settings has a switch (on by default) and "Restore automatic backup". iOS and Android only; on Android the folder is private to the app, so it helps with mistakes but not with losing the phone
 - [ ] **Undo last action.** Generalizes the swipe-to-delete undo above to edits, copy day and imports: keep the last change's inverse in memory and offer Undo for a few seconds
 - [ ] **CSV export of the log.** One row per entry (date, name, type, macros), readable in a spreadsheet. Overlaps with the Pro "shareable reports"; see Open Questions
 
@@ -252,10 +254,24 @@ Ideas that aren't milestones yet. They aren't ordered: when one is picked up, gi
 | iPad and landscape layout | Low–Med | M | No | Free |
 
 - [ ] **Haptics.** A light tap when an entry is logged or a plan is confirmed, and a warning tap on delete
-- [ ] **VoiceOver labels.** `Semantics` on the progress bars ("1,450 of 2,000 calories, 550 left") and a text summary on each chart, since VoiceOver can't read an `fl_chart` bar. Add a semantics check to the 2x text / dark mode test
-- [ ] **Comma decimals.** `parseNumber` uses `double.tryParse`, so "1,5" typed on a European keyboard is rejected. Accept a comma as the decimal separator, and format numbers with the device locale
+- [x] **VoiceOver labels.** `Semantics` on the progress bars ("1,450 of 2,000 calories, 550 left") and a text summary on each chart, since VoiceOver can't read an `fl_chart` bar. Add a semantics check to the 2x text / dark mode test *Done:* `totalSemanticsLabel` for every Home total, text summaries for the Summary and body weight charts, checked in `large_text_dark_mode_test.dart`
+- [x] **Comma decimals.** `parseNumber` uses `double.tryParse`, so "1,5" typed on a European keyboard is rejected. Accept a comma as the decimal separator, and format numbers with the device locale *Done for input:* `parseNumber` reads a lone comma as the decimal point and rejects text with more than one separator. Numbers are still shown with a dot; locale formatting is not done
 - [ ] **Water tracking.** A row on Home with +/- buttons in glasses or ml, an optional daily goal, and a line on Summary. A new `water_log` table (`log_date`, `amount_ml`); include it in the backup format
 - [ ] **iPad and landscape layout.** On wide screens, show the catalog or the day's log beside Home instead of a full-screen push, and give the Summary chart the extra width
+
+### From the November 2026 review
+
+Found by reading the code rather than from the brainstorm. Built on the `improvements-nov-2026` branch unless marked otherwise.
+
+- [x] **Plain error messages and an error log.** Saves no longer show raw exception text. Errors go to an on-device log (newest 50, in preferences, never sent anywhere) under Settings > Help > Error log, which can be shared or cleared. Uncaught Flutter and platform errors are recorded too
+- [x] **CI.** `.github/workflows/checks.yml` runs `flutter analyze` and `flutter test` on every push and pull request, and fails when the committed drift code is out of date
+- [x] **Stricter lints.** `unawaited_futures`, `avoid_dynamic_calls` (lib only), `prefer_const_constructors`, `prefer_final_locals`, `cancel_subscriptions`, `unnecessary_await_in_return`
+- [x] **Scan from Add Food.** A scan button beside the Add Food search: a catalog food goes straight to logging, any other code opens New Food and looks it up at once
+- [x] **Keep the brand.** Schema v9 `food_items.brand`, filled by lookups, shown in the list and searched
+- [x] **Word search.** Every word must match, in any order, in the name or brand; a search lists recently logged foods first (`core/search.dart`)
+- [x] **Log indexes.** Schema v9 indexes on `food_log_entries` (`created_at`, `food_item_id`, `meal_id`), `food_log_entry_items.entry_id` and `meal_food_items.meal_id`
+- [ ] **iOS privacy manifest.** The file is written; adding it to the Xcode target is a [manual Mac step](#manual-mac-steps-before-the-next-ios-build)
+- [ ] **Android backup rules.** Needs a decision: rely on Android Auto Backup (on by default, so when the user has Google backup on, the database and the automatic backups are copied to their Google account) and say so in the app, or turn it off with `android:allowBackup="false"` to keep the "stays on the device" promise literal
 
 ---
 

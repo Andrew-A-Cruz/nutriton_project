@@ -192,6 +192,10 @@ Stored via `shared_preferences`, not in SQLite. Read on app launch to configure 
 | `reminder_<n>_enabled` | Bool | Daily reminder slot n (0 to 2) is on. Absent = off |
 | `reminder_<n>_minutes` | Int | Reminder slot n time, minutes after local midnight (defaults 540, 780, 1140). Both reminder keys are in the backup `preferences` as a `reminders` list, which older backups lack |
 | `onboarding_complete` | Bool | Gate for the onboarding screen |
+| `last_backup_at` | Int | When the last export succeeded, epoch ms. Device-local: not in the backup, and an import leaves it alone |
+| `auto_backup_enabled` | Bool | Automatic weekly backups. Absent = on. Device-local |
+| `last_auto_backup_at` | Int | When the last automatic backup was written, epoch ms. Device-local |
+| `error_log` | String list | The on-device error log, newest first, at most 50 JSON lines (`at`, `context`, `message`, `stack`). Device-local, never sent anywhere |
 
 ---
 
