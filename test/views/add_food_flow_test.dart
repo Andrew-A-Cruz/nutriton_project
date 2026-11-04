@@ -48,7 +48,7 @@ void main() {
   }
 
   Future<List<FoodLogEntry>> entriesOn(String day) async =>
-      (await db.logDao.watchEntriesForDate(day).first);
+      (db.logDao.watchEntriesForDate(day).first);
 
   testWidgets(
     'logging a food by grams lands on the day Home is showing, not today',

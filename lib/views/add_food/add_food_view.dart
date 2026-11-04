@@ -60,7 +60,7 @@ class _AddFoodViewState extends ConsumerState<AddFoodView> {
         builder: (_) => const FoodFormView(offerLogAfterSave: true),
       ),
     );
-    if (food != null && mounted) _logFood(food);
+    if (food != null && mounted) await _logFood(food);
   }
 
   @override

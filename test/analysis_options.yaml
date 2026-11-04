@@ -1,0 +1,6 @@
+include: ../analysis_options.yaml
+
+linter:
+  rules:
+    # Tests poke at decoded backup JSON, which is dynamic by nature.
+    avoid_dynamic_calls: false

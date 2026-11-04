@@ -62,7 +62,7 @@ class _DayLogListState extends ConsumerState<DayLogList> {
             await repo.restoreEntry(deleted);
           } catch (e) {
             if (navigator.mounted) {
-              showCupertinoDialog<void>(
+              await showCupertinoDialog<void>(
                 context: navigator.context,
                 builder: (dialogContext) => CupertinoAlertDialog(
                   content: Text('Could not undo: $e'),
@@ -179,7 +179,7 @@ class _EntryTile extends ConsumerWidget {
       );
     } catch (e) {
       if (navigator.mounted) {
-        showCupertinoDialog<void>(
+        await showCupertinoDialog<void>(
           context: navigator.context,
           builder: (dialogContext) => CupertinoAlertDialog(
             content: Text('Could not log again: $e'),
