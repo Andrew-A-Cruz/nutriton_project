@@ -273,6 +273,34 @@ Found by reading the code rather than from the brainstorm. Built on the `improve
 - [ ] **iOS privacy manifest.** The file is written; adding it to the Xcode target is a [manual Mac step](#manual-mac-steps-before-the-next-ios-build)
 - [x] **Android backup rules.** Decided to keep Android Auto Backup on (the default): when the user has Google backup on, the database and the automatic backups are copied to their Google account, as iCloud backup does on iOS. The welcome page says so
 
+### From the November 2026 market research
+
+A look at MyFitnessPal, Cronometer, MacroFactor, Lose It!, Yazio, Lifesum, the AI photo apps (Cal AI, SnapCalorie) and the small privacy-first trackers (Lokcal, LibreLog, Bite Diary). Most comparison sources are blogs, many run by competing apps, so prices and rankings vary; the points below are the ones that held across sources.
+
+**Positioning.** The loudest complaint in the category is paywall creep, led by MyFitnessPal moving barcode scanning to Premium in 2022. MacroFactor charges about $72 a year mainly for adaptive targets. The privacy-first apps are small and basic. Nutriton's angle: the features people pay for elsewhere, free, with no account and no ads, and the data stays on the phone. Keep barcode scanning, recipes, plans, copy day and backups free (Principle 1 of the monetization plan).
+
+| Idea | Value | Effort | Schema change | Tier |
+|---|---|---|---|---|
+| Adaptive goals (with the TDEE helper) | High | L | No | Free |
+| Starter generic foods | High | M | No (bundled data) | Free |
+| Nutrition label scan | High | M | No | Free |
+| Mindful mode | Medium | S | No (preferences) | Free |
+| Health Connect on Android | Medium | M | No | Free |
+| Fasting timer | Low–Med | M | Yes (new table) | Free |
+| Copy or move an entry to another day | Medium | S | No | Free |
+
+- [ ] **Adaptive goals (with the TDEE helper).** Raise the [TDEE helper](#goals) and [adaptive goals](#goals) above to the top of the backlog: they are MacroFactor's main paid feature, and we already store intake and body weight. Build the TDEE helper first as the starting estimate, then the weekly re-estimate from intake and the weight trend. Everything runs on the device; suggest only, never change a goal without confirmation
+- [ ] **Starter generic foods.** A new user has to create every food before logging anything that has no barcode. Bundle a starter set of generic foods ("banana", "chicken breast, cooked", "white rice, cooked") from USDA FoodData Central (public domain, e.g. the Foundation and SR Legacy sets), searchable offline from Add Food and copied into the catalog on first use. Keep the bundle small (a few thousand foods) to limit the app size; decide between a read-only bundled SQLite file and seeding on first launch when planning it
+- [ ] **Nutrition label scan.** For products Open Food Facts doesn't know: photograph the printed nutrition table and fill the New Food form from it, using on-device text recognition (Apple Vision on iOS, ML Kit on Android; e.g. `google_mlkit_text_recognition`). Nothing leaves the phone. The user reviews every field before saving. Parse per serving and per 100 g, and kJ as well as kcal; test the parser against saved OCR text fixtures, as for the Open Food Facts mapper
+- [ ] **Mindful mode.** One Settings switch for users who find tracking stressful: hide calorie and macro numbers on Home (show only the foods, or rings without numbers), hide the streak badge, and draw Summary bars in one neutral color instead of under / on / over colors. Reminders stay as they are. Few apps offer this, and it is cheap since it only changes rendering
+- [ ] **Health Connect on Android.** M19 is iOS only. The `health` plugin also covers Health Connect, so the same `HealthService` seam can write nutrition and read body weight on Android. Needs the Health Connect permissions declared in the manifest and a privacy-policy activity
+- [ ] **Fasting timer.** Yazio's main draw. Start and stop a fast, show the elapsed time on Home, and keep a history (a new `fasts` table: `started_at`, `ended_at`; include it in the backup format). Optional, hidden until switched on in Settings
+- [ ] **Copy or move an entry to another day.** "Log again today" (M10) only copies to today. Add "Copy to..." and "Move to..." with a date picker (Tomorrow as a shortcut) for planning ahead, as MacroFactor does
+
+**Considered and skipped:**
+- **AI photo or voice logging.** It needs a cloud model, which breaks the "stays on the device" promise, and accuracy is poor: a 2026 study (reported second-hand) found Cal AI underestimated meals by about 345 kcal, and all four apps tested underestimated fat by about 30 g. The label scan above covers the "fill the form for me" need without either problem. Revisit only as an opt-in that is clearly labelled as sending data off the phone
+- **Competing on micronutrient depth.** Cronometer tracks 80+ nutrients from curated sources; Open Food Facts data for vitamins and minerals is uneven. Fiber, sugar and sodium (M13) are enough for now
+
 ---
 
 ## Schema Changes Summary
