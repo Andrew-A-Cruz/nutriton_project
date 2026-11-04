@@ -39,6 +39,16 @@ String lastBackupLabel(DateTime? last, DateTime now) {
   };
 }
 
+/// Like [lastBackupLabel], for automatic backups: "Last automatic backup:
+/// today" or "No automatic backup yet".
+String lastAutoBackupLabel(DateTime? last, DateTime now) {
+  if (last == null) return 'No automatic backup yet';
+  return lastBackupLabel(
+    last,
+    now,
+  ).replaceFirst('Last backup', 'Last automatic backup');
+}
+
 /// Midnight of [d]'s local calendar day as a UTC instant, so subtracting two
 /// of them is an exact whole number of days even across a DST change.
 DateTime _utcDay(DateTime d) => DateTime.utc(d.year, d.month, d.day);

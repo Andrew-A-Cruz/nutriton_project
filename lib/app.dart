@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'providers/backup_providers.dart';
 import 'providers/health_providers.dart';
 import 'providers/preferences_providers.dart';
 import 'providers/reminder_providers.dart';
@@ -34,6 +35,8 @@ class _RootGate extends ConsumerWidget {
     // Keeps Apple Health in line with the log and body weight, when opted in.
     ref.watch(healthNutritionPlanProvider);
     ref.watch(healthWeightPlanProvider);
+    // Writes the week's automatic backup after today's first entry.
+    ref.watch(autoBackupPlanProvider);
     final onboarded = ref.watch(
       preferencesProvider.select((s) => s.onboardingComplete),
     );

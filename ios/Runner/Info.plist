@@ -8,6 +8,11 @@
 	<string>Nutriton writes your daily calories and nutrients to Apple Health.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Scan a food barcode to look up its nutrition details.</string>
+	<!-- Shows the app's Documents folder (automatic backups) in the Files app. -->
+	<key>UIFileSharingEnabled</key>
+	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
