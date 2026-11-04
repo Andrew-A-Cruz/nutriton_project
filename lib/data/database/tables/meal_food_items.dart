@@ -6,6 +6,7 @@ import 'food_items.dart';
 import 'meals.dart';
 
 /// Junction table: the foods in a meal template and how many grams of each.
+@TableIndex(name: 'meal_food_items_meal_id', columns: {#mealId})
 class MealFoodItems extends Table {
   TextColumn get id => text()();
   TextColumn get mealId =>

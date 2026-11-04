@@ -271,6 +271,7 @@ Ideas that aren't milestones yet. They aren't ordered: when one is picked up, gi
 | 6 | M16 | `food_items.barcode` (nullable, indexed) |
 | 7 | M17 | `scheduled_meals` rebuilt: `meal_id` nullable, new nullable `food_item_id`, `meal_slot` (nullable) and `servings` (default 1), with a CHECK that exactly one source is set. The planned `scheduled_items` table was folded into the existing scheduling tables |
 | 8 | M19 | `body_weights.source` (nullable text, default `'manual'`; `'health'` for a weight read from Apple Health) |
+| 9 | November 2026 improvements | `food_items.brand` (nullable) and `favorite`; `meals.favorite` and `cooked_weight_g` (nullable, recipes); indexes on `food_log_entries` (`created_at`, `food_item_id`, `meal_id`), `food_log_entry_items.entry_id` and `meal_food_items.meal_id` |
 
 Each step gets a drift migration test (`make-migrations`) and an update to `DATA_MODEL.md` and the backup format.
 

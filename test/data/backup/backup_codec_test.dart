@@ -26,6 +26,7 @@ void main() {
     servingWeightG: 100,
     displayUnit: 'g',
     archived: false,
+    favorite: false,
   );
 
   Map<String, dynamic> valid() =>
@@ -123,5 +124,18 @@ void main() {
     expect(codec.decode(jsonEncode(json)).settings.goals, {
       Metric.protein: 100,
     });
+  });
+
+  test('foods and meals from before schema v9 read as not favorite', () {
+    final json = valid();
+    (json['food_items'] as List).single.remove('favorite');
+    json['meals'] = [
+      {'id': 'm1', 'name': 'Chili', 'archived': false},
+    ];
+    final data = codec.decode(jsonEncode(json));
+    expect(data.foodItems.single.favorite, isFalse);
+    expect(data.foodItems.single.brand, isNull);
+    expect(data.meals.single.favorite, isFalse);
+    expect(data.meals.single.cookedWeightG, isNull);
   });
 }

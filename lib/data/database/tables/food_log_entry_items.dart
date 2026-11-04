@@ -7,6 +7,7 @@ import 'food_log_entries.dart';
 
 /// Breakdown of a logged meal as it was actually eaten (after adding, removing
 /// or re-weighing items). Snapshot values, independent of the template.
+@TableIndex(name: 'food_log_entry_items_entry_id', columns: {#entryId})
 class FoodLogEntryItems extends Table {
   TextColumn get id => text()();
   TextColumn get entryId =>

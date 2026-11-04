@@ -37,6 +37,8 @@ Saved catalog foods. Macros are stored per 1 serving, where 1 serving is `servin
 | `sugar` | REAL | Yes | Schema v4. `>= 0` in grams, per 1 serving. Null = not recorded |
 | `sodium` | REAL | Yes | Schema v4. `>= 0` in **milligrams**, per 1 serving. Null = not recorded |
 | `barcode` | TEXT | Yes | Schema v6. Digits of an EAN/UPC (8 to 14), saved when a food is created from a scan or typed in the food form. Indexed (`food_items_barcode`). Null = none (every row from before v6). Not unique; a scan matches the first non-archived food by name |
+| `brand` | TEXT | Yes | Schema v9. Up to 100 characters, e.g. from an Open Food Facts lookup. Shown beside the name and matched by catalog search. Null = none |
+| `favorite` | BOOL | No | Schema v9. Default `false`. Starred foods are pinned at the top of Add Food |
 
 ---
 
@@ -49,6 +51,8 @@ Named meal templates in the catalog. Items live in `meal_food_items`.
 | `id` | TEXT | No | Primary key (UUID) |
 | `name` | TEXT | No | 2–100 characters |
 | `archived` | BOOL | No | Default `false` |
+| `favorite` | BOOL | No | Schema v9. Default `false`. Starred meals are pinned at the top of Add Food |
+| `cooked_weight_g` | REAL | Yes | Schema v9. `> 0`. Set for a recipe: the weight of the whole batch once cooked. Logging a portion of P grams logs P / `cooked_weight_g` of the items' totals, with the breakdown weights scaled the same way. Null = an ordinary meal |
 
 ---
 
@@ -59,7 +63,7 @@ Junction table: the foods in a meal template and how much of each. Editing a log
 | Column | Type | Nullable | Constraints / Notes |
 |---|---|---|---|
 | `id` | TEXT | No | Primary key (UUID) |
-| `meal_id` | TEXT | No | FK → `meals.id`, `ON DELETE CASCADE` |
+| `meal_id` | TEXT | No | FK → `meals.id`, `ON DELETE CASCADE`. Indexed (`meal_food_items_meal_id`, v9) |
 | `food_item_id` | TEXT | No | FK → `food_items.id`, `ON DELETE RESTRICT` |
 | `weight_g` | REAL | No | `> 0` |
 | `sort_order` | INT | No | Display order within the meal, default `0` |
@@ -74,15 +78,15 @@ The daily log. One row per logged item: a catalog food, a meal, or an adhoc entr
 |---|---|---|---|
 | `id` | TEXT | No | Primary key (UUID) |
 | `log_date` | TEXT | No | `yyyy-MM-dd`. Indexed (`food_log_entries_log_date`) |
-| `created_at` | DATETIME | No | Set on insert; gives a stable order within a day |
+| `created_at` | DATETIME | No | Set on insert; gives a stable order within a day. Indexed (`food_log_entries_created_at`, v9) for Recent foods |
 | `entry_type` | TEXT | No | `'food'`, `'meal'` or `'adhoc'` |
 | `name` | TEXT | No | Snapshot of the food, meal or adhoc name |
 | `calories` | REAL | No | `>= 0`, resolved total for this entry |
 | `protein` | REAL | No | `>= 0`, resolved total |
 | `carbs` | REAL | No | `>= 0`, resolved total |
 | `fat` | REAL | No | `>= 0`, resolved total |
-| `food_item_id` | TEXT | Yes | FK → `food_items.id`, `ON DELETE SET NULL` (provenance) |
-| `meal_id` | TEXT | Yes | FK → `meals.id`, `ON DELETE SET NULL` (provenance) |
+| `food_item_id` | TEXT | Yes | FK → `food_items.id`, `ON DELETE SET NULL` (provenance). Indexed (`food_log_entries_food_item_id`, v9) |
+| `meal_id` | TEXT | Yes | FK → `meals.id`, `ON DELETE SET NULL` (provenance). Indexed (`food_log_entries_meal_id`, v9) |
 | `servings` | REAL | Yes | Food entries only, `> 0` |
 | `meal_slot` | TEXT | Yes | Schema v3. `'breakfast'`, `'lunch'`, `'dinner'` or `'snack'` (CHECK). Null = "Other" (every row logged before v3). Home groups by it; stored by name, so backups hold a plain string |
 | `fiber` | REAL | Yes | Schema v4. `>= 0` in grams, resolved total (copied from the food when logged). Null = not recorded, which is different from 0 (every row from before v4) |
@@ -108,7 +112,7 @@ The breakdown of a logged meal, as it was actually eaten. This can differ from t
 | Column | Type | Nullable | Constraints / Notes |
 |---|---|---|---|
 | `id` | TEXT | No | Primary key (UUID) |
-| `entry_id` | TEXT | No | FK → `food_log_entries.id`, `ON DELETE CASCADE` |
+| `entry_id` | TEXT | No | FK → `food_log_entries.id`, `ON DELETE CASCADE`. Indexed (`food_log_entry_items_entry_id`, v9) |
 | `food_item_id` | TEXT | Yes | FK → `food_items.id`, `ON DELETE SET NULL` (provenance) |
 | `name` | TEXT | No | Snapshot of the food name |
 | `weight_g` | REAL | No | `> 0` |

@@ -156,6 +156,31 @@ class $FoodItemsTable extends FoodItems
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _brandMeta = const VerificationMeta('brand');
+  @override
+  late final GeneratedColumn<String> brand = GeneratedColumn<String>(
+    'brand',
+    aliasedName,
+    true,
+    additionalChecks: GeneratedColumn.checkTextLength(maxTextLength: 100),
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _favoriteMeta = const VerificationMeta(
+    'favorite',
+  );
+  @override
+  late final GeneratedColumn<bool> favorite = GeneratedColumn<bool>(
+    'favorite',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("favorite" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -171,6 +196,8 @@ class $FoodItemsTable extends FoodItems
     sugar,
     sodium,
     barcode,
+    brand,
+    favorite,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -279,6 +306,18 @@ class $FoodItemsTable extends FoodItems
         barcode.isAcceptableOrUnknown(data['barcode']!, _barcodeMeta),
       );
     }
+    if (data.containsKey('brand')) {
+      context.handle(
+        _brandMeta,
+        brand.isAcceptableOrUnknown(data['brand']!, _brandMeta),
+      );
+    }
+    if (data.containsKey('favorite')) {
+      context.handle(
+        _favoriteMeta,
+        favorite.isAcceptableOrUnknown(data['favorite']!, _favoriteMeta),
+      );
+    }
     return context;
   }
 
@@ -340,6 +379,14 @@ class $FoodItemsTable extends FoodItems
         DriftSqlType.string,
         data['${effectivePrefix}barcode'],
       ),
+      brand: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}brand'],
+      ),
+      favorite: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}favorite'],
+      )!,
     );
   }
 
@@ -369,6 +416,13 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
   /// Optional barcode digits (EAN/UPC), set when a food is created from a
   /// scan or typed in the food form. Null when unknown.
   final String? barcode;
+
+  /// Optional brand, e.g. from an Open Food Facts lookup. Shown beside the
+  /// name and matched by search.
+  final String? brand;
+
+  /// Starred foods are pinned at the top of Add Food.
+  final bool favorite;
   const FoodItem({
     required this.id,
     required this.name,
@@ -383,6 +437,8 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     this.sugar,
     this.sodium,
     this.barcode,
+    this.brand,
+    required this.favorite,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -408,6 +464,10 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     if (!nullToAbsent || barcode != null) {
       map['barcode'] = Variable<String>(barcode);
     }
+    if (!nullToAbsent || brand != null) {
+      map['brand'] = Variable<String>(brand);
+    }
+    map['favorite'] = Variable<bool>(favorite);
     return map;
   }
 
@@ -434,6 +494,10 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
       barcode: barcode == null && nullToAbsent
           ? const Value.absent()
           : Value(barcode),
+      brand: brand == null && nullToAbsent
+          ? const Value.absent()
+          : Value(brand),
+      favorite: Value(favorite),
     );
   }
 
@@ -456,6 +520,8 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
       sugar: serializer.fromJson<double?>(json['sugar']),
       sodium: serializer.fromJson<double?>(json['sodium']),
       barcode: serializer.fromJson<String?>(json['barcode']),
+      brand: serializer.fromJson<String?>(json['brand']),
+      favorite: serializer.fromJson<bool>(json['favorite']),
     );
   }
   @override
@@ -475,6 +541,8 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
       'sugar': serializer.toJson<double?>(sugar),
       'sodium': serializer.toJson<double?>(sodium),
       'barcode': serializer.toJson<String?>(barcode),
+      'brand': serializer.toJson<String?>(brand),
+      'favorite': serializer.toJson<bool>(favorite),
     };
   }
 
@@ -492,6 +560,8 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     Value<double?> sugar = const Value.absent(),
     Value<double?> sodium = const Value.absent(),
     Value<String?> barcode = const Value.absent(),
+    Value<String?> brand = const Value.absent(),
+    bool? favorite,
   }) => FoodItem(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -506,6 +576,8 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     sugar: sugar.present ? sugar.value : this.sugar,
     sodium: sodium.present ? sodium.value : this.sodium,
     barcode: barcode.present ? barcode.value : this.barcode,
+    brand: brand.present ? brand.value : this.brand,
+    favorite: favorite ?? this.favorite,
   );
   FoodItem copyWithCompanion(FoodItemsCompanion data) {
     return FoodItem(
@@ -526,6 +598,8 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
       sugar: data.sugar.present ? data.sugar.value : this.sugar,
       sodium: data.sodium.present ? data.sodium.value : this.sodium,
       barcode: data.barcode.present ? data.barcode.value : this.barcode,
+      brand: data.brand.present ? data.brand.value : this.brand,
+      favorite: data.favorite.present ? data.favorite.value : this.favorite,
     );
   }
 
@@ -544,7 +618,9 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
           ..write('fiber: $fiber, ')
           ..write('sugar: $sugar, ')
           ..write('sodium: $sodium, ')
-          ..write('barcode: $barcode')
+          ..write('barcode: $barcode, ')
+          ..write('brand: $brand, ')
+          ..write('favorite: $favorite')
           ..write(')'))
         .toString();
   }
@@ -564,6 +640,8 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     sugar,
     sodium,
     barcode,
+    brand,
+    favorite,
   );
   @override
   bool operator ==(Object other) =>
@@ -581,7 +659,9 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
           other.fiber == this.fiber &&
           other.sugar == this.sugar &&
           other.sodium == this.sodium &&
-          other.barcode == this.barcode);
+          other.barcode == this.barcode &&
+          other.brand == this.brand &&
+          other.favorite == this.favorite);
 }
 
 class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
@@ -598,6 +678,8 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
   final Value<double?> sugar;
   final Value<double?> sodium;
   final Value<String?> barcode;
+  final Value<String?> brand;
+  final Value<bool> favorite;
   final Value<int> rowid;
   const FoodItemsCompanion({
     this.id = const Value.absent(),
@@ -613,6 +695,8 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     this.sugar = const Value.absent(),
     this.sodium = const Value.absent(),
     this.barcode = const Value.absent(),
+    this.brand = const Value.absent(),
+    this.favorite = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   FoodItemsCompanion.insert({
@@ -629,6 +713,8 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     this.sugar = const Value.absent(),
     this.sodium = const Value.absent(),
     this.barcode = const Value.absent(),
+    this.brand = const Value.absent(),
+    this.favorite = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -651,6 +737,8 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     Expression<double>? sugar,
     Expression<double>? sodium,
     Expression<String>? barcode,
+    Expression<String>? brand,
+    Expression<bool>? favorite,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -667,6 +755,8 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
       if (sugar != null) 'sugar': sugar,
       if (sodium != null) 'sodium': sodium,
       if (barcode != null) 'barcode': barcode,
+      if (brand != null) 'brand': brand,
+      if (favorite != null) 'favorite': favorite,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -685,6 +775,8 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     Value<double?>? sugar,
     Value<double?>? sodium,
     Value<String?>? barcode,
+    Value<String?>? brand,
+    Value<bool>? favorite,
     Value<int>? rowid,
   }) {
     return FoodItemsCompanion(
@@ -701,6 +793,8 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
       sugar: sugar ?? this.sugar,
       sodium: sodium ?? this.sodium,
       barcode: barcode ?? this.barcode,
+      brand: brand ?? this.brand,
+      favorite: favorite ?? this.favorite,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -747,6 +841,12 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     if (barcode.present) {
       map['barcode'] = Variable<String>(barcode.value);
     }
+    if (brand.present) {
+      map['brand'] = Variable<String>(brand.value);
+    }
+    if (favorite.present) {
+      map['favorite'] = Variable<bool>(favorite.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -769,6 +869,8 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
           ..write('sugar: $sugar, ')
           ..write('sodium: $sodium, ')
           ..write('barcode: $barcode, ')
+          ..write('brand: $brand, ')
+          ..write('favorite: $favorite, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -817,8 +919,41 @@ class $MealsTable extends Meals with TableInfo<$MealsTable, Meal> {
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _favoriteMeta = const VerificationMeta(
+    'favorite',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, name, archived];
+  late final GeneratedColumn<bool> favorite = GeneratedColumn<bool>(
+    'favorite',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("favorite" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _cookedWeightGMeta = const VerificationMeta(
+    'cookedWeightG',
+  );
+  @override
+  late final GeneratedColumn<double> cookedWeightG = GeneratedColumn<double>(
+    'cooked_weight_g',
+    aliasedName,
+    true,
+    check: () => ComparableExpr(cookedWeightG).isBiggerThanValue(0),
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    archived,
+    favorite,
+    cookedWeightG,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -850,6 +985,21 @@ class $MealsTable extends Meals with TableInfo<$MealsTable, Meal> {
         archived.isAcceptableOrUnknown(data['archived']!, _archivedMeta),
       );
     }
+    if (data.containsKey('favorite')) {
+      context.handle(
+        _favoriteMeta,
+        favorite.isAcceptableOrUnknown(data['favorite']!, _favoriteMeta),
+      );
+    }
+    if (data.containsKey('cooked_weight_g')) {
+      context.handle(
+        _cookedWeightGMeta,
+        cookedWeightG.isAcceptableOrUnknown(
+          data['cooked_weight_g']!,
+          _cookedWeightGMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -871,6 +1021,14 @@ class $MealsTable extends Meals with TableInfo<$MealsTable, Meal> {
         DriftSqlType.bool,
         data['${effectivePrefix}archived'],
       )!,
+      favorite: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}favorite'],
+      )!,
+      cookedWeightG: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}cooked_weight_g'],
+      ),
     );
   }
 
@@ -884,13 +1042,31 @@ class Meal extends DataClass implements Insertable<Meal> {
   final String id;
   final String name;
   final bool archived;
-  const Meal({required this.id, required this.name, required this.archived});
+
+  /// Starred meals are pinned at the top of Add Food.
+  final bool favorite;
+
+  /// Set for a recipe: the weight of the whole batch once cooked. A portion
+  /// of the recipe then logs portion / cooked weight of the items' totals.
+  /// Null for an ordinary meal.
+  final double? cookedWeightG;
+  const Meal({
+    required this.id,
+    required this.name,
+    required this.archived,
+    required this.favorite,
+    this.cookedWeightG,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
     map['name'] = Variable<String>(name);
     map['archived'] = Variable<bool>(archived);
+    map['favorite'] = Variable<bool>(favorite);
+    if (!nullToAbsent || cookedWeightG != null) {
+      map['cooked_weight_g'] = Variable<double>(cookedWeightG);
+    }
     return map;
   }
 
@@ -899,6 +1075,10 @@ class Meal extends DataClass implements Insertable<Meal> {
       id: Value(id),
       name: Value(name),
       archived: Value(archived),
+      favorite: Value(favorite),
+      cookedWeightG: cookedWeightG == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cookedWeightG),
     );
   }
 
@@ -911,6 +1091,8 @@ class Meal extends DataClass implements Insertable<Meal> {
       id: serializer.fromJson<String>(json['id']),
       name: serializer.fromJson<String>(json['name']),
       archived: serializer.fromJson<bool>(json['archived']),
+      favorite: serializer.fromJson<bool>(json['favorite']),
+      cookedWeightG: serializer.fromJson<double?>(json['cookedWeightG']),
     );
   }
   @override
@@ -920,19 +1102,35 @@ class Meal extends DataClass implements Insertable<Meal> {
       'id': serializer.toJson<String>(id),
       'name': serializer.toJson<String>(name),
       'archived': serializer.toJson<bool>(archived),
+      'favorite': serializer.toJson<bool>(favorite),
+      'cookedWeightG': serializer.toJson<double?>(cookedWeightG),
     };
   }
 
-  Meal copyWith({String? id, String? name, bool? archived}) => Meal(
+  Meal copyWith({
+    String? id,
+    String? name,
+    bool? archived,
+    bool? favorite,
+    Value<double?> cookedWeightG = const Value.absent(),
+  }) => Meal(
     id: id ?? this.id,
     name: name ?? this.name,
     archived: archived ?? this.archived,
+    favorite: favorite ?? this.favorite,
+    cookedWeightG: cookedWeightG.present
+        ? cookedWeightG.value
+        : this.cookedWeightG,
   );
   Meal copyWithCompanion(MealsCompanion data) {
     return Meal(
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
       archived: data.archived.present ? data.archived.value : this.archived,
+      favorite: data.favorite.present ? data.favorite.value : this.favorite,
+      cookedWeightG: data.cookedWeightG.present
+          ? data.cookedWeightG.value
+          : this.cookedWeightG,
     );
   }
 
@@ -941,37 +1139,47 @@ class Meal extends DataClass implements Insertable<Meal> {
     return (StringBuffer('Meal(')
           ..write('id: $id, ')
           ..write('name: $name, ')
-          ..write('archived: $archived')
+          ..write('archived: $archived, ')
+          ..write('favorite: $favorite, ')
+          ..write('cookedWeightG: $cookedWeightG')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name, archived);
+  int get hashCode => Object.hash(id, name, archived, favorite, cookedWeightG);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is Meal &&
           other.id == this.id &&
           other.name == this.name &&
-          other.archived == this.archived);
+          other.archived == this.archived &&
+          other.favorite == this.favorite &&
+          other.cookedWeightG == this.cookedWeightG);
 }
 
 class MealsCompanion extends UpdateCompanion<Meal> {
   final Value<String> id;
   final Value<String> name;
   final Value<bool> archived;
+  final Value<bool> favorite;
+  final Value<double?> cookedWeightG;
   final Value<int> rowid;
   const MealsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.archived = const Value.absent(),
+    this.favorite = const Value.absent(),
+    this.cookedWeightG = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   MealsCompanion.insert({
     required String id,
     required String name,
     this.archived = const Value.absent(),
+    this.favorite = const Value.absent(),
+    this.cookedWeightG = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name);
@@ -979,12 +1187,16 @@ class MealsCompanion extends UpdateCompanion<Meal> {
     Expression<String>? id,
     Expression<String>? name,
     Expression<bool>? archived,
+    Expression<bool>? favorite,
+    Expression<double>? cookedWeightG,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (name != null) 'name': name,
       if (archived != null) 'archived': archived,
+      if (favorite != null) 'favorite': favorite,
+      if (cookedWeightG != null) 'cooked_weight_g': cookedWeightG,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -993,12 +1205,16 @@ class MealsCompanion extends UpdateCompanion<Meal> {
     Value<String>? id,
     Value<String>? name,
     Value<bool>? archived,
+    Value<bool>? favorite,
+    Value<double?>? cookedWeightG,
     Value<int>? rowid,
   }) {
     return MealsCompanion(
       id: id ?? this.id,
       name: name ?? this.name,
       archived: archived ?? this.archived,
+      favorite: favorite ?? this.favorite,
+      cookedWeightG: cookedWeightG ?? this.cookedWeightG,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1015,6 +1231,12 @@ class MealsCompanion extends UpdateCompanion<Meal> {
     if (archived.present) {
       map['archived'] = Variable<bool>(archived.value);
     }
+    if (favorite.present) {
+      map['favorite'] = Variable<bool>(favorite.value);
+    }
+    if (cookedWeightG.present) {
+      map['cooked_weight_g'] = Variable<double>(cookedWeightG.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1027,6 +1249,8 @@ class MealsCompanion extends UpdateCompanion<Meal> {
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('archived: $archived, ')
+          ..write('favorite: $favorite, ')
+          ..write('cookedWeightG: $cookedWeightG, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4300,9 +4524,29 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'food_items_barcode',
     'CREATE INDEX food_items_barcode ON food_items (barcode)',
   );
+  late final Index mealFoodItemsMealId = Index(
+    'meal_food_items_meal_id',
+    'CREATE INDEX meal_food_items_meal_id ON meal_food_items (meal_id)',
+  );
   late final Index foodLogEntriesLogDate = Index(
     'food_log_entries_log_date',
     'CREATE INDEX food_log_entries_log_date ON food_log_entries (log_date)',
+  );
+  late final Index foodLogEntriesCreatedAt = Index(
+    'food_log_entries_created_at',
+    'CREATE INDEX food_log_entries_created_at ON food_log_entries (created_at)',
+  );
+  late final Index foodLogEntriesFoodItemId = Index(
+    'food_log_entries_food_item_id',
+    'CREATE INDEX food_log_entries_food_item_id ON food_log_entries (food_item_id)',
+  );
+  late final Index foodLogEntriesMealId = Index(
+    'food_log_entries_meal_id',
+    'CREATE INDEX food_log_entries_meal_id ON food_log_entries (meal_id)',
+  );
+  late final Index foodLogEntryItemsEntryId = Index(
+    'food_log_entry_items_entry_id',
+    'CREATE INDEX food_log_entry_items_entry_id ON food_log_entry_items (entry_id)',
   );
   late final Index scheduledMealsStartDate = Index(
     'scheduled_meals_start_date',
@@ -4330,7 +4574,12 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     scheduledMealOutcomes,
     bodyWeights,
     foodItemsBarcode,
+    mealFoodItemsMealId,
     foodLogEntriesLogDate,
+    foodLogEntriesCreatedAt,
+    foodLogEntriesFoodItemId,
+    foodLogEntriesMealId,
+    foodLogEntryItemsEntryId,
     scheduledMealsStartDate,
   ];
   @override
@@ -4416,6 +4665,8 @@ typedef $$FoodItemsTableCreateCompanionBuilder =
       Value<double?> sugar,
       Value<double?> sodium,
       Value<String?> barcode,
+      Value<String?> brand,
+      Value<bool> favorite,
       Value<int> rowid,
     });
 typedef $$FoodItemsTableUpdateCompanionBuilder =
@@ -4433,6 +4684,8 @@ typedef $$FoodItemsTableUpdateCompanionBuilder =
       Value<double?> sugar,
       Value<double?> sodium,
       Value<String?> barcode,
+      Value<String?> brand,
+      Value<bool> favorite,
       Value<int> rowid,
     });
 
@@ -4599,6 +4852,16 @@ class $$FoodItemsTableFilterComposer
 
   ColumnFilters<String> get barcode => $composableBuilder(
     column: $table.barcode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get brand => $composableBuilder(
+    column: $table.brand,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get favorite => $composableBuilder(
+    column: $table.favorite,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4776,6 +5039,16 @@ class $$FoodItemsTableOrderingComposer
     column: $table.barcode,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get brand => $composableBuilder(
+    column: $table.brand,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get favorite => $composableBuilder(
+    column: $table.favorite,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$FoodItemsTableAnnotationComposer
@@ -4829,6 +5102,12 @@ class $$FoodItemsTableAnnotationComposer
 
   GeneratedColumn<String> get barcode =>
       $composableBuilder(column: $table.barcode, builder: (column) => column);
+
+  GeneratedColumn<String> get brand =>
+      $composableBuilder(column: $table.brand, builder: (column) => column);
+
+  GeneratedColumn<bool> get favorite =>
+      $composableBuilder(column: $table.favorite, builder: (column) => column);
 
   Expression<T> mealFoodItemsRefs<T extends Object>(
     Expression<T> Function($$MealFoodItemsTableAnnotationComposer a) f,
@@ -4978,6 +5257,8 @@ class $$FoodItemsTableTableManager
                 Value<double?> sugar = const Value.absent(),
                 Value<double?> sodium = const Value.absent(),
                 Value<String?> barcode = const Value.absent(),
+                Value<String?> brand = const Value.absent(),
+                Value<bool> favorite = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => FoodItemsCompanion(
                 id: id,
@@ -4993,6 +5274,8 @@ class $$FoodItemsTableTableManager
                 sugar: sugar,
                 sodium: sodium,
                 barcode: barcode,
+                brand: brand,
+                favorite: favorite,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -5010,6 +5293,8 @@ class $$FoodItemsTableTableManager
                 Value<double?> sugar = const Value.absent(),
                 Value<double?> sodium = const Value.absent(),
                 Value<String?> barcode = const Value.absent(),
+                Value<String?> brand = const Value.absent(),
+                Value<bool> favorite = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => FoodItemsCompanion.insert(
                 id: id,
@@ -5025,6 +5310,8 @@ class $$FoodItemsTableTableManager
                 sugar: sugar,
                 sodium: sodium,
                 barcode: barcode,
+                brand: brand,
+                favorite: favorite,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -5169,6 +5456,8 @@ typedef $$MealsTableCreateCompanionBuilder =
       required String id,
       required String name,
       Value<bool> archived,
+      Value<bool> favorite,
+      Value<double?> cookedWeightG,
       Value<int> rowid,
     });
 typedef $$MealsTableUpdateCompanionBuilder =
@@ -5176,6 +5465,8 @@ typedef $$MealsTableUpdateCompanionBuilder =
       Value<String> id,
       Value<String> name,
       Value<bool> archived,
+      Value<bool> favorite,
+      Value<double?> cookedWeightG,
       Value<int> rowid,
     });
 
@@ -5258,6 +5549,16 @@ class $$MealsTableFilterComposer extends Composer<_$AppDatabase, $MealsTable> {
 
   ColumnFilters<bool> get archived => $composableBuilder(
     column: $table.archived,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get favorite => $composableBuilder(
+    column: $table.favorite,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get cookedWeightG => $composableBuilder(
+    column: $table.cookedWeightG,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5360,6 +5661,16 @@ class $$MealsTableOrderingComposer
     column: $table.archived,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get favorite => $composableBuilder(
+    column: $table.favorite,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get cookedWeightG => $composableBuilder(
+    column: $table.cookedWeightG,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$MealsTableAnnotationComposer
@@ -5379,6 +5690,14 @@ class $$MealsTableAnnotationComposer
 
   GeneratedColumn<bool> get archived =>
       $composableBuilder(column: $table.archived, builder: (column) => column);
+
+  GeneratedColumn<bool> get favorite =>
+      $composableBuilder(column: $table.favorite, builder: (column) => column);
+
+  GeneratedColumn<double> get cookedWeightG => $composableBuilder(
+    column: $table.cookedWeightG,
+    builder: (column) => column,
+  );
 
   Expression<T> mealFoodItemsRefs<T extends Object>(
     Expression<T> Function($$MealFoodItemsTableAnnotationComposer a) f,
@@ -5491,11 +5810,15 @@ class $$MealsTableTableManager
                 Value<String> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<bool> archived = const Value.absent(),
+                Value<bool> favorite = const Value.absent(),
+                Value<double?> cookedWeightG = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => MealsCompanion(
                 id: id,
                 name: name,
                 archived: archived,
+                favorite: favorite,
+                cookedWeightG: cookedWeightG,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -5503,11 +5826,15 @@ class $$MealsTableTableManager
                 required String id,
                 required String name,
                 Value<bool> archived = const Value.absent(),
+                Value<bool> favorite = const Value.absent(),
+                Value<double?> cookedWeightG = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => MealsCompanion.insert(
                 id: id,
                 name: name,
                 archived: archived,
+                favorite: favorite,
+                cookedWeightG: cookedWeightG,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

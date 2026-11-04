@@ -8,6 +8,9 @@ import 'meals.dart';
 /// The daily log. Every entry stores its own resolved macros (a snapshot taken
 /// when it was logged); the catalog references are provenance only.
 @TableIndex(name: 'food_log_entries_log_date', columns: {#logDate})
+@TableIndex(name: 'food_log_entries_created_at', columns: {#createdAt})
+@TableIndex(name: 'food_log_entries_food_item_id', columns: {#foodItemId})
+@TableIndex(name: 'food_log_entries_meal_id', columns: {#mealId})
 class FoodLogEntries extends Table {
   TextColumn get id => text()();
 
