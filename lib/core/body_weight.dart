@@ -6,6 +6,7 @@ library;
 import 'date_key.dart';
 import 'metrics.dart';
 import 'nutrition_math.dart';
+import 'validation.dart';
 
 /// Kilograms in one avoirdupois pound.
 const double kilogramsPerPound = 0.45359237;
@@ -46,8 +47,8 @@ String formatBodyWeightValue(double kg, BodyWeightUnit unit) =>
 /// The error to show for typed body weight [text] in [unit], or null if it is
 /// a number in the accepted range.
 String? validateBodyWeight(String text, BodyWeightUnit unit) {
-  final value = double.tryParse(text.trim());
-  if (value == null || !value.isFinite) return 'Enter a number';
+  final value = parseNumber(text);
+  if (value == null) return 'Enter a number';
   if (value <= 0) return 'Enter a number greater than 0';
   final kg = unit.toKg(value);
   if (kg < minBodyWeightKg || kg > maxBodyWeightKg) {

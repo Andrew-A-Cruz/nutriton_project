@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/body_weight.dart';
+import '../../core/validation.dart';
 import '../../providers/body_weight_providers.dart';
 import '../../providers/preferences_providers.dart';
 import '../common/error_feedback.dart';
@@ -150,7 +151,7 @@ class _WeighInDialogState extends ConsumerState<WeighInDialog> {
       setState(() => _error = error);
       return;
     }
-    final kg = widget.unit.toKg(double.parse(_controller.text.trim()));
+    final kg = widget.unit.toKg(parseNumber(_controller.text)!);
     _run(
       () => ref.read(bodyWeightRepositoryProvider).setWeight(widget.date, kg),
     );
