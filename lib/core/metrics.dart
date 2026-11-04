@@ -81,3 +81,16 @@ String formatMacroLine(Macros macros, {Set<Metric> tracked = const {}}) {
   ];
   return parts.join(' · ');
 }
+
+/// What VoiceOver reads for a day's total of [metric]: "Calories: 1450 of
+/// 2000 kcal, 550 kcal left", "... 120 kcal over", or "Protein: 80 g" with
+/// no goal. A bar alone says nothing to a screen reader.
+String totalSemanticsLabel(Metric metric, double amount, double? goal) {
+  String of(double v) => '${metric.format(v)} ${metric.unit}';
+  if (goal == null || goal <= 0) return '${metric.label}: ${of(amount)}';
+  final remaining = goal - amount;
+  final rest = remaining >= 0
+      ? '${of(remaining)} left'
+      : '${of(-remaining)} over';
+  return '${metric.label}: ${metric.format(amount)} of ${of(goal)}, $rest';
+}

@@ -97,7 +97,7 @@ class _PrimaryTotal extends StatelessWidget {
     final remaining = hasGoal ? goal! - amount : 0.0;
     // Dynamic colors must be resolved, or dark mode gets the light variant.
     final secondary = CupertinoColors.secondaryLabel.resolveFrom(context);
-    return Column(
+    final column = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
@@ -147,6 +147,13 @@ class _PrimaryTotal extends StatelessWidget {
         ],
       ],
     );
+    return _TotalSemantics(
+      metric: metric,
+      amount: amount,
+      goal: goal,
+      coverageHint: coverageHint,
+      child: column,
+    );
   }
 }
 
@@ -166,7 +173,7 @@ class _SecondaryTotal extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasGoal = goal != null && goal! > 0;
-    return Column(
+    final column = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Row(
@@ -202,6 +209,44 @@ class _SecondaryTotal extends StatelessWidget {
           ),
         ],
       ],
+    );
+    return _TotalSemantics(
+      metric: metric,
+      amount: amount,
+      goal: goal,
+      coverageHint: coverageHint,
+      child: column,
+    );
+  }
+}
+
+/// Reads a total as one sentence ([totalSemanticsLabel], plus any coverage
+/// hint) instead of its separate number, goal and bar.
+class _TotalSemantics extends StatelessWidget {
+  const _TotalSemantics({
+    required this.metric,
+    required this.amount,
+    required this.goal,
+    required this.coverageHint,
+    required this.child,
+  });
+
+  final Metric metric;
+  final double amount;
+  final double? goal;
+  final String? coverageHint;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      key: Key('total-semantics-${metric.name}'),
+      container: true,
+      label: [
+        totalSemanticsLabel(metric, amount, goal),
+        ?coverageHint,
+      ].join('. '),
+      child: ExcludeSemantics(child: child),
     );
   }
 }

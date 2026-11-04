@@ -132,6 +132,28 @@ void main() {
     await unmount(tester);
   });
 
+  testWidgets('totals and charts have screen reader labels at 2x text', (
+    tester,
+  ) async {
+    stressScreen(tester);
+    final handle = tester.ensureSemantics();
+    await tester.runAsync(seed);
+    await tester.pumpWidget(testApp(db: db, prefs: prefs));
+    await settle(tester);
+
+    String label(String key) => tester.getSemantics(find.byKey(Key(key))).label;
+    expect(label('total-semantics-calories'), contains('of 2000 kcal'));
+    expect(label('total-semantics-calories'), contains('left'));
+    expect(label('total-semantics-protein'), startsWith('Protein: '));
+
+    await tester.tap(find.byIcon(CupertinoIcons.chart_bar_fill));
+    await settle(tester);
+    expect(label('summary-chart-semantics'), startsWith('Calories chart'));
+    expect(label('weight-chart-semantics'), contains('2 weigh-ins'));
+    handle.dispose();
+    await unmount(tester);
+  });
+
   testWidgets('secondary labels use the dark-mode color', (tester) async {
     stressScreen(tester);
     await tester.runAsync(seed);
