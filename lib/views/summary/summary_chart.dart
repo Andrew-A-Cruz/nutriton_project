@@ -7,7 +7,10 @@ import '../../core/metrics.dart';
 import '../../core/summary_math.dart';
 
 /// Bar chart of one metric's per-day average for each bucket, with the goal as
-/// a dashed reference line. Buckets with no logged days draw no bar.
+/// a dashed reference line. Buckets with no logged days draw no bar. With a
+/// goal, each bar is colored by whether it is under, on (within
+/// [goalTolerance]) or over the goal, with a legend below. VoiceOver reads a
+/// text summary instead of the bars.
 class SummaryChart extends StatelessWidget {
   const SummaryChart({
     super.key,
@@ -37,11 +40,20 @@ class SummaryChart extends StatelessWidget {
       if (v > highest) highest = v;
     }
     final labelEvery = (buckets.length / _maxLabels).ceil();
-    final barColor = CupertinoColors.activeBlue.resolveFrom(context);
+    final underColor = CupertinoColors.activeBlue.resolveFrom(context);
+    final onTargetColor = CupertinoColors.systemGreen.resolveFrom(context);
+    final overColor = CupertinoColors.systemRed.resolveFrom(context);
+    Color colorFor(double value) => !hasGoal
+        ? underColor
+        : switch (goalStatus(value, goal!)) {
+            GoalStatus.under => underColor,
+            GoalStatus.onTarget => onTargetColor,
+            GoalStatus.over => overColor,
+          };
     final goalColor = CupertinoColors.systemOrange.resolveFrom(context);
     final labelColor = CupertinoColors.secondaryLabel.resolveFrom(context);
 
-    return SizedBox(
+    final chart = SizedBox(
       height: 220,
       child: BarChart(
         BarChartData(
@@ -57,7 +69,7 @@ class SummaryChart extends StatelessWidget {
                 barRods: [
                   BarChartRodData(
                     toY: values[i],
-                    color: barColor,
+                    color: colorFor(values[i]),
                     width: buckets.length > 12 ? 6 : 14,
                     borderRadius: const BorderRadius.vertical(
                       top: Radius.circular(3),
@@ -132,6 +144,61 @@ class SummaryChart extends StatelessWidget {
         ),
       ),
     );
+
+    return Semantics(
+      key: const Key('summary-chart-semantics'),
+      container: true,
+      label: _describe(values),
+      child: ExcludeSemantics(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            chart,
+            if (hasGoal) ...[
+              const SizedBox(height: 8),
+              Wrap(
+                key: const Key('summary-legend'),
+                spacing: 16,
+                runSpacing: 4,
+                children: [
+                  _LegendItem(color: underColor, label: 'Under goal'),
+                  _LegendItem(
+                    color: onTargetColor,
+                    label:
+                        'Within ${(goalTolerance * 100).round()}% of the goal',
+                  ),
+                  _LegendItem(color: overColor, label: 'Over goal'),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// What VoiceOver reads for the chart: the average, the highest bar, and how
+  /// many bars are on target when there is a goal.
+  String _describe(List<double> values) {
+    final logged = [
+      for (var i = 0; i < buckets.length; i++)
+        if (buckets[i].daysLogged > 0) (bucket: buckets[i], value: values[i]),
+    ];
+    if (logged.isEmpty) return '${metric.label} chart. Nothing logged.';
+    String amount(double v) => '${metric.format(v)} ${metric.unit}';
+    final top = logged.reduce((a, b) => b.value > a.value ? b : a);
+    final mean =
+        logged.map((l) => l.value).reduce((a, b) => a + b) / logged.length;
+    final parts = [
+      '${metric.label} chart, ${logged.length} of ${buckets.length} bars '
+          'with data',
+      'average ${amount(mean)}',
+      'highest ${amount(top.value)} on ${_axisLabel(top.bucket)}',
+      if (goal != null && goal! > 0)
+        '${logged.where((l) => goalStatus(l.value, goal!) == GoalStatus.onTarget).length} '
+            'on target for the goal of ${amount(goal!)}',
+    ];
+    return '${parts.join(', ')}.';
   }
 
   String _axisLabel(Bucket bucket) {
@@ -144,5 +211,38 @@ class SummaryChart extends StatelessWidget {
       BucketSize.week => DateFormat('MMM d').format(start),
       BucketSize.month => DateFormat('MMM').format(start),
     };
+  }
+}
+
+class _LegendItem extends StatelessWidget {
+  const _LegendItem({required this.color, required this.label});
+
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+          ),
+          child: const SizedBox(width: 10, height: 10),
+        ),
+        const SizedBox(width: 6),
+        Flexible(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: CupertinoColors.secondaryLabel.resolveFrom(context),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }

@@ -21,6 +21,36 @@ final summaryRangeProvider =
       SummaryRangeNotifier.new,
     );
 
+/// The last day Summary shows. Null follows today (also across midnight); the
+/// arrows set a day in the past. Kept alive so it survives switching tabs.
+class SummaryEndNotifier extends Notifier<String?> {
+  @override
+  String? build() {
+    ref.keepAlive();
+    return null;
+  }
+
+  /// Moves back (-1) or forward (+1) by one [range]. Reaching today goes back
+  /// to following it.
+  void step(SummaryRange range, int direction) {
+    final today = ref.read(todayProvider);
+    final next = stepSummaryEnd(state ?? today, range, direction, today: today);
+    state = next == today ? null : next;
+  }
+
+  void showToday() => state = null;
+}
+
+final summaryEndNotifierProvider =
+    NotifierProvider<SummaryEndNotifier, String?>(SummaryEndNotifier.new);
+
+/// The day Summary ends on: the chosen day, or today.
+final summaryEndProvider = Provider<String>((ref) {
+  final today = ref.watch(todayProvider);
+  final chosen = ref.watch(summaryEndNotifierProvider);
+  return chosen == null || chosen.compareTo(today) > 0 ? today : chosen;
+});
+
 /// Arguments for [summaryReportProvider]: a range ending on a 'yyyy-MM-dd' day.
 typedef SummaryQuery = ({String endDate, SummaryRange range});
 
