@@ -140,36 +140,53 @@ class CatalogRepository {
   Future<List<MealItemRow>> findMealItems(String mealId) =>
       _db.mealDao.findItems(mealId);
 
-  /// Creates a meal and its items in one transaction.
+  /// Creates a meal and its items in one transaction. A [cookedWeightG] makes
+  /// it a recipe, logged by the portion eaten.
   Future<String> createMeal({
     required String name,
     required List<MealItemInput> items,
+    double? cookedWeightG,
   }) async {
     final id = _uuid.v4();
     _validateMeal(name, items);
+    _validateCookedWeight(cookedWeightG);
     await _db.transaction(() async {
       await _db.mealDao.insertMeal(
-        MealsCompanion.insert(id: id, name: name.trim()),
+        MealsCompanion.insert(
+          id: id,
+          name: name.trim(),
+          cookedWeightG: Value(cookedWeightG),
+        ),
       );
       await _writeItems(id, items);
     });
     return id;
   }
 
-  /// Replaces a meal's name and items in one transaction.
+  /// Replaces a meal's name and items in one transaction. The cooked weight
+  /// changes only when [cookedWeightG] is given (`Value(null)` turns a recipe
+  /// back into an ordinary meal).
   Future<void> updateMeal(
     String id, {
     required String name,
     required List<MealItemInput> items,
+    Value<double?> cookedWeightG = const Value.absent(),
   }) async {
     _validateMeal(name, items);
+    if (cookedWeightG.present) _validateCookedWeight(cookedWeightG.value);
     await _db.transaction(() async {
       await _db.mealDao.updateMeal(
         id,
-        MealsCompanion(name: Value(name.trim())),
+        MealsCompanion(name: Value(name.trim()), cookedWeightG: cookedWeightG),
       );
       await _writeItems(id, items);
     });
+  }
+
+  static void _validateCookedWeight(double? grams) {
+    if (grams != null && (!grams.isFinite || grams <= 0)) {
+      throw ArgumentError.value(grams, 'cookedWeightG', 'must be > 0');
+    }
   }
 
   Future<void> setMealArchived(String id, {required bool archived}) =>

@@ -291,4 +291,34 @@ void main() {
       expect((a + b).total, 5);
     });
   });
+
+  group('recipePortion', () {
+    test('is the portion over the cooked weight', () {
+      expect(recipePortion(portionG: 300, cookedWeightG: 1200), 0.25);
+      expect(recipePortion(portionG: 1200, cookedWeightG: 1200), 1);
+    });
+
+    test('a portion of a recipe scales its raw totals', () {
+      // 1,000 g raw that cooks down to 800 g: 200 g cooked is a quarter.
+      const raw = Macros(calories: 1600, protein: 120, carbs: 100, fat: 80);
+      final eaten = raw.times(recipePortion(portionG: 200, cookedWeightG: 800));
+      expect(eaten.calories, 400);
+      expect(eaten.protein, 30);
+    });
+
+    test('rejects a zero, negative or non-finite weight', () {
+      expect(
+        () => recipePortion(portionG: 100, cookedWeightG: 0),
+        throwsArgumentError,
+      );
+      expect(
+        () => recipePortion(portionG: 0, cookedWeightG: 800),
+        throwsArgumentError,
+      );
+      expect(
+        () => recipePortion(portionG: double.nan, cookedWeightG: 800),
+        throwsArgumentError,
+      );
+    });
+  });
 }

@@ -11,6 +11,7 @@ import '../../providers/catalog_providers.dart';
 import '../../providers/infrastructure_providers.dart';
 import '../common/archivable_list.dart';
 import '../common/error_feedback.dart';
+import '../common/form_widgets.dart';
 import 'food_list.dart';
 
 /// Active meal templates whose name contains [search] (case-insensitive).
@@ -98,6 +99,9 @@ class _MealRow extends ConsumerWidget {
       ),
     );
     final count = '${items.length} food${items.length == 1 ? '' : 's'}';
-    return '$count · ${Metric.calories.format(total.calories)} kcal';
+    final kcal = '${Metric.calories.format(total.calories)} kcal';
+    final cooked = meal.cookedWeightG;
+    if (cooked == null) return '$count · $kcal';
+    return 'Recipe · $count · $kcal in ${formatWeight(cooked, WeightUnit.g)}';
   }
 }

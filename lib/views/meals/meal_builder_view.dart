@@ -1,6 +1,8 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/metrics.dart';
 import '../../core/nutrition_math.dart';
 import '../../core/validation.dart';
 import '../../data/database/app_database.dart';
@@ -25,9 +27,11 @@ class MealBuilderView extends ConsumerStatefulWidget {
 
 class _MealBuilderViewState extends ConsumerState<MealBuilderView> {
   late final TextEditingController _name;
+  late final TextEditingController _cookedWeight;
   final List<MealDraftItem> _items = [];
   bool _loaded = false;
   String? _nameError;
+  String? _cookedWeightError;
   String? _itemsError;
   String? _saveError;
   bool _saving = false;
@@ -39,16 +43,31 @@ class _MealBuilderViewState extends ConsumerState<MealBuilderView> {
   void initState() {
     super.initState();
     _name = TextEditingController(text: widget.existing?.name ?? '');
+    final cooked = widget.existing?.cookedWeightG;
+    _cookedWeight = TextEditingController(
+      text: cooked == null
+          ? ''
+          : plainNumber(roundTo(_unit.fromGrams(cooked), 2)),
+    );
     _loaded = widget.existing == null;
   }
 
   @override
   void dispose() {
     _name.dispose();
+    _cookedWeight.dispose();
     for (final item in _items) {
       item.dispose();
     }
     super.dispose();
+  }
+
+  bool _cookedWeightUnchanged(Meal existing, String text) {
+    final cooked = existing.cookedWeightG;
+    final initial = cooked == null
+        ? ''
+        : plainNumber(roundTo(_unit.fromGrams(cooked), 2));
+    return text == initial;
   }
 
   Future<void> _addFood() async {
@@ -67,22 +86,40 @@ class _MealBuilderViewState extends ConsumerState<MealBuilderView> {
   Future<void> _save() async {
     final nameError = requiredName(_name.text);
     final itemsValid = validateDrafts(_items);
+    final cookedText = _cookedWeight.text.trim();
+    final cookedError = cookedText.isEmpty ? null : positiveNumber(cookedText);
     setState(() {
       _nameError = nameError;
+      _cookedWeightError = cookedError;
       _itemsError = _items.isEmpty ? 'Add at least one food' : null;
       _saveError = null;
     });
-    if (nameError != null || !itemsValid) return;
+    if (nameError != null || cookedError != null || !itemsValid) return;
 
     final catalog = ref.read(catalogRepositoryProvider);
     final inputs = draftInputs(_items);
     final existing = widget.existing;
+    final cookedG = cookedText.isEmpty
+        ? null
+        : _unit.toGrams(parseNumber(cookedText)!);
     setState(() => _saving = true);
     try {
       if (existing == null) {
-        await catalog.createMeal(name: _name.text, items: inputs);
+        await catalog.createMeal(
+          name: _name.text,
+          items: inputs,
+          cookedWeightG: cookedG,
+        );
       } else {
-        await catalog.updateMeal(existing.id, name: _name.text, items: inputs);
+        await catalog.updateMeal(
+          existing.id,
+          name: _name.text,
+          items: inputs,
+          // Untouched, the stored grams are kept exactly.
+          cookedWeightG: _cookedWeightUnchanged(existing, cookedText)
+              ? const Value.absent()
+              : Value(cookedG),
+        );
       }
       if (mounted) Navigator.of(context).pop();
     } catch (e, stack) {
@@ -161,6 +198,23 @@ class _MealBuilderViewState extends ConsumerState<MealBuilderView> {
                       child: FormFieldError(_itemsError),
                     ),
                   MealTotals(items: _items),
+                  CupertinoFormSection.insetGrouped(
+                    header: const Text('RECIPE'),
+                    footer: const Text(
+                      'Optional. For batch cooking: weigh the whole pot once '
+                      'cooked, then log it by the portion you eat.',
+                    ),
+                    children: [
+                      formRow(
+                        fieldKey: const Key('meal-cooked-weight'),
+                        label: 'Cooked weight',
+                        controller: _cookedWeight,
+                        error: _cookedWeightError,
+                        placeholder: 'Optional',
+                        suffix: _unit.name,
+                      ),
+                    ],
+                  ),
                   if (_saveError != null)
                     Padding(
                       padding: const EdgeInsets.all(16),

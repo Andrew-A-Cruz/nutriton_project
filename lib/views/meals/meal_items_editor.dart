@@ -186,15 +186,24 @@ class MealItemsEditor extends StatelessWidget {
 
 /// Running totals for the rows in a meal.
 class MealTotals extends ConsumerWidget {
-  const MealTotals({super.key, required this.items});
+  const MealTotals({
+    super.key,
+    required this.items,
+    this.portion = 1,
+    this.header = 'TOTAL',
+  });
 
   final List<MealDraftItem> items;
 
+  /// Share of [items] shown, for a portion of a recipe.
+  final double portion;
+  final String header;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final totals = draftTotals(items);
+    final totals = draftTotals(items).times(portion);
     return CupertinoFormSection.insetGrouped(
-      header: const Text('TOTAL'),
+      header: Text(header),
       children: [
         CupertinoListTile(
           title: Text(

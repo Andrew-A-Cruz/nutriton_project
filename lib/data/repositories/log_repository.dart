@@ -183,15 +183,23 @@ class LogRepository {
   /// Logs a meal as eaten: [items] may differ from the template. Writes the
   /// entry and its breakdown in one transaction. If [updateTemplate] is true,
   /// the meal's catalog items are replaced with [items] in the same transaction.
+  ///
+  /// [portion] is the share of [items] eaten, for a recipe (see
+  /// [recipePortion]): every breakdown weight and total is multiplied by it.
+  /// The template, when updated, keeps the whole batch.
   Future<String> logMeal({
     required String logDate,
     required Meal meal,
     required List<MealItemInput> items,
     bool updateTemplate = false,
     MealSlot? mealSlot,
+    double portion = 1,
   }) async {
     if (items.isEmpty) {
       throw ArgumentError('a logged meal needs at least one item');
+    }
+    if (!portion.isFinite || portion <= 0) {
+      throw ArgumentError.value(portion, 'portion', 'must be > 0');
     }
     final entryId = _uuid.v4();
     await _db.transaction(() async {
@@ -209,14 +217,15 @@ class LogRepository {
           }
           foods[item.foodItemId] = food;
         }
-        final macros = CatalogRepository.macrosForWeight(food, item.weightG);
+        final eatenG = item.weightG * portion;
+        final macros = CatalogRepository.macrosForWeight(food, eatenG);
         snapshots.add(
           FoodLogEntryItemsCompanion.insert(
             id: _uuid.v4(),
             entryId: entryId,
             foodItemId: Value(food.id),
             name: food.name,
-            weightG: item.weightG,
+            weightG: eatenG,
             calories: macros.calories,
             protein: macros.protein,
             carbs: macros.carbs,

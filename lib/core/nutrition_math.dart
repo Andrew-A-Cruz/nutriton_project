@@ -176,3 +176,20 @@ Coverage coverageOf(Iterable<Macros> items, double? Function(Macros) pick) {
   }
   return Coverage(recorded: recorded, total: total);
 }
+
+/// The share of a recipe eaten: [portionG] grams of a batch that weighed
+/// [cookedWeightG] grams once cooked. Cooking changes the weight (a pot of
+/// chili loses water), so a portion is measured against the cooked weight,
+/// not the raw ingredients. Logging multiplies every ingredient by this.
+double recipePortion({
+  required double portionG,
+  required double cookedWeightG,
+}) {
+  if (!cookedWeightG.isFinite || cookedWeightG <= 0) {
+    throw ArgumentError.value(cookedWeightG, 'cookedWeightG', 'must be > 0');
+  }
+  if (!portionG.isFinite || portionG <= 0) {
+    throw ArgumentError.value(portionG, 'portionG', 'must be > 0');
+  }
+  return portionG / cookedWeightG;
+}
