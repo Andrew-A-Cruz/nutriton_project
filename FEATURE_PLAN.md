@@ -271,7 +271,7 @@ Found by reading the code rather than from the brainstorm. Built on the `improve
 - [x] **Word search.** Every word must match, in any order, in the name or brand; a search lists recently logged foods first (`core/search.dart`)
 - [x] **Log indexes.** Schema v9 indexes on `food_log_entries` (`created_at`, `food_item_id`, `meal_id`), `food_log_entry_items.entry_id` and `meal_food_items.meal_id`
 - [ ] **iOS privacy manifest.** The file is written; adding it to the Xcode target is a [manual Mac step](#manual-mac-steps-before-the-next-ios-build)
-- [ ] **Android backup rules.** Needs a decision: rely on Android Auto Backup (on by default, so when the user has Google backup on, the database and the automatic backups are copied to their Google account) and say so in the app, or turn it off with `android:allowBackup="false"` to keep the "stays on the device" promise literal
+- [x] **Android backup rules.** Decided to keep Android Auto Backup on (the default): when the user has Google backup on, the database and the automatic backups are copied to their Google account, as iCloud backup does on iOS. The welcome page says so
 
 ---
 
