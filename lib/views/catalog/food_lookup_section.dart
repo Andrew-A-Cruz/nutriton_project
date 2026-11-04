@@ -6,6 +6,7 @@ import '../../data/database/app_database.dart';
 import '../../data/repositories/food_lookup_repository.dart';
 import '../../providers/food_lookup_providers.dart';
 import '../../providers/infrastructure_providers.dart';
+import '../common/error_feedback.dart';
 import 'barcode_scanner_page.dart';
 
 /// "Look up" block for the new-food form: a barcode field and a name search
@@ -88,11 +89,12 @@ class _FoodLookupSectionState extends ConsumerState<FoodLookupSection> {
         _status = _Status.error;
         _error = e.message;
       });
-    } catch (_) {
+    } catch (e, stack) {
+      final message = reportError(ref, e, stack, 'Could not look up the food');
       if (!mounted || id != _request) return;
       setState(() {
         _status = _Status.error;
-        _error = 'Something went wrong. Try again.';
+        _error = message;
       });
     }
   }
@@ -107,8 +109,9 @@ class _FoodLookupSectionState extends ConsumerState<FoodLookupSection> {
         local = await ref
             .read(catalogRepositoryProvider)
             .findFoodByBarcode(code);
-      } catch (_) {
+      } catch (e, stack) {
         // Fall through to the online lookup.
+        reportError(ref, e, stack, 'Could not check the catalog for a barcode');
       }
       if (!mounted || id != _request) return;
       if (local != null) {

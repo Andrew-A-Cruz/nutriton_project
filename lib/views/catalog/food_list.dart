@@ -7,6 +7,7 @@ import '../../data/database/app_database.dart';
 import '../../providers/catalog_providers.dart';
 import '../../providers/infrastructure_providers.dart';
 import '../common/archivable_list.dart';
+import '../common/error_feedback.dart';
 import '../common/form_widgets.dart';
 
 /// Active catalog foods matching [search], by name.
@@ -28,7 +29,11 @@ class FoodList extends ConsumerWidget {
 
     return foods.when(
       loading: () => const Center(child: CupertinoActivityIndicator()),
-      error: (error, _) => Center(child: Text('Could not load foods: $error')),
+      error: (error, stack) => LoadErrorText(
+        failed: 'Could not load foods',
+        error: error,
+        stack: stack,
+      ),
       data: (rows) {
         if (rows.isEmpty) {
           return CatalogEmptyText(

@@ -9,6 +9,7 @@ import '../../providers/infrastructure_providers.dart';
 import '../../providers/preferences_providers.dart';
 import '../common/form_widgets.dart';
 import '../common/meal_slot_picker.dart';
+import '../common/error_feedback.dart';
 
 /// Logs a one-off food for [logDate]. Nothing is written to the catalog.
 /// Pops to the root after logging.
@@ -87,11 +88,11 @@ class _AdhocFoodFormState extends ConsumerState<AdhocFoodForm> {
             mealSlot: _slot,
           );
       if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
-    } catch (e) {
+    } catch (e, stack) {
       if (mounted) {
         setState(() {
           _saving = false;
-          _saveError = 'Could not log food: $e';
+          _saveError = reportError(ref, e, stack, 'Could not log food');
         });
       }
     }

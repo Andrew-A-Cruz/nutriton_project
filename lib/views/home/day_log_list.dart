@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -9,6 +11,7 @@ import '../../providers/infrastructure_providers.dart';
 import '../../data/repositories/schedule_repository.dart';
 import '../../providers/log_providers.dart';
 import '../../providers/today_providers.dart';
+import '../common/error_feedback.dart';
 import 'edit_entry_sheets.dart';
 import 'entry_sheets.dart';
 import 'scheduled_suggestions.dart';
@@ -49,6 +52,7 @@ class _DayLogListState extends ConsumerState<DayLogList> {
     // entry of the day is deleted, but the banner and its Undo must outlive it.
     final repo = ref.read(logRepositoryProvider);
     final overlay = Overlay.of(context, rootOverlay: true);
+    final errorLog = ref.read(errorLogProvider);
     final navigator = Navigator.of(context, rootNavigator: true);
     setState(() => _dismissed.add(id));
     try {
@@ -60,19 +64,12 @@ class _DayLogListState extends ConsumerState<DayLogList> {
         onUndo: () async {
           try {
             await repo.restoreEntry(deleted);
-          } catch (e) {
+          } catch (e, stack) {
+            unawaited(errorLog.record(e, stack, context: 'Could not undo'));
             if (navigator.mounted) {
-              await showCupertinoDialog<void>(
-                context: navigator.context,
-                builder: (dialogContext) => CupertinoAlertDialog(
-                  content: Text('Could not undo: $e'),
-                  actions: [
-                    CupertinoDialogAction(
-                      onPressed: () => Navigator.of(dialogContext).pop(),
-                      child: const Text('OK'),
-                    ),
-                  ],
-                ),
+              await showErrorDialog(
+                navigator.context,
+                'Could not undo the delete.',
               );
             }
             return;
@@ -80,7 +77,8 @@ class _DayLogListState extends ConsumerState<DayLogList> {
           if (mounted) setState(() => _dismissed.remove(id));
         },
       );
-    } catch (_) {
+    } catch (e, stack) {
+      unawaited(errorLog.record(e, stack, context: 'Could not delete'));
       if (mounted) setState(() => _dismissed.remove(id));
     }
   }
@@ -165,6 +163,7 @@ class _EntryTile extends ConsumerWidget {
   /// needs up front, because the action sheet that started it is already gone.
   Future<void> _logAgain(BuildContext context, WidgetRef ref) async {
     final repo = ref.read(logRepositoryProvider);
+    final errorLog = ref.read(errorLogProvider);
     final overlay = Overlay.of(context, rootOverlay: true);
     final navigator = Navigator.of(context, rootNavigator: true);
     try {
@@ -177,19 +176,12 @@ class _EntryTile extends ConsumerWidget {
         message: 'Logged again today',
         onUndo: () => repo.deleteEntry(newId),
       );
-    } catch (e) {
+    } catch (e, stack) {
+      unawaited(errorLog.record(e, stack, context: 'Could not log again'));
       if (navigator.mounted) {
-        await showCupertinoDialog<void>(
-          context: navigator.context,
-          builder: (dialogContext) => CupertinoAlertDialog(
-            content: Text('Could not log again: $e'),
-            actions: [
-              CupertinoDialogAction(
-                onPressed: () => Navigator.of(dialogContext).pop(),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
+        await showErrorDialog(
+          navigator.context,
+          'Could not log again. Try again.',
         );
       }
     }

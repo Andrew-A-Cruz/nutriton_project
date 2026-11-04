@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/database/app_database.dart';
+import '../data/diagnostics/error_log.dart';
 import '../data/repositories/catalog_repository.dart';
 import '../data/repositories/log_repository.dart';
 import '../data/repositories/summary_repository.dart';
@@ -30,4 +31,10 @@ final logRepositoryProvider = Provider<LogRepository>(
 
 final summaryRepositoryProvider = Provider<SummaryRepository>(
   (ref) => SummaryRepository(ref.watch(databaseProvider)),
+);
+
+/// Failures recorded on the device. `main` overrides it with the instance its
+/// global error handlers write to.
+final errorLogProvider = Provider<ErrorLog>(
+  (ref) => ErrorLog(ref.watch(sharedPreferencesProvider)),
 );

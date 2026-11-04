@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/health.dart';
 import '../../providers/health_providers.dart';
 import '../../providers/preferences_providers.dart';
+import '../common/error_feedback.dart';
 
 /// Settings section for Apple Health, off by default and shown only where a
 /// health store exists (iOS). Each switch asks for permission for its own data
@@ -25,8 +26,9 @@ class _AppleHealthSectionState extends ConsumerState<AppleHealthSection> {
         granted = await ref
             .read(healthServiceProvider)
             .requestAuthorization(group);
-      } catch (_) {
+      } catch (e, stack) {
         // Treated like a refusal: the switch stays off.
+        reportError(ref, e, stack, 'Could not ask Apple Health for access');
       }
       if (!mounted) return;
       if (!granted) {

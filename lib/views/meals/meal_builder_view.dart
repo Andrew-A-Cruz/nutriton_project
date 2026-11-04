@@ -10,6 +10,7 @@ import '../../providers/preferences_providers.dart';
 import '../common/form_widgets.dart';
 import 'food_picker_page.dart';
 import 'meal_items_editor.dart';
+import '../common/error_feedback.dart';
 
 /// Creates or edits a meal template: a name and an ordered list of foods, each
 /// with a weight. Pops after saving.
@@ -84,11 +85,11 @@ class _MealBuilderViewState extends ConsumerState<MealBuilderView> {
         await catalog.updateMeal(existing.id, name: _name.text, items: inputs);
       }
       if (mounted) Navigator.of(context).pop();
-    } catch (e) {
+    } catch (e, stack) {
       if (mounted) {
         setState(() {
           _saving = false;
-          _saveError = 'Could not save: $e';
+          _saveError = reportError(ref, e, stack, 'Could not save');
         });
       }
     }

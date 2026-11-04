@@ -11,6 +11,7 @@ import '../../providers/infrastructure_providers.dart';
 import '../../providers/preferences_providers.dart';
 import '../common/form_widgets.dart';
 import '../common/meal_slot_picker.dart';
+import '../common/error_feedback.dart';
 
 /// Edits the name and macros of a one-off entry. Can also hand off to the
 /// "Move to another day" picker.
@@ -101,11 +102,11 @@ class _EditAdhocSheetState extends ConsumerState<EditAdhocSheet> {
           );
       await _applySlot(ref, widget.entry, _slot);
       if (mounted) Navigator.of(context).pop();
-    } catch (e) {
+    } catch (e, stack) {
       if (mounted) {
         setState(() {
           _saving = false;
-          _saveError = 'Could not save: $e';
+          _saveError = reportError(ref, e, stack, 'Could not save');
         });
       }
     }
@@ -272,11 +273,11 @@ class _MoveEntryPickerState extends ConsumerState<_MoveEntryPicker> {
     try {
       await ref.read(logRepositoryProvider).moveEntry(widget.entry.id, key);
       if (mounted) Navigator.of(context).pop(key);
-    } catch (e) {
+    } catch (e, stack) {
       if (mounted) {
         setState(() {
           _saving = false;
-          _error = 'Could not move: $e';
+          _error = reportError(ref, e, stack, 'Could not move');
         });
       }
     }

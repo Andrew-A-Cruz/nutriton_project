@@ -12,6 +12,7 @@ import '../../providers/preferences_providers.dart';
 import '../common/form_widgets.dart';
 import '../meals/schedule_meal_view.dart';
 import 'food_lookup_section.dart';
+import '../common/error_feedback.dart';
 
 /// Creates or edits a catalog food. Pops with the saved [FoodItem], or with
 /// null when cancelled, so the caller can act on it (Add Food logs it).
@@ -230,11 +231,11 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
       }
       final food = await catalog.findFood(id);
       if (mounted) Navigator.of(context).pop(food);
-    } catch (e) {
+    } catch (e, stack) {
       if (mounted) {
         setState(() {
           _saving = false;
-          _saveError = 'Could not save: $e';
+          _saveError = reportError(ref, e, stack, 'Could not save');
         });
       }
     }

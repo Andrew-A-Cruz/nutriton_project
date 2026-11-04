@@ -9,6 +9,7 @@ import '../../providers/body_weight_providers.dart';
 import '../../providers/preferences_providers.dart';
 import '../../providers/summary_providers.dart';
 import '../../providers/today_providers.dart';
+import '../common/error_feedback.dart';
 import 'summary_chart.dart';
 import 'weight_chart.dart';
 
@@ -48,9 +49,13 @@ class SummaryView extends ConsumerWidget {
                 padding: EdgeInsets.only(top: 48),
                 child: Center(child: CupertinoActivityIndicator()),
               ),
-              error: (error, _) => Padding(
+              error: (error, stack) => Padding(
                 padding: const EdgeInsets.only(top: 48),
-                child: Center(child: Text('Could not load: $error')),
+                child: LoadErrorText(
+                  failed: 'Could not load the summary',
+                  error: error,
+                  stack: stack,
+                ),
               ),
               data: (report) => _ReportBody(report: report, settings: settings),
             ),

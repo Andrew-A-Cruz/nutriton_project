@@ -5,6 +5,7 @@ import '../../core/metrics.dart';
 import '../../core/nutrition_math.dart';
 import '../../core/weekdays.dart';
 import '../../providers/schedule_providers.dart';
+import '../common/error_feedback.dart';
 
 /// One planned meal or food inside its meal section on Home, dimmed so it
 /// reads as a suggestion and not as something eaten. Tap to log it (nothing is
@@ -31,9 +32,10 @@ class PlannedTile extends ConsumerWidget {
       await ref
           .read(scheduleRepositoryProvider)
           .confirm(item.schedule.id, date: date);
-    } catch (e) {
+    } catch (e, stack) {
+      final message = reportError(ref, e, stack, 'Could not log ${item.name}');
       if (!context.mounted) return;
-      await _showError(context, 'Could not log ${item.name}', '$e');
+      await showErrorDialog(context, message);
     }
   }
 
@@ -43,26 +45,11 @@ class PlannedTile extends ConsumerWidget {
       await ref
           .read(scheduleRepositoryProvider)
           .dismiss(item.schedule.id, date: date);
-    } catch (e) {
+    } catch (e, stack) {
+      final message = reportError(ref, e, stack, 'Could not skip ${item.name}');
       if (!context.mounted) return;
-      await _showError(context, 'Could not skip ${item.name}', '$e');
+      await showErrorDialog(context, message);
     }
-  }
-
-  Future<void> _showError(BuildContext context, String title, String message) {
-    return showCupertinoDialog<void>(
-      context: context,
-      builder: (dialog) => CupertinoAlertDialog(
-        title: Text(title),
-        content: Text(message),
-        actions: [
-          CupertinoDialogAction(
-            onPressed: () => Navigator.of(dialog).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
   }
 
   void _showActions(BuildContext context, WidgetRef ref) {

@@ -12,6 +12,7 @@ import '../../providers/today_providers.dart';
 import '../common/form_widgets.dart';
 import '../common/meal_slot_picker.dart';
 import '../home/date_header.dart';
+import '../common/error_feedback.dart';
 
 enum AmountMode { servings, weight }
 
@@ -125,11 +126,11 @@ class _LogFoodViewState extends ConsumerState<LogFoodView> {
             mealSlot: _slot,
           );
       if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
-    } catch (e) {
+    } catch (e, stack) {
       if (mounted) {
         setState(() {
           _saving = false;
-          _saveError = 'Could not log food: $e';
+          _saveError = reportError(ref, e, stack, 'Could not log food');
         });
       }
     }

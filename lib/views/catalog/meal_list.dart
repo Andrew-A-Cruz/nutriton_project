@@ -9,6 +9,7 @@ import '../../data/repositories/catalog_repository.dart';
 import '../../providers/catalog_providers.dart';
 import '../../providers/infrastructure_providers.dart';
 import '../common/archivable_list.dart';
+import '../common/error_feedback.dart';
 import 'food_list.dart';
 
 /// Active meal templates whose name contains [search] (case-insensitive).
@@ -31,7 +32,11 @@ class MealList extends ConsumerWidget {
 
     return meals.when(
       loading: () => const Center(child: CupertinoActivityIndicator()),
-      error: (error, _) => Center(child: Text('Could not load meals: $error')),
+      error: (error, stack) => LoadErrorText(
+        failed: 'Could not load meals',
+        error: error,
+        stack: stack,
+      ),
       data: (all) {
         final rows = [
           for (final m in all)

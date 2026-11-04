@@ -6,6 +6,7 @@ import '../../providers/infrastructure_providers.dart';
 import '../../providers/log_providers.dart';
 import '../../providers/today_providers.dart';
 import 'date_header.dart';
+import '../common/error_feedback.dart';
 
 /// Asks which day to copy and copies its entries onto [toDate]. Resolves to
 /// true if a day was copied.
@@ -46,11 +47,11 @@ class _CopyDaySheetState extends ConsumerState<_CopyDaySheet> {
           .read(logRepositoryProvider)
           .copyDay(fromDate: fromDate, toDate: widget.toDate);
       if (mounted) Navigator.of(context).pop(true);
-    } catch (e) {
+    } catch (e, stack) {
       if (mounted) {
         setState(() {
           _copying = false;
-          _error = 'Could not copy: $e';
+          _error = reportError(ref, e, stack, 'Could not copy');
         });
       }
     }

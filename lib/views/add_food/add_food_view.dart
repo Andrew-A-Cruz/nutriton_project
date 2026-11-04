@@ -6,6 +6,7 @@ import '../../providers/infrastructure_providers.dart';
 import '../catalog/catalog_browser.dart';
 import '../catalog/food_form_view.dart';
 import '../meals/meal_log_view.dart';
+import '../common/error_feedback.dart';
 import 'adhoc_food_form.dart';
 import 'log_food_view.dart';
 
@@ -30,8 +31,9 @@ class _AddFoodViewState extends ConsumerState<AddFoodView> {
     double? last;
     try {
       last = await ref.read(logRepositoryProvider).lastServingsFor(food.id);
-    } catch (_) {
+    } catch (e, stack) {
       // Prefilling is a convenience; fall back to one serving.
+      reportError(ref, e, stack, 'Could not read the last servings');
     }
     if (!mounted) return;
     await Navigator.of(context).push(

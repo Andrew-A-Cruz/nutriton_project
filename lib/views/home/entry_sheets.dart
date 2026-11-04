@@ -10,6 +10,7 @@ import '../../providers/log_providers.dart';
 import '../../providers/preferences_providers.dart';
 import '../common/form_widgets.dart';
 import '../common/meal_slot_picker.dart';
+import '../common/error_feedback.dart';
 
 /// Edits the serving count of a logged food entry.
 class EditServingsDialog extends ConsumerStatefulWidget {
@@ -56,11 +57,11 @@ class _EditServingsDialogState extends ConsumerState<EditServingsDialog> {
             .updateMealSlot(widget.entry.id, slot);
       }
       if (mounted) Navigator.of(context).pop();
-    } catch (e) {
+    } catch (e, stack) {
       if (mounted) {
         setState(() {
           _saving = false;
-          _error = 'Could not save: $e';
+          _error = reportError(ref, e, stack, 'Could not save');
         });
       }
     }
@@ -139,7 +140,8 @@ class _MealBreakdownSheetState extends ConsumerState<MealBreakdownSheet> {
       await ref
           .read(logRepositoryProvider)
           .updateMealSlot(widget.entry.id, slot);
-    } catch (_) {
+    } catch (e, stack) {
+      reportError(ref, e, stack, 'Could not change the meal slot');
       if (mounted) setState(() => _slot = previous);
     }
   }
@@ -199,8 +201,11 @@ class _MealBreakdownSheetState extends ConsumerState<MealBreakdownSheet> {
               child: items.when(
                 loading: () =>
                     const Center(child: CupertinoActivityIndicator()),
-                error: (error, _) =>
-                    Center(child: Text('Could not load breakdown: $error')),
+                error: (error, stack) => LoadErrorText(
+                  failed: 'Could not load the breakdown',
+                  error: error,
+                  stack: stack,
+                ),
                 data: (rows) => rows.isEmpty
                     ? const Center(child: Text('No items recorded'))
                     : ListView(

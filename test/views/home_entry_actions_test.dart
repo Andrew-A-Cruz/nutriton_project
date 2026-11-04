@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nutriton_project/core/date_key.dart';
 import 'package:nutriton_project/core/nutrition_math.dart';
 import 'package:nutriton_project/data/database/app_database.dart';
+import 'package:nutriton_project/data/diagnostics/error_log.dart';
 import 'package:nutriton_project/data/repositories/catalog_repository.dart';
 import 'package:nutriton_project/data/repositories/log_repository.dart';
 import 'package:nutriton_project/providers/infrastructure_providers.dart';
@@ -538,29 +539,34 @@ void main() {
     ]);
   });
 
-  _appTest('a failed undo shows an error dialog and the entry stays deleted', (
-    tester,
-  ) async {
-    await tester.runAsync(seedDay);
-    final spy = _SpyLogRepository(db)..failRestore = true;
-    await pumpHome(
-      tester,
-      overrides: [logRepositoryProvider.overrideWithValue(spy)],
-    );
+  _appTest(
+    'a failed undo shows a plain error, records it, and the entry stays deleted',
+    (tester) async {
+      await tester.runAsync(seedDay);
+      final spy = _SpyLogRepository(db)..failRestore = true;
+      await pumpHome(
+        tester,
+        overrides: [logRepositoryProvider.overrideWithValue(spy)],
+      );
 
-    await swipeToDelete(tester, find.text('Protein bar'));
-    await tester.tap(find.byKey(const Key('undo-button')));
-    await settle(tester);
+      await swipeToDelete(tester, find.text('Protein bar'));
+      await tester.tap(find.byKey(const Key('undo-button')));
+      await settle(tester);
 
-    expect(find.text('Could not undo: Bad state: disk full'), findsOneWidget);
-    expect(find.text('Protein bar'), findsNothing);
+      expect(find.text('Could not undo the delete.'), findsOneWidget);
+      expect(find.textContaining('disk full'), findsNothing);
+      expect(find.text('Protein bar'), findsNothing);
+      final logged = ErrorLog(prefs).entries.single;
+      expect(logged.context, 'Could not undo');
+      expect(logged.message, contains('disk full'));
 
-    await tester.tap(find.text('OK'));
-    await settle(tester);
+      await tester.tap(find.text('OK'));
+      await settle(tester);
 
-    expect(find.text('Could not undo: Bad state: disk full'), findsNothing);
-    expect(await entryNamesOn(tester, _today), ['Chicken breast']);
-  });
+      expect(find.text('Could not undo the delete.'), findsNothing);
+      expect(await entryNamesOn(tester, _today), ['Chicken breast']);
+    },
+  );
 
   _appTest('Copy yesterday, pressed twice in one frame, copies the day once', (
     tester,
