@@ -19,6 +19,7 @@ class CatalogBrowser extends StatefulWidget {
     required this.onMealTap,
     this.archivable = false,
     this.showRecent = false,
+    this.onScan,
   });
 
   final ValueChanged<FoodItem> onFoodTap;
@@ -28,6 +29,9 @@ class CatalogBrowser extends StatefulWidget {
   /// Shows recently or frequently logged foods and meals above the list (when
   /// not searching).
   final bool showRecent;
+
+  /// Shows a scan button beside the search field when set.
+  final VoidCallback? onScan;
 
   @override
   State<CatalogBrowser> createState() => _CatalogBrowserState();
@@ -57,10 +61,29 @@ class _CatalogBrowserState extends State<CatalogBrowser> {
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-          child: CupertinoSearchTextField(
-            key: const Key('catalog-search'),
-            placeholder: 'Search',
-            onChanged: (value) => setState(() => _search = value),
+          child: Row(
+            children: [
+              Expanded(
+                child: CupertinoSearchTextField(
+                  key: const Key('catalog-search'),
+                  placeholder: 'Search',
+                  onChanged: (value) => setState(() => _search = value),
+                ),
+              ),
+              if (widget.onScan != null)
+                Semantics(
+                  label: 'Scan a barcode',
+                  button: true,
+                  excludeSemantics: true,
+                  child: CupertinoButton(
+                    key: const Key('catalog-scan'),
+                    padding: const EdgeInsets.only(left: 8),
+                    minimumSize: const Size.square(44),
+                    onPressed: widget.onScan,
+                    child: const Icon(CupertinoIcons.barcode_viewfinder),
+                  ),
+                ),
+            ],
           ),
         ),
         if (widget.showRecent && _search.trim().isEmpty) ...[

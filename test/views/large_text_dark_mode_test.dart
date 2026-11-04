@@ -73,6 +73,39 @@ void main() {
     await weights.setWeight(addDays(todayKey(), -1), 124.1);
   }
 
+  testWidgets('Add Food fits at 2x text, in every mode and with a favorite', (
+    tester,
+  ) async {
+    stressScreen(tester);
+    await tester.runAsync(() async {
+      await seed();
+      final catalog = CatalogRepository(db);
+      final id = await catalog.createFood(
+        name: 'A long catalog food name that needs room',
+        brand: 'An equally long brand name for wrapping',
+        perServing: const Macros(calories: 150, protein: 5, carbs: 27, fat: 3),
+        servingWeightG: 40,
+      );
+      await catalog.setFoodFavorite(id, favorite: true);
+    });
+    await tester.pumpWidget(testApp(db: db, prefs: prefs));
+    await settle(tester);
+    await tester.tap(find.byKey(const Key('add-food-button')));
+    await settle(tester);
+    expect(find.byKey(const Key('favorite-sources')), findsOneWidget);
+
+    for (final mode in ['Quick add', 'One-off', 'Catalog']) {
+      await tester.tap(
+        find.descendant(
+          of: find.byKey(const Key('add-food-mode')),
+          matching: find.text(mode),
+        ),
+      );
+      await settle(tester);
+    }
+    await unmount(tester);
+  });
+
   testWidgets('Home and Summary fit at 2x text in dark mode', (tester) async {
     stressScreen(tester);
     await tester.runAsync(seed);

@@ -22,7 +22,12 @@ class FoodFormView extends ConsumerStatefulWidget {
     this.existing,
     this.template,
     this.offerLogAfterSave = false,
+    this.scannedBarcode,
   });
+
+  /// A barcode scanned before the form opened. A new food looks it up at once
+  /// and keeps it.
+  final String? scannedBarcode;
 
   final FoodItem? existing;
 
@@ -91,7 +96,9 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
         ? ''
         : _weightText(source.servingWeightG, _unit);
     _weight = TextEditingController(text: _initialWeightText);
-    _barcode = TextEditingController(text: existing?.barcode ?? '');
+    _barcode = TextEditingController(
+      text: existing?.barcode ?? widget.scannedBarcode ?? '',
+    );
   }
 
   @override
@@ -294,6 +301,7 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
                 onCatalogMatch: widget.offerLogAfterSave
                     ? _useCatalogFood
                     : null,
+                initialScannedBarcode: widget.scannedBarcode,
               ),
             if (_lookupNotice != null)
               Padding(

@@ -24,9 +24,14 @@ class FoodLookupSection extends ConsumerStatefulWidget {
     required this.onPick,
     this.onCatalogMatch,
     this.onBarcode,
+    this.initialScannedBarcode,
   });
 
   final ValueChanged<FoodLookupResult> onPick;
+
+  /// A code already scanned elsewhere (Add Food's scan button). It is looked up
+  /// as soon as the section opens, as if it had just been scanned here.
+  final String? initialScannedBarcode;
   final ValueChanged<FoodItem>? onCatalogMatch;
   final ValueChanged<String>? onBarcode;
 
@@ -48,6 +53,18 @@ class _FoodLookupSectionState extends ConsumerState<FoodLookupSection> {
 
   /// Bumped per request so a slow, older reply cannot overwrite a newer one.
   int _request = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    final code = widget.initialScannedBarcode;
+    if (code != null && code.isNotEmpty) {
+      _barcode.text = code;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _lookupBarcode(scanned: true);
+      });
+    }
+  }
 
   @override
   void dispose() {
