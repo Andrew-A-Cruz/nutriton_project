@@ -2,6 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/database/app_database.dart';
+import '../../data/database/daos/log_dao.dart';
+import '../../providers/catalog_providers.dart';
 import '../../providers/log_providers.dart';
 import 'food_list.dart';
 import 'meal_list.dart';
@@ -61,11 +63,16 @@ class _CatalogBrowserState extends State<CatalogBrowser> {
             onChanged: (value) => setState(() => _search = value),
           ),
         ),
-        if (widget.showRecent && _search.trim().isEmpty)
+        if (widget.showRecent && _search.trim().isEmpty) ...[
+          FavoriteSources(
+            onFoodTap: widget.onFoodTap,
+            onMealTap: widget.onMealTap,
+          ),
           RecentSources(
             onFoodTap: widget.onFoodTap,
             onMealTap: widget.onMealTap,
           ),
+        ],
         Expanded(
           child: switch (_section) {
             CatalogSection.foods => FoodList(
@@ -81,6 +88,94 @@ class _CatalogBrowserState extends State<CatalogBrowser> {
           },
         ),
       ],
+    );
+  }
+}
+
+/// Starred foods and meals, as a strip above Recent. Hidden when there are
+/// none.
+class FavoriteSources extends ConsumerWidget {
+  const FavoriteSources({
+    super.key,
+    required this.onFoodTap,
+    required this.onMealTap,
+  });
+
+  final ValueChanged<FoodItem> onFoodTap;
+  final ValueChanged<Meal> onMealTap;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sources = ref.watch(favoriteSourcesProvider);
+    if (sources.isEmpty) return const SizedBox.shrink();
+    return Column(
+      key: const Key('favorite-sources'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+          child: Text(
+            'FAVORITES',
+            style: TextStyle(
+              fontSize: 13,
+              color: CupertinoColors.secondaryLabel.resolveFrom(context),
+            ),
+          ),
+        ),
+        _SourceStrip(
+          sources: sources,
+          keyPrefix: 'pinned',
+          onFoodTap: onFoodTap,
+          onMealTap: onMealTap,
+        ),
+      ],
+    );
+  }
+}
+
+/// Logged-before or starred sources as a row of buttons, scrolling sideways.
+class _SourceStrip extends StatelessWidget {
+  const _SourceStrip({
+    required this.sources,
+    required this.keyPrefix,
+    required this.onFoodTap,
+    required this.onMealTap,
+  });
+
+  final List<RecentSource> sources;
+
+  /// Each button is keyed '[keyPrefix]-food-ID' or '[keyPrefix]-meal-ID'.
+  final String keyPrefix;
+  final ValueChanged<FoodItem> onFoodTap;
+  final ValueChanged<Meal> onMealTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Row(
+        children: [
+          for (final source in sources)
+            CupertinoButton(
+              key: Key(
+                source.food != null
+                    ? '$keyPrefix-food-${source.id}'
+                    : '$keyPrefix-meal-${source.id}',
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              onPressed: () {
+                final food = source.food;
+                if (food != null) {
+                  onFoodTap(food);
+                } else {
+                  onMealTap(source.meal!);
+                }
+              },
+              child: Text(source.name),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -149,34 +244,11 @@ class _RecentSourcesState extends ConsumerState<RecentSources> {
             ),
           )
         else
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Row(
-              children: [
-                for (final source in sources)
-                  CupertinoButton(
-                    key: Key(
-                      source.food != null
-                          ? 'recent-food-${source.id}'
-                          : 'recent-meal-${source.id}',
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    onPressed: () {
-                      final food = source.food;
-                      if (food != null) {
-                        widget.onFoodTap(food);
-                      } else {
-                        widget.onMealTap(source.meal!);
-                      }
-                    },
-                    child: Text(source.name),
-                  ),
-              ],
-            ),
+          _SourceStrip(
+            sources: sources,
+            keyPrefix: 'recent',
+            onFoodTap: widget.onFoodTap,
+            onMealTap: widget.onMealTap,
           ),
       ],
     );

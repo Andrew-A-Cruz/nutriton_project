@@ -53,8 +53,18 @@ class FoodList extends ConsumerWidget {
           rowBuilder: (context, food) => CupertinoListTile(
             title: Text(food.name),
             subtitle: Text(
-              '${Metric.calories.format(food.calories)} kcal per '
-              '${formatWeight(food.servingWeightG, _foodUnit(food))}',
+              [
+                ?food.brand,
+                '${Metric.calories.format(food.calories)} kcal per '
+                    '${formatWeight(food.servingWeightG, _foodUnit(food))}',
+              ].join(' · '),
+            ),
+            trailing: FavoriteButton(
+              key: Key('favorite-food-${food.id}'),
+              favorite: food.favorite,
+              onPressed: () => ref
+                  .read(catalogRepositoryProvider)
+                  .setFoodFavorite(food.id, favorite: !food.favorite),
             ),
             onTap: () => onTap(food),
           ),
@@ -67,6 +77,38 @@ class FoodList extends ConsumerWidget {
 /// The food's own display unit (not the user's setting).
 WeightUnit _foodUnit(FoodItem food) =>
     WeightUnit.values.asNameMap()[food.displayUnit] ?? WeightUnit.g;
+
+/// A star that pins a food or meal to the top of Add Food.
+class FavoriteButton extends StatelessWidget {
+  const FavoriteButton({
+    super.key,
+    required this.favorite,
+    required this.onPressed,
+  });
+
+  final bool favorite;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: favorite ? 'Remove from favorites' : 'Add to favorites',
+      button: true,
+      excludeSemantics: true,
+      child: CupertinoButton(
+        padding: EdgeInsets.zero,
+        minimumSize: const Size.square(44),
+        onPressed: onPressed,
+        child: Icon(
+          favorite ? CupertinoIcons.star_fill : CupertinoIcons.star,
+          color: favorite
+              ? CupertinoColors.systemYellow.resolveFrom(context)
+              : CupertinoColors.tertiaryLabel.resolveFrom(context),
+        ),
+      ),
+    );
+  }
+}
 
 /// Centred hint for an empty catalog list.
 class CatalogEmptyText extends StatelessWidget {

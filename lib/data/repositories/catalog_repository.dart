@@ -38,6 +38,7 @@ class CatalogRepository {
     required double servingWeightG,
     WeightUnit displayUnit = WeightUnit.g,
     String? barcode,
+    String? brand,
   }) async {
     final id = _uuid.v4();
     _validateFood(name, perServing, servingWeightG);
@@ -55,6 +56,7 @@ class CatalogRepository {
         servingWeightG: servingWeightG,
         displayUnit: Value(displayUnit.name),
         barcode: Value(_cleanBarcode(barcode)),
+        brand: Value(_cleanBrand(brand)),
       ),
     );
     return id;
@@ -67,6 +69,7 @@ class CatalogRepository {
     required double servingWeightG,
     WeightUnit displayUnit = WeightUnit.g,
     String? barcode,
+    String? brand,
   }) async {
     _validateFood(name, perServing, servingWeightG);
     await _db.foodDao.updateFood(
@@ -83,6 +86,7 @@ class CatalogRepository {
         servingWeightG: Value(servingWeightG),
         displayUnit: Value(displayUnit.name),
         barcode: Value(_cleanBarcode(barcode)),
+        brand: Value(_cleanBrand(brand)),
       ),
     );
   }
@@ -96,6 +100,24 @@ class CatalogRepository {
     return trimmed == null || trimmed.isEmpty ? null : trimmed;
   }
 
+  /// Trimmed; empty is no brand. Throws past [maxNameLength] characters.
+  static String? _cleanBrand(String? brand) {
+    final trimmed = brand?.trim();
+    if (trimmed == null || trimmed.isEmpty) return null;
+    if (trimmed.length > maxNameLength) {
+      throw ArgumentError.value(
+        brand,
+        'brand',
+        'must be at most $maxNameLength characters',
+      );
+    }
+    return trimmed;
+  }
+
+  /// Starred foods are pinned at the top of Add Food.
+  Future<void> setFoodFavorite(String id, {required bool favorite}) =>
+      _db.foodDao.updateFood(id, FoodItemsCompanion(favorite: Value(favorite)));
+
   /// Archived foods leave search results but stay in past log entries.
   Future<void> setFoodArchived(String id, {required bool archived}) =>
       _db.foodDao.setArchived(id, archived: archived);
@@ -107,6 +129,10 @@ class CatalogRepository {
   Future<List<Meal>> findMeals() => _db.mealDao.findActive();
 
   Future<Meal?> findMeal(String id) => _db.mealDao.findById(id);
+
+  /// Starred meals are pinned at the top of Add Food.
+  Future<void> setMealFavorite(String id, {required bool favorite}) =>
+      _db.mealDao.updateMeal(id, MealsCompanion(favorite: Value(favorite)));
 
   Stream<List<MealItemRow>> watchMealItems(String mealId) =>
       _db.mealDao.watchItems(mealId);

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/metrics.dart';
 import '../../core/nutrition_math.dart';
+import '../../core/search.dart';
 import '../../data/database/app_database.dart';
 import '../../data/database/daos/meal_dao.dart';
 import '../../data/repositories/catalog_repository.dart';
@@ -28,7 +29,7 @@ class MealList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final meals = ref.watch(mealsProvider);
-    final query = search.trim().toLowerCase();
+    final query = search.trim();
 
     return meals.when(
       loading: () => const Center(child: CupertinoActivityIndicator()),
@@ -40,13 +41,13 @@ class MealList extends ConsumerWidget {
       data: (all) {
         final rows = [
           for (final m in all)
-            if (query.isEmpty || m.name.toLowerCase().contains(query)) m,
+            if (matchesSearch(query, [m.name])) m,
         ];
         if (rows.isEmpty) {
           return CatalogEmptyText(
             query.isEmpty
                 ? 'No meals yet. Tap + to build one.'
-                : 'No meals match "${search.trim()}".',
+                : 'No meals match "$query".',
           );
         }
         return ArchivableList<Meal>(
@@ -77,12 +78,19 @@ class _MealRow extends ConsumerWidget {
     final items = ref.watch(mealItemsProvider(meal.id)).value;
     return CupertinoListTile(
       title: Text(meal.name),
-      subtitle: Text(items == null ? '' : _summary(items)),
+      subtitle: Text(items == null ? '' : _summary(meal, items)),
+      trailing: FavoriteButton(
+        key: Key('favorite-meal-${meal.id}'),
+        favorite: meal.favorite,
+        onPressed: () => ref
+            .read(catalogRepositoryProvider)
+            .setMealFavorite(meal.id, favorite: !meal.favorite),
+      ),
       onTap: onTap,
     );
   }
 
-  static String _summary(List<MealItemRow> items) {
+  static String _summary(Meal meal, List<MealItemRow> items) {
     if (items.isEmpty) return 'No foods yet';
     final total = sumMacros(
       items.map(

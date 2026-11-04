@@ -194,6 +194,10 @@ void main() {
   testWidgets('a new catalog food is saved and logged in one step', (
     tester,
   ) async {
+    // Tall enough for the whole food form.
+    tester.view.physicalSize = const Size(800, 3000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     await pumpHome(tester);
     await openAddFood(tester);
 

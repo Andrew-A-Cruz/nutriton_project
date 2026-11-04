@@ -97,6 +97,10 @@ void main() {
   testWidgets('a failed save shows a plain message and records the error', (
     tester,
   ) async {
+    // Tall enough for the whole food form.
+    tester.view.physicalSize = const Size(800, 3000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(
       testScreen(
         db: db,
@@ -143,5 +147,6 @@ class _FailingCatalog extends CatalogRepository {
     required double servingWeightG,
     WeightUnit displayUnit = WeightUnit.g,
     String? barcode,
+    String? brand,
   }) => Future.error(StateError('disk full'));
 }
