@@ -11,7 +11,18 @@ class WidgetSnapshot {
     required this.emptyValueText,
     required this.progress,
     required this.overGoal,
+    this.locked = false,
   });
+
+  /// What the widget shows without Pro: a prompt to unlock it in the app,
+  /// and none of the day's figures.
+  const WidgetSnapshot.locked({required this.dateKey})
+    : valueText = 'Pro',
+      caption = 'Unlock in Nutriton',
+      emptyValueText = 'Pro',
+      progress = 0,
+      overGoal = false,
+      locked = true;
 
   /// The day these figures are for ('yyyy-MM-dd'). The widget shows
   /// [emptyValueText] instead once the device date has moved past it.
@@ -32,6 +43,10 @@ class WidgetSnapshot {
   /// Whether the day is past the goal.
   final bool overGoal;
 
+  /// Whether the widget is locked (no Pro). It then ignores the date and
+  /// shows only [valueText] and [caption].
+  final bool locked;
+
   /// The shared-storage entries the widget reads, keyed by name.
   Map<String, Object> toMap() => {
     'date_key': dateKey,
@@ -40,6 +55,7 @@ class WidgetSnapshot {
     'empty_value_text': emptyValueText,
     'progress': progress,
     'over_goal': overGoal,
+    'locked': locked,
   };
 
   @override
@@ -50,7 +66,8 @@ class WidgetSnapshot {
       other.caption == caption &&
       other.emptyValueText == emptyValueText &&
       other.progress == progress &&
-      other.overGoal == overGoal;
+      other.overGoal == overGoal &&
+      other.locked == locked;
 
   @override
   int get hashCode => Object.hash(
@@ -60,6 +77,7 @@ class WidgetSnapshot {
     emptyValueText,
     progress,
     overGoal,
+    locked,
   );
 
   @override

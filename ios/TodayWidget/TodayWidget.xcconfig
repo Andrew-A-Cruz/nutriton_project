@@ -1,0 +1,4 @@
+// The widget is not a CocoaPods target, so it takes only Flutter's generated
+// settings, for FLUTTER_BUILD_NAME and FLUTTER_BUILD_NUMBER. The extension's
+// version must match the app's.
+#include? "../Flutter/Generated.xcconfig"

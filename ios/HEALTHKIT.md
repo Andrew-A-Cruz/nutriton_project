@@ -1,30 +1,19 @@
 # Apple Health (iOS)
 
-The app writes daily nutrition to Apple Health and reads body weight from it, through the `health` package. Both are opt-in switches under Settings > Apple Health. Nothing here has been compiled or run: it was written without Xcode.
+The app writes daily nutrition to Apple Health and reads body weight from it, through the `health` package. Both are opt-in switches under Settings > Apple Health, and both are Nutriton Pro features: without Pro the switches are lock badges, and no sync runs (what was already written to Health, or read from it, stays).
 
 ## What is already in the repo
 
 - `Runner/Info.plist`: `NSHealthShareUsageDescription` (read) and `NSHealthUpdateUsageDescription` (write).
 - `Runner/Runner.entitlements`: `com.apple.developer.healthkit` (true) and `com.apple.developer.healthkit.access` (empty array; no clinical records).
 
-The entitlements file is **not yet referenced by `Runner.xcodeproj`**, so HealthKit does nothing until the steps below are done.
+Runner's `CODE_SIGN_ENTITLEMENTS` is `Runner/Runner.entitlements` (set in October 2026), and the free personal team provisions HealthKit: a signed release build carries `com.apple.developer.healthkit`. Free-team builds still expire after 7 days.
 
-## Steps (Mac, Xcode)
+## Checking it on a device
 
-1. Open `ios/Runner.xcworkspace`.
-2. Target `Runner` > **Build Settings**: set `CODE_SIGN_ENTITLEMENTS` to `Runner/Runner.entitlements`, if the Today widget steps did not already (`TodayWidget/README.md`, step 6).
-3. Target `Runner` > **Signing & Capabilities** > **+ Capability** > **HealthKit**. Leave "Clinical Health Records" and "Background Delivery" unticked. Xcode may rewrite `Runner.entitlements`; the HealthKit keys should stay as they are.
-4. Run `cd ios && pod install`, then build and run on a **device** (Health is not available in every simulator setup).
-5. In the app: Settings > Apple Health, switch on "Write nutrition" or "Read body weight". iOS shows its permission sheet for just that data.
-
-## Free Apple team warning
-
-The team is a free personal team. Free teams may not be able to provision the **HealthKit** capability (and the **App Groups** one the widget uses). Xcode then reports a provisioning-profile error such as "Personal development teams do not support the HealthKit capability", and the Runner target will not build while the entitlement is set. If so:
-
-- Remove the HealthKit capability (and the two HealthKit keys from `Runner.entitlements`) to get a building app again. The Dart code is harmless without it: the switches' permission requests fail, so they stay off.
-- A paid Apple Developer Program membership is the fix. Free-team builds also expire after 7 days.
-
-This has not been verified against the real team.
+1. Install with the `install-iphone` skill (it unlocks Pro in its builds).
+2. In the app: Settings > Apple Health, switch on "Write nutrition" or "Read body weight". iOS shows its permission sheet for just that data.
+3. In the Health app: Browse > Nutrition shows Nutriton's samples; Sharing > Apps > Nutriton shows the permissions.
 
 ## How it behaves
 

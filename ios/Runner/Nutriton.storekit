@@ -1,0 +1,94 @@
+{
+  "identifier": "59F9AFA7-D994-4CBB-A4DC-582DF61F0EB2",
+  "nonRenewingSubscriptions": [],
+  "products": [
+    {
+      "displayPrice": "9.99",
+      "familyShareable": true,
+      "internalID": "D628795A0",
+      "localizations": [
+        {
+          "description": "The widget, Apple Health and future Pro extras.",
+          "displayName": "Nutriton Pro",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.nutriton.app.pro",
+      "referenceName": "Nutriton Pro",
+      "type": "NonConsumable"
+    },
+    {
+      "displayPrice": "0.00",
+      "familyShareable": false,
+      "internalID": "DAE5367A0",
+      "localizations": [
+        {
+          "description": "Try Nutriton Pro free for 14 days.",
+          "displayName": "14-day Trial",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.nutriton.app.trial14",
+      "referenceName": "14-day Trial",
+      "type": "NonConsumable"
+    },
+    {
+      "displayPrice": "1.99",
+      "familyShareable": false,
+      "internalID": "97738E2E0",
+      "localizations": [
+        {
+          "description": "A thank-you. Unlocks nothing.",
+          "displayName": "Small Tip",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.nutriton.app.tip.small",
+      "referenceName": "Small Tip",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "4.99",
+      "familyShareable": false,
+      "internalID": "2BD76E9A0",
+      "localizations": [
+        {
+          "description": "A thank-you. Unlocks nothing.",
+          "displayName": "Medium Tip",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.nutriton.app.tip.medium",
+      "referenceName": "Medium Tip",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "9.99",
+      "familyShareable": false,
+      "internalID": "E6D656190",
+      "localizations": [
+        {
+          "description": "A thank-you. Unlocks nothing.",
+          "displayName": "Large Tip",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.nutriton.app.tip.large",
+      "referenceName": "Large Tip",
+      "type": "Consumable"
+    }
+  ],
+  "settings": {
+    "_applicationInternalID": "",
+    "_developerTeamID": "D8U7624NXN",
+    "_failTransactionsEnabled": false,
+    "_locale": "en_US",
+    "_storefront": "USA",
+    "_storeKitErrors": []
+  },
+  "subscriptionGroups": [],
+  "version": {
+    "major": 4,
+    "minor": 0
+  }
+}

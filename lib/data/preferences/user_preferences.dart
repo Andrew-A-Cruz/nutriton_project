@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/body_weight.dart';
 import '../../core/metrics.dart';
 import '../../core/nutrition_math.dart';
+import '../../core/pro.dart';
 import '../../core/reminder.dart';
 
 /// User settings. Loaded from [UserPreferences] at launch and saved back on
@@ -91,6 +92,11 @@ class UserPreferences {
   static const healthWriteNutritionKey = 'health_write_nutrition';
   static const healthReadWeightKey = 'health_read_weight';
   static const lastBackupKey = 'last_backup_at';
+  static const proPurchasedKey = 'pro_purchased';
+  static const proTrialStartedKey = 'pro_trial_started_at';
+  static const proGrandfatheredKey = 'pro_grandfathered';
+  static const trialEndedNoticeKey = 'pro_trial_ended_notice_shown';
+  static const reviewAskedKey = 'review_prompt_asked';
   static String goalKey(Metric metric) => 'goal_${metric.name}';
   static String reminderEnabledKey(int slot) => 'reminder_${slot}_enabled';
   static String reminderMinutesKey(int slot) => 'reminder_${slot}_minutes';
@@ -179,4 +185,40 @@ class UserPreferences {
 
   Future<void> writeLastBackup(DateTime when) =>
       _prefs.setInt(lastBackupKey, when.millisecondsSinceEpoch);
+
+  /// The last [ProStatus] the store reported, so Pro works offline and at
+  /// launch. Like the backup date, not part of [UserSettings] or a backup.
+  ProStatus readProStatus() {
+    final trialMs = _prefs.getInt(proTrialStartedKey);
+    return ProStatus(
+      purchased: _prefs.getBool(proPurchasedKey) ?? false,
+      trialStartedAt: trialMs == null
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(trialMs),
+      grandfathered: _prefs.getBool(proGrandfatheredKey) ?? false,
+    );
+  }
+
+  Future<void> writeProStatus(ProStatus status) async {
+    await _prefs.setBool(proPurchasedKey, status.purchased);
+    final trial = status.trialStartedAt;
+    if (trial == null) {
+      await _prefs.remove(proTrialStartedKey);
+    } else {
+      await _prefs.setInt(proTrialStartedKey, trial.millisecondsSinceEpoch);
+    }
+    await _prefs.setBool(proGrandfatheredKey, status.grandfathered);
+  }
+
+  /// Whether "Your trial ended" has been shown.
+  bool readTrialEndedNoticeShown() =>
+      _prefs.getBool(trialEndedNoticeKey) ?? false;
+
+  Future<void> writeTrialEndedNoticeShown() =>
+      _prefs.setBool(trialEndedNoticeKey, true);
+
+  /// Whether the App Store review prompt has been asked for.
+  bool readReviewAsked() => _prefs.getBool(reviewAskedKey) ?? false;
+
+  Future<void> writeReviewAsked() => _prefs.setBool(reviewAskedKey, true);
 }

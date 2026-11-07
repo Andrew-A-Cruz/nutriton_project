@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'providers/health_providers.dart';
 import 'providers/preferences_providers.dart';
 import 'providers/reminder_providers.dart';
+import 'providers/review_providers.dart';
 import 'providers/widget_providers.dart';
 import 'views/catalog/catalog_view.dart';
 import 'views/home/home_view.dart';
@@ -34,6 +35,8 @@ class _RootGate extends ConsumerWidget {
     // Keeps Apple Health in line with the log and body weight, when opted in.
     ref.watch(healthNutritionPlanProvider);
     ref.watch(healthWeightPlanProvider);
+    // Asks for one App Store review after a week of logging.
+    ref.watch(reviewPromptPlanProvider);
     final onboarded = ref.watch(
       preferencesProvider.select((s) => s.onboardingComplete),
     );

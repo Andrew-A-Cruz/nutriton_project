@@ -33,8 +33,12 @@ Three ideas from the brainstorm are already built, so they are not milestones he
 | M17 | Planned meals (scheduling) | Medium | L | v7 (extends `scheduled_meals`) | None |
 | M18 | Home screen widget | Low–Med | L | No | `home_widget` + a Swift WidgetKit target |
 | M19 | Apple Health | Low–Med | M | v8 (`body_weights.source`) | `health` |
-| M20 | Cloud sync | Low (one device) | XL | Sync metadata | `supabase_flutter` |
-| M21 | Pro unlock (monetization) | — | M | No | `purchases_flutter` |
+| M20 | Cloud sync (iCloud, CloudKit) | Low (one device) | XL | Sync metadata | None (a Swift CloudKit layer) |
+| M21 | Pro unlock (monetization) | — | M | No | `purchases_flutter`, `in_app_review`, `url_launcher` |
+| M22 | Shareable reports (Pro) | Medium | M | No | A PDF package (`pdf`), `share_plus` |
+| M23 | Themes and app icons (Pro) | Low | M | No | None (alternate icons need a small platform channel) |
+| M24 | Fast food menus | High | L | v9 (`food_items.menu_item_id`) | None (a bundled JSON asset) |
+| M25 | Target weight guide | Medium | M | No (preferences) | None |
 
 **Why this order:**
 - **M9 and M10 come first.** They remove taps from every logging session and are pure queries and repository code on the current schema.
@@ -42,8 +46,10 @@ Three ideas from the brainstorm are already built, so they are not milestones he
 - **M13 comes before M16.** Open Food Facts returns fiber, sugar and sodium, so a barcode lookup can fill them once the columns exist.
 - **M16 is high value but large.** It brings in the network, the camera, permissions and messy third-party data. It is placed after the cheaper wins, not because it matters less.
 - **M18 to M20 are late.** They're mostly platform plumbing, and M18 and M19 may need a paid Apple Developer account (see Open Questions).
-- **Status (October 2026):** M9 to M19 are built and merged. M18 and M19 are done only on the Dart side, and their iOS parts wait on the [manual Mac steps](#manual-mac-steps-before-the-next-ios-build).
-- **M21 is last.** Pro only has something to sell once the features it unlocks exist. Detailed in [`MONETIZATION_PLAN.md`](./MONETIZATION_PLAN.md).
+- **Status (October 2026):** M9 to M19 and M21 are built. The M18 widget target and the M19 HealthKit capability are wired into the Xcode project, and both provision on the free personal team. M20, M22 and M23 are not started. See the [manual Mac steps](#manual-mac-steps-before-the-next-ios-build) for what still needs a device.
+- **M21 comes before the Pro features it gates.** It builds the purchase, the trial, the paywall and `ProGate`, and gates the two Pro features that exist (M18, M19). M20, M22 and M23 each ship behind the same gate, and the paywall lists only Pro features that are built. Detailed in [`MONETIZATION_PLAN.md`](./MONETIZATION_PLAN.md).
+- **M20 uses CloudKit, not Supabase.** No server and no running cost, so sync stays in the one-time Pro tier. The cost is Apple only: no Android or web sync.
+- **M24 and M25 were added in November 2026.** Both are free. M24 is the same kind of win as M9 and M16, fewer taps per meal, but most of the work is gathering and checking the menu data, not the code. M25 builds on M15's weigh-ins, and it takes over the backlog's TDEE helper.
 
 ---
 
@@ -127,38 +133,95 @@ Each milestone ends with something runnable and its tests passing, as in v1. Run
 - [x] Repository tests: matching by weekday, a confirmed or skipped item disappears, archived sources are hidden. *Done:* also one-off dates, food plans logging with their servings and slot, meal servings scaling, the exactly-one-source rules, and the DAO CHECKs. Backup: the new columns ride on the plan rows, and `servings` defaults to 1 when missing so pre-M17 files import (format `version` stays 1); `backup_scheduling_test.dart` covers the round trip and the pre-M17 fixture. Known limit: a backup that holds a food-only plan (null `meal_id`) reads as damaged in an app from before M17, the cost of keeping format `version` 1
 
 ### M18 — Home screen widget
-- [ ] Check first: App Groups provisioning with your signing setup (see Open Questions). *Not done:* needs Xcode and a Mac. The decision was to build everything first and expect provisioning to fail on the free personal team until you upgrade; nothing has been provisioned or compiled
-- [x] `home_widget`: the app writes today's totals and goal to shared storage whenever the log changes. A small SwiftUI WidgetKit extension shows remaining calories and a progress ring. *Done on the Dart side:* `home_widget` is added. `buildWidgetSnapshot` (`lib/core/widget_snapshot.dart`, pure) turns today's primary-metric total and goal into display text, a 0..1 progress and an over-goal flag, rounded as the app displays them. `WidgetPublisher` (`lib/data/widget/`) has a `HomeWidgetPublisher` (iOS only, App Group `group.com.nutriton.app`, `updateWidget(iOSName: 'TodayWidget')`) and a no-op default that `main` replaces, as for notifications. `widgetPlanProvider`, watched from the root, publishes when today's entries, the primary metric or its goal change, and skips an identical snapshot. *Written by hand, never compiled:* `ios/TodayWidget/` (`TodayWidget.swift`, `Info.plist`, `TodayWidget.entitlements`, `README.md`) and `ios/Runner/Runner.entitlements`. **Manual step:** the widget target is not in `project.pbxproj`; add it in Xcode by following `ios/TodayWidget/README.md`. Provisioning the App Group on a free team is unverified and may fail
+- [x] Check first: App Groups provisioning with your signing setup (see Open Questions). *Done (October 2026):* the free personal team provisions `group.com.nutriton.app` for both the app and the widget; a signed release build carries it
+- [x] `home_widget`: the app writes today's totals and goal to shared storage whenever the log changes. A small SwiftUI WidgetKit extension shows remaining calories and a progress ring. *Done on the Dart side:* `home_widget` is added. `buildWidgetSnapshot` (`lib/core/widget_snapshot.dart`, pure) turns today's primary-metric total and goal into display text, a 0..1 progress and an over-goal flag, rounded as the app displays them. `WidgetPublisher` (`lib/data/widget/`) has a `HomeWidgetPublisher` (iOS only, App Group `group.com.nutriton.app`, `updateWidget(iOSName: 'TodayWidget')`) and a no-op default that `main` replaces, as for notifications. `widgetPlanProvider`, watched from the root, publishes when today's entries, the primary metric or its goal change, and skips an identical snapshot. *Written by hand, never compiled:* `ios/TodayWidget/` (`TodayWidget.swift`, `Info.plist`, `TodayWidget.entitlements`, `README.md`) and `ios/Runner/Runner.entitlements`. *Wired (October 2026):* the `TodayWidget` app extension target is in `project.pbxproj` (added with the `xcodeproj` gem, not by hand), Runner depends on it and embeds it before Thin Binary, and both targets point at their entitlements. Its version comes from Flutter's build name and number through `TodayWidget/TodayWidget.xcconfig`. `flutter build ios --release` builds and signs it
 - [x] Refresh on log changes and at midnight. *Done:* log and goal changes republish, and the day rollover republishes while the app runs (`todayProvider`). The widget timeline ends at the next midnight (`.after(midnight)`) and has a reset entry at midnight, so a stale date key shows an empty day with the whole goal left. Tests: `widget_snapshot_test.dart` (no goal, under, over, exactly on goal, other metric, rounding) and `widget_publish_test.dart` (fake publisher: launch, log/edit/delete today, other day does not republish, goal and metric changes, day rollover, no-op default). The Swift and the real plugin are untested
 
 ### M19 — Apple Health
-- [ ] Check first: the HealthKit entitlement with your signing setup (see Open Questions). *Not done:* needs Xcode and a Mac. The decision was to build everything first and expect provisioning to fail on the free personal team until you upgrade; nothing has been provisioned or compiled
+- [x] Check first: the HealthKit entitlement with your signing setup (see Open Questions). *Done (October 2026):* the free personal team provisions HealthKit; a signed release build carries `com.apple.developer.healthkit`
 - [x] Write each day's dietary energy, protein, carbs and fat (and M13's fiber, sugar and sodium). Writes are idempotent, so editing an entry rewrites that day. *Done on the Dart side:* `health` is added. `nutritionSamples` (`lib/core/health.dart`, pure) turns a day's totals into one sample per nutrient, leaving out fiber, sugar and sodium when not recorded and any value of 0; sodium goes in as grams (mg / 1000), since the plugin has no milligram unit. `HealthService` (`lib/data/health/`) has a `PluginHealthService` (iOS only) and a no-op default that `main` replaces. A rewrite deletes the app's own samples for the day (the plugin's `delete` only touches samples this app wrote) and writes fresh totals spanning the day. `HealthSync` rewrites exactly the days whose totals changed, including a day emptied by deletes. Turning the switch on writes the last 30 days; at launch only today is written, then any day that changes while the app runs. `healthNutritionPlanProvider` is watched from the root. Android (Health Connect) is not built: it stays a no-op
 - [x] Read body weight into M15's table, marked with its source so it isn't written back. *Done:* schema v8 adds `body_weights.source` (nullable text, default `'manual'`; null reads as manual). `BodyWeightDao.importHealthReadings` fills days with no reading, updates days that are themselves from health, and never touches a manual one; a manual edit sets the source back to manual. Reads the latest weight of each day over the last 90 days at launch, on switching on and at the day rollover (not on every resume). A weight deleted in Health is not removed here. Home shows "from Health" beside such a weight. The app never writes weight to Health. Backup carries `source` (optional on read, format `version` stays 1)
-- [x] Opt-in from Settings, with per-type permissions. *Done:* an "Apple Health" section (iOS only, hidden elsewhere) with "Write nutrition" and "Read body weight", both off by default (`health_write_nutrition`, `health_read_weight`; also in the backup preferences, optional on read). Authorization is requested for just that group's types when its switch is turned on; a refusal leaves it off with a hint. HealthKit never reveals a refused read, so for weight a "yes" means only that the prompt was shown. **Manual step:** enable the HealthKit capability in Xcode; see `ios/HEALTHKIT.md`. Tests: `health_test.dart`, `health_sync_test.dart` (fake service), `apple_health_test.dart`, `backup_health_test.dart` and the v7 to v8 group in `migration_test.dart`. The plugin calls, the Info.plist keys and the entitlements are untested
+- [x] Opt-in from Settings, with per-type permissions. *Done:* an "Apple Health" section (iOS only, hidden elsewhere) with "Write nutrition" and "Read body weight", both off by default (`health_write_nutrition`, `health_read_weight`; also in the backup preferences, optional on read). Authorization is requested for just that group's types when its switch is turned on; a refusal leaves it off with a hint. HealthKit never reveals a refused read, so for weight a "yes" means only that the prompt was shown. *Wired (October 2026):* Runner's `CODE_SIGN_ENTITLEMENTS` is `Runner/Runner.entitlements`, which holds the HealthKit keys. Tests: `health_test.dart`, `health_sync_test.dart` (fake service), `apple_health_test.dart`, `backup_health_test.dart` and the v7 to v8 group in `migration_test.dart`. The plugin calls, the Info.plist keys and the entitlements are untested
 
-### M20 — Cloud sync
-- [ ] Decide whether it is needed. With M11 in place, sync is only worth building for a second device or a web view
-- [ ] If yes: Supabase Postgres mirroring the drift schema, `updated_at` and `deleted` columns on every table, last-write-wins per row, and sign in with Apple
-- [ ] Plan this one separately in detail before starting. The choice between CloudKit and Supabase also decides its pricing tier (see [`MONETIZATION_PLAN.md`](./MONETIZATION_PLAN.md#sync-and-pricing))
+### M20 — Cloud sync (iCloud)
+*Decided (October 2026):* CloudKit, in the one-time Pro tier. Supabase stays the later Pro+ option only if Android or web sync is ever wanted (see [`MONETIZATION_PLAN.md`](./MONETIZATION_PLAN.md#sync-and-pricing)).
+
+- [ ] Needs a paid Apple Developer account first: free personal teams cannot provision the iCloud capability
+- [ ] Plan this one separately in detail before starting. Outline: the CloudKit private database (the user's own iCloud quota, no account in the app), one record type per drift table, `updated_at` and `deleted` columns on every table, last-write-wins per row. CloudKit has no first-class Flutter package, so a small Swift layer sits behind a platform channel, like the widget
+- [ ] Pro only: the sync action goes behind `ProGate`. Records already synced to a device stay there without Pro (Principle 2 of the monetization plan)
+- [ ] Set `ProFeature.iCloudSync.available` to true when it ships, so the paywall lists it
 
 ### M21 — Pro unlock
-- [ ] Free core plus a one-time Pro in-app purchase, with an optional subscription later only for features that cost money to run. Full plan, free/Pro split and checklist in [`MONETIZATION_PLAN.md`](./MONETIZATION_PLAN.md)
+- [x] Free core plus a one-time Pro in-app purchase, with an optional subscription later only for features that cost money to run. Full plan, free/Pro split and checklist in [`MONETIZATION_PLAN.md`](./MONETIZATION_PLAN.md). *Done in code (October 2026):* RevenueCat store layer, cached Pro status, 14-day trial, paywall, `ProGate` on Apple Health, the locked widget, the Settings section with the tip jar, and the review prompt. Selling it still waits on the App Store prerequisites in the monetization plan
+
+### M22 — Shareable reports (Pro)
+A formatted summary of a date range to send someone else, such as a dietitian or doctor. Not the backup: that stays free (Principle 1).
+
+- [ ] Summary: a "Share report" action for the range shown. It builds a PDF with the date range, daily averages against goals, a table of daily totals, and the weight trend when there are weigh-ins. It goes out through the share sheet (`share_plus`, as backups do)
+- [ ] The report data as a pure function in `core/` (`buildReport(days, goals, weights)`), tested without rendering. Only the PDF layout touches the package
+- [ ] The share action goes behind `ProGate`. A report already shared stays wherever it was saved
+- [ ] The plain CSV export in the backlog stays free (Open Question 7); this milestone is the formatted report
+- [ ] Set `ProFeature.reports.available` to true when it ships
+- [ ] Tests: report math (averages, days without entries, metrics with no goal), the share action locked and unlocked, and a golden or text check of the PDF's contents
+
+**Done when:** a Pro user can share a PDF of last month from Summary, and a free user sees the lock on that action and nothing else changes.
+
+### M23 — Themes and app icons (Pro)
+Cosmetic extras, which Principle 4 of the monetization plan puts in Pro.
+
+- [ ] Accent color themes: a few preset `primaryColor`s, plus the system light and dark appearance kept as-is. Saved as a preference (`theme`) and applied in `CupertinoApp`'s theme. Without Pro the default theme is used, but the saved choice stays for when Pro returns
+- [ ] Alternate app icons: two or three designs registered under `CFBundleAlternateIcons` in `Info.plist`, switched with `UIApplication.setAlternateIconName` through a small platform channel. Turning Pro off does not reset an icon the user already chose (iOS keeps it; Principle 2)
+- [ ] Settings: an "Appearance" section with both pickers behind `ProGate`. Check each theme in `large_text_dark_mode_test.dart`
+- [ ] Set `ProFeature.themes.available` to true when it ships
+
+**Done when:** a Pro user can change the accent color and the app icon, and a free user sees the lock on both pickers and the default look.
+
+### M24 — Fast food menus
+Log a menu item from a common chain in a few taps, without looking it up in the chain's nutrition PDF and typing in the numbers. Free: it is a faster way to log (Principle 3).
+
+- [ ] **Data source first** (see Open Questions). The menu data is the bulk of the work. Pick the chains (start with the 15 to 20 largest US chains), the source for each, and how often it is checked again. Each item records where its values came from and the date they were checked
+- [ ] **Bundled data, offline.** A versioned JSON asset (`assets/menus/menus.json`): `{ "version", "checkedAt", "chains": [{ "id", "name", "items": [{ "id", "name", "category", "calories", "protein", "carbs", "fat", "fiber", "sugar", "sodium", "servingWeightG" }] }] }`. Values are per item as served, which is how the chains publish them. Each size (small, medium, large) is its own item. No network call and no new package; the data is updated with app releases. A remote refresh can come later if it is needed
+- [ ] `MenuRepository` loads and parses the asset once (a pure parser in `core/`, tested on its own). Reject an item with negative values or no calories, so one bad row can't break the list
+- [ ] **Add Food sheet:** a "Restaurants" entry next to the catalog list. It opens a list of chains, then that chain's items grouped by category (burgers, sides, drinks…), with search within a chain and across all chains. Chains are shown by name only, with no logos
+- [ ] **Logging:** tapping an item opens the normal servings flow. The first time, the item is saved as a catalog food, so it shows in Recent and Frequent (M9) and can go in meals and plans. A nullable `menu_item_id` on `food_items` (schema v9) stops a second copy from being made, and links the food to its menu row for later updates
+- [ ] **Edits stay the user's.** A saved menu food can be edited like any other food (no mayo, a different size). Once edited, it is no longer updated from new menu data
+- [ ] **Updated values:** when a new app version ships newer values for a menu item, an unedited catalog food takes them. Past log entries keep their snapshot, as they do now
+- [ ] Show "Values from <chain>, checked <month year>. Recipes change." on the item screen, with a link to report a wrong value (opens a prefilled email or GitHub issue through `url_launcher`)
+- [ ] Backup: `menu_item_id` rides on the food rows and is optional on read (format `version` stays 1). Migration test v8 to v9
+- [ ] Tests: the parser (valid file, bad rows skipped, a version newer than the app), search across chains, a first log makes one catalog food and a second log reuses it, an edited food is not updated, and the widget flow from the Add sheet
+
+**Done when:** a medium fries from a listed chain can be logged from the Add sheet in under five taps, with no typing except the search.
+
+### M25 — Target weight guide
+A guide that helps the user pick a reasonable target weight and pace, from their height, weight, age, sex and activity level. It suggests; the user decides. Free, as a goal feature. It takes over the backlog's TDEE helper.
+
+- [ ] **Profile inputs** in a new Settings section ("Body and activity") and as an optional onboarding step: height (`height_cm`, entered in cm or ft/in to match `body_weight_unit`), birth year (`birth_year`), sex used for the energy formula (`sex_for_bmr`: female, male, or skip), and activity level (`activity_level`: sedentary, light, moderate, active, very active). Current weight is the latest M15 weigh-in, or is entered here and saved as today's weigh-in. All inputs stay on the device; say so on the screen. Also in the backup preferences, optional on read
+- [ ] **Pure math in `core/body_goal.dart`,** tested without UI:
+  - BMI = kg / m², and the weight band for a BMI of 18.5 to 24.9 at the user's height
+  - Energy use: Mifflin-St Jeor resting energy times the activity factor (1.2, 1.375, 1.55, 1.725, 1.9). Without age or sex, show the BMI band only and leave out calories
+  - Pace: about 0.25 to 1% of body weight per week for loss (offered as gentle, steady, faster, with steady as the default), smaller for gain. Daily calorie change from about 7,700 kcal per kg (3,500 per lb), and an estimated date for reaching the target
+  - A floor: never suggest a calorie goal below the resting energy estimate or below about 1,200 kcal a day. If the chosen pace would need one, the guide says so and offers the fastest pace that stays above it
+- [ ] **The guide screen:** current BMI and where it falls, the healthy band for the user's height, a suggested target (the nearest edge of the band when outside it, or the current weight when inside it, which the user can change), the pace choice, the resulting daily calorie goal and the estimated date
+- [ ] **Saving:** "Use this plan" saves `goal_weight_kg`, and with a confirm, updates the calorie goal. It never changes a goal without that confirm, and the protein, carbs and fat goals are left as they are
+- [ ] **Where the target shows:** a dashed target line on the Summary weight chart (M15), and "n kg to go" on Home's weigh-in row. When the 7-day average reaches the target, offer to switch to a maintenance goal
+- [ ] **Limits, stated on the screen:** BMI does not tell muscle from fat, and it reads differently for athletes, older adults and some ethnic groups. Under 18 (from the birth year), the guide shows only a note to talk to a doctor, since adult BMI bands don't apply. A short line says this is not medical advice and suggests a professional for pregnancy, medical conditions or a history of disordered eating. Keep the wording neutral, with no "ideal body" language
+- [ ] Tests: BMI and band math at metric and imperial heights, Mifflin-St Jeor against worked examples, each activity factor, the calorie floor, no calories without age or sex, the under-18 case, the target date, saving the goal only after the confirm, and the chart's target line
+
+**Done when:** a user can enter their height and activity level, see their healthy weight band, pick a target and pace, and save a target weight and calorie goal that both show up on Home and Summary.
 
 ---
 
 ## Manual Mac Steps Before the Next iOS Build
 
-M14 to M19 were built on Windows, with no Xcode or Android SDK. Everything native is written but has never been compiled or run on a device. Do these on a Mac, in order (the Android step needs only a machine with the Android SDK):
+M14 to M19 were built on Windows, with no Xcode or Android SDK. The iOS project steps are now done on a Mac, and a signed release build succeeds. What is left needs a device or the Android SDK:
 
-- [ ] `cd ios && pod install`. `Podfile.lock` does not yet include `flutter_local_notifications`, `flutter_timezone`, `home_widget` or `health`
+- [x] `cd ios && pod install`. *Done:* `Podfile.lock` includes `flutter_local_notifications`, `flutter_timezone`, `home_widget`, `health`, `purchases_flutter`, `in_app_review` and `url_launcher_ios`
 - [ ] Build and run once on a device before the steps below, to check M14 to M17: reminder notifications and their permission prompt, camera barcode scanning, and the live Open Food Facts lookup
 - [x] Android: build once to check the core library desugaring change in `android/app/build.gradle.kts` (M14) and that reminders survive a reboot *Done:* a release build ran on an API 36 emulator. Onboarding, saving a food across restarts, reminders (permission prompt, firing, surviving a reboot), the scanner opening the camera, the Open Food Facts barcode lookup and the backup share sheet all worked. Actually decoding a barcode and running on a physical phone are still untested. The build needed `minSdk` 26 (for `health`) and the `INTERNET` permission in the main manifest, without which release lookups had no network access
-- [ ] M18 widget: add the `TodayWidget` Widget Extension target and the App Groups capability (`group.com.nutriton.app`) on Runner and the widget, following [`ios/TodayWidget/README.md`](./ios/TodayWidget/README.md). Set Runner's `CODE_SIGN_ENTITLEMENTS` to `Runner/Runner.entitlements`
-- [ ] M19 Apple Health: add the HealthKit capability on Runner, following [`ios/HEALTHKIT.md`](./ios/HEALTHKIT.md)
-- [ ] If the free personal team refuses to provision App Groups or HealthKit, remove that capability (and its keys from `Runner/Runner.entitlements`) to get a building app again; the Dart side stays inert without them
-
-Until the M18 and M19 steps are done, `Runner.entitlements` is not referenced by the Xcode project, so current builds are unaffected.
+- [x] M18 widget: add the `TodayWidget` Widget Extension target and the App Groups capability (`group.com.nutriton.app`) on Runner and the widget, following [`ios/TodayWidget/README.md`](./ios/TodayWidget/README.md). Set Runner's `CODE_SIGN_ENTITLEMENTS` to `Runner/Runner.entitlements`. *Done (October 2026)*
+- [x] M19 Apple Health: add the HealthKit capability on Runner, following [`ios/HEALTHKIT.md`](./ios/HEALTHKIT.md). *Done (October 2026)*
+- [ ] On the phone: add the "Today" widget from the home screen and check it follows the log, and switch on both Apple Health options and check the data in the Health app. Both are Pro features; the `install-iphone` skill unlocks Pro in its builds
+- [x] ~~If the free personal team refuses to provision App Groups or HealthKit, remove that capability~~ Not needed: both provision on the free team
 
 ---
 
@@ -221,12 +284,12 @@ Ideas that aren't milestones yet. They aren't ordered: when one is picked up, gi
 |---|---|---|---|---|
 | Goals per weekday | Medium | M | No (preferences) | Free |
 | Macro goals as percentages | Medium | S | No (preferences) | Free |
-| TDEE helper | Medium | M | No (preferences) | Free |
+| ~~TDEE helper~~ | — | — | — | Now part of M25 |
 | Adaptive goals | Medium | L | No | Free (after M15) |
 
 - [ ] **Goals per weekday.** Different goals on training and rest days, or per weekday. Stored as optional `goal_<metric>_<weekday>` preferences that fall back to `goal_<metric>`. Home and the Summary goal line read the goal for the day shown (Summary uses the average goal across the range)
 - [ ] **Macro goals as percentages.** Set protein, carbs and fat as a percentage of the calorie goal (e.g. 30 / 40 / 30); the gram goals are derived and update when the calorie goal changes
-- [ ] **TDEE helper.** An optional step in onboarding and Settings: age, sex, height, weight and activity level give an estimated daily energy use (Mifflin-St Jeor) and a suggested calorie goal for maintain, lose or gain. The inputs stay on the device; state that on the screen
+- [x] ~~**TDEE helper.**~~ Moved to [M25 — Target weight guide](#m25--target-weight-guide). The original idea: an optional step in onboarding and Settings: age, sex, height, weight and activity level give an estimated daily energy use (Mifflin-St Jeor) and a suggested calorie goal for maintain, lose or gain. The inputs stay on the device; state that on the screen
 - [ ] **Adaptive goals.** After M15, compare the weight trend with average intake over the last few weeks to estimate real energy use, and suggest a goal change. Suggest only; never change the goal without the user confirming it
 
 ### Data and safety
@@ -271,6 +334,7 @@ Ideas that aren't milestones yet. They aren't ordered: when one is picked up, gi
 | 6 | M16 | `food_items.barcode` (nullable, indexed) |
 | 7 | M17 | `scheduled_meals` rebuilt: `meal_id` nullable, new nullable `food_item_id`, `meal_slot` (nullable) and `servings` (default 1), with a CHECK that exactly one source is set. The planned `scheduled_items` table was folded into the existing scheduling tables |
 | 8 | M19 | `body_weights.source` (nullable text, default `'manual'`; `'health'` for a weight read from Apple Health) |
+| 9 (planned) | M24 | `food_items.menu_item_id` (nullable, indexed): links a catalog food to its bundled menu item |
 
 Each step gets a drift migration test (`make-migrations`) and an update to `DATA_MODEL.md` and the backup format.
 
@@ -283,8 +347,10 @@ Decide each one before its milestone starts:
 1. **Backup format (M11).** *Proposed:* JSON. Copying the SQLite file is simpler, but a file from an older build can't be safely opened by a newer one without running migrations on import, and you can't read or edit it. JSON costs about a day more.
 2. **Slot times (M12).** The 10:30 / 15:00 / 20:00 cutoffs are a guess. Should they be adjustable in Settings, or are fixed times fine?
 3. **Null vs 0 for new nutrients (M13).** *Proposed:* null means not recorded, so old foods don't claim 0 mg of sodium. The cost is the coverage text in the UI.
-4. **Paid Apple Developer account (M18, M19).** Your current builds use a free personal team. Free teams may not be able to provision App Groups (M18) or HealthKit (M19), and their builds expire after 7 days. Check what your team can provision before starting either milestone. If it can't, these two wait or are dropped. *Decided (October 2026):* the team is a free personal team. Build the Dart side and the platform files anyway, and expect provisioning to fail until the account is upgraded. See [Manual Mac Steps](#manual-mac-steps-before-the-next-ios-build).
-5. **Cloud sync (M20).** Is a second device or a web version actually planned? If not, M20 can be cut.
+4. **Paid Apple Developer account (M18, M19).** Your current builds use a free personal team. Free teams may not be able to provision App Groups (M18) or HealthKit (M19), and their builds expire after 7 days. Check what your team can provision before starting either milestone. If it can't, these two wait or are dropped. *Decided (October 2026):* the team is a free personal team. Build the Dart side and the platform files anyway, and expect provisioning to fail until the account is upgraded. See [Manual Mac Steps](#manual-mac-steps-before-the-next-ios-build). *Checked (October 2026):* the free team does provision both App Groups and HealthKit. A paid account is still needed to sell Pro (M21), for iCloud (M20) and for builds that don't expire after 7 days.
+5. **Cloud sync (M20).** Is a second device or a web version actually planned? If not, M20 can be cut. *Decided (October 2026):* if built, it is CloudKit, in Pro.
 6. **Monetization (M21).** Price, the free/Pro split, and whether sync is Pro or a subscription. See [`MONETIZATION_PLAN.md`](./MONETIZATION_PLAN.md#open-questions).
 7. **CSV export (backlog).** A raw CSV of your own log is data portability, which argues for free (Principle 1). The Pro "shareable reports" already list "a PDF or CSV of a date range". *Proposed:* the plain CSV is free, and Pro keeps the formatted PDF report.
 8. **Siri Shortcuts (backlog).** It connects the app to something else, which the monetization rule of thumb puts in Pro, but it is also a faster way to log, which Principle 3 keeps free. Decide before building it.
+9. **Menu data source (M24).** Where the values come from, and whether the license lets them ship inside the app. The options: (a) entered by hand from each chain's published nutrition information, which is the most accurate but needs checking again a few times a year; (b) USDA FoodData Central, which is public domain but has only some restaurant items, often generic ones; (c) Open Food Facts, which has some restaurant items, but its database license (ODbL) requires attribution and share-alike; (d) a paid nutrition API, which goes against the free, no-running-cost tier. *Proposed:* (a) for a short list of chains, with (b) where it covers an item, and the source and date stored on each item. Also decide whether the first version is US only.
+10. **Target weight guide wording (M25).** Which defaults to suggest (the pace, the edge of the BMI band as the target) and how to word the screen so it helps without pushing anyone toward a low weight. *Proposed:* steady pace by default, the floor rule above, and the screen's text reviewed by someone outside the project before release. Also decide whether to offer the WHO's lower BMI cutoffs for Asian populations as an option.

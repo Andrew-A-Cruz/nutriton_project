@@ -11,6 +11,8 @@ struct TodayEntry: TimelineEntry {
     let caption: String
     let progress: Double
     let overGoal: Bool
+    /// No Nutriton Pro: shows a prompt to unlock instead of a ring.
+    var locked = false
 
     static let placeholder = TodayEntry(
         date: Date(), valueText: "1500", caption: "kcal left",
@@ -46,6 +48,12 @@ struct TodayProvider: TimelineProvider {
     /// they were published for, otherwise reset to an empty day.
     private func currentEntry(at date: Date) -> TodayEntry {
         let defaults = UserDefaults(suiteName: appGroupId)
+        if defaults?.bool(forKey: "locked") == true {
+            return TodayEntry(
+                date: date, valueText: defaults?.string(forKey: "value_text") ?? "Pro",
+                caption: defaults?.string(forKey: "caption") ?? "Unlock in Nutriton",
+                progress: 0, overGoal: false, locked: true)
+        }
         let caption = defaults?.string(forKey: "caption") ?? "kcal left"
         let emptyValue = defaults?.string(forKey: "empty_value_text") ?? "0"
         guard let defaults = defaults,
@@ -82,6 +90,26 @@ struct TodayWidgetView: View {
     private var tint: Color { entry.overGoal ? .red : .green }
 
     var body: some View {
+        if entry.locked {
+            VStack(spacing: 6) {
+                Image(systemName: "lock.fill")
+                    .font(.title2)
+                    .foregroundColor(.secondary)
+                Text(entry.valueText)
+                    .font(.headline)
+                Text(entry.caption)
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .minimumScaleFactor(0.7)
+            }
+            .padding(8)
+        } else {
+            ring
+        }
+    }
+
+    private var ring: some View {
         ZStack {
             Circle().stroke(tint.opacity(0.2), lineWidth: 10)
             Circle()

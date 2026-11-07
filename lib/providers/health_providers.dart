@@ -8,6 +8,7 @@ import '../core/nutrition_math.dart';
 import '../data/health/health_service.dart';
 import '../data/health/health_sync.dart';
 import 'body_weight_providers.dart';
+import 'entitlement_providers.dart';
 import 'infrastructure_providers.dart';
 import 'preferences_providers.dart';
 import 'today_providers.dart';
@@ -42,11 +43,12 @@ final healthWindowTotalsProvider =
 /// Keeps the nutrition written to Apple Health in line with the log while the
 /// switch in Settings is on. Watched from the root, so it runs at launch, when
 /// the switch is turned on (backfilling the window), and whenever an entry is
-/// added, edited or deleted. Does nothing, and makes no calls, while off.
+/// added, edited or deleted. Does nothing, and makes no calls, while off or
+/// without Pro. What was already written stays in Health.
 final healthNutritionPlanProvider = Provider<void>((ref) {
-  final enabled = ref.watch(
-    preferencesProvider.select((s) => s.healthWriteNutrition),
-  );
+  final enabled =
+      ref.watch(preferencesProvider.select((s) => s.healthWriteNutrition)) &&
+      ref.watch(proProvider);
   final today = ref.watch(todayProvider);
   final sync = ref.read(healthSyncProvider);
   if (!enabled) {
@@ -69,11 +71,12 @@ final healthNutritionPlanProvider = Provider<void>((ref) {
 });
 
 /// Reads body weight from Apple Health while the switch in Settings is on:
-/// at launch, when it is turned on, and when the day rolls over.
+/// at launch, when it is turned on, and when the day rolls over. Not without
+/// Pro; weights already read in stay.
 final healthWeightPlanProvider = Provider<void>((ref) {
-  final enabled = ref.watch(
-    preferencesProvider.select((s) => s.healthReadWeight),
-  );
+  final enabled =
+      ref.watch(preferencesProvider.select((s) => s.healthReadWeight)) &&
+      ref.watch(proProvider);
   final today = ref.watch(todayProvider);
   unawaited(
     ref

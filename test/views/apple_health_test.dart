@@ -7,6 +7,7 @@ import 'package:nutriton_project/data/database/app_database.dart';
 import 'package:nutriton_project/data/repositories/body_weight_repository.dart';
 import 'package:nutriton_project/data/repositories/log_repository.dart';
 import 'package:nutriton_project/providers/health_providers.dart';
+import 'package:nutriton_project/providers/entitlement_providers.dart';
 import 'package:nutriton_project/providers/today_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -52,6 +53,8 @@ void main() {
     overrides: [
       healthServiceProvider.overrideWithValue(health),
       healthSupportedProvider.overrideWithValue(supported),
+      // A Pro feature; the locked state is covered in pro_test.dart.
+      proProvider.overrideWithValue(true),
       clockProvider.overrideWithValue(() => now),
     ],
   );

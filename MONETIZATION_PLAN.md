@@ -1,6 +1,8 @@
 # Food Log App — Monetization Plan (M21)
 
-How the app makes money once the features in [`FEATURE_PLAN.md`](./FEATURE_PLAN.md) are built. This is the last milestone: Pro is worth paying for only after the features it unlocks exist.
+How the app makes money once the features in [`FEATURE_PLAN.md`](./FEATURE_PLAN.md) are built. M21 builds the purchase machinery and gates the Pro features that exist (M18 widget, M19 Apple Health); M20 iCloud sync, M22 shareable reports and M23 themes and icons ship behind the same gate later. The paywall lists only Pro features that are built.
+
+**Status (October 2026):** M21 is built in code and tested. Nothing can be sold until the [prerequisites](#prerequisites) are done; until then builds without a RevenueCat key show "Purchases are not available" on the paywall.
 
 > Related docs: [`GAME_PLAN.md`](./GAME_PLAN.md) · [`DATA_MODEL.md`](./DATA_MODEL.md) · [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md) · [`FEATURE_PLAN.md`](./FEATURE_PLAN.md)
 
@@ -40,11 +42,11 @@ How the app makes money once the features in [`FEATURE_PLAN.md`](./FEATURE_PLAN.
 
 | Free forever | Pro (one-time) | Pro+ (subscription, only if built) |
 |---|---|---|
-| Logging, catalog, meals (v1) | M18 home screen widget | Supabase sync, incl. Android (M20 server path) |
+| Logging, catalog, meals (v1) | M18 home screen widget | Supabase sync, incl. Android (only if ever wanted) |
 | M16 barcode scan and online lookup | M19 Apple Health | AI logging: photo or text ("two eggs and toast") via an LLM API |
-| M17 planned meals | iCloud sync across iPhone, iPad, Mac (M20 CloudKit path) | |
-| Summary, every range from a day to a year | Shareable reports: a PDF or CSV of a date range to send a dietitian or doctor (new, not yet in FEATURE_PLAN) | |
-| Goals for calories and macros | Alternate app icons and themes | |
+| M17 planned meals | M20 iCloud sync across iPhone, iPad, Mac (CloudKit) | |
+| Summary, every range from a day to a year | M22 shareable reports: a PDF of a date range to send a dietitian or doctor | |
+| Goals for calories and macros | M23 alternate app icons and themes | |
 | M9 recent and frequent foods | | |
 | M10 log again and copy day | | |
 | M11 export and import (JSON backup) | | |
@@ -70,7 +72,7 @@ How M20 is built decides which tier sync lives in:
 | CloudKit private database | ~$0 (uses the user's iCloud quota) | Apple only | Pro |
 | Supabase | Ongoing (database, auth, bandwidth) | Any, incl. Android and web | Pro+ |
 
-CloudKit has no first-class Flutter package, so it means a small Swift layer behind a platform channel. It avoids running a server and keeps sync in the one-time tier.
+CloudKit has no first-class Flutter package, so it means a small Swift layer behind a platform channel. It avoids running a server and keeps sync in the one-time tier. *Decided (October 2026):* M20 uses CloudKit. It needs a paid Apple Developer account, since free teams cannot provision iCloud.
 
 Note that iOS device backups already include the database (it lives in the app's Documents directory), so "backup" alone is not a selling point. *Sync between devices* is.
 
@@ -102,10 +104,12 @@ If revisited, the only acceptable form is opt-in: "watch an ad to unlock Pro for
 
 Do these before writing code:
 
-- [ ] Paid Apple Developer account ($99/yr). Required to sell anything; also unblocks M18 and M19 (FEATURE_PLAN Open Question 4)
+- [ ] Paid Apple Developer account ($99/yr). Required to sell anything, and for iCloud (M20). (M18 and M19 turned out to provision on the free team.)
 - [ ] Join the App Store Small Business Program (15% commission instead of 30%)
 - [ ] App Store Connect: Paid Applications agreement, tax and banking forms
 - [ ] Privacy policy URL (required for IAP and the App Store listing). Short: data stays on device; list any network calls (Open Food Facts, sync, AI)
+- [ ] RevenueCat project with the App Store app, and its public iOS SDK key. Builds read it from `--dart-define=REVENUECAT_IOS_KEY=...`; without it the store is off
+- [ ] Set `privacyPolicyUrl` in `lib/core/pro.dart` (the paywall hides the link while it is null). Terms of use use Apple's standard licence agreement
 - [ ] Create products in App Store Connect, with Family Sharing turned on for the Pro product:
 
 | Product ID | Type | Notes |
@@ -119,20 +123,24 @@ Do these before writing code:
 
 ## Milestone M21 — Pro unlock
 
-- [ ] Add `purchases_flutter` (RevenueCat). It handles StoreKit and Play Billing, receipt validation and restore; free under $2.5k monthly revenue. Fallback: the official `in_app_purchase` package with on-device StoreKit 2 verification
-- [ ] RevenueCat dashboard: one entitlement `pro`, granted by `com.nutriton.app.pro` and (while active) the trial product. Later, an entitlement `pro_plus` for the subscriptions
-- [ ] `lib/providers/entitlement_providers.dart`: a `proProvider` (`bool`) fed by RevenueCat's customer-info stream, cached in `shared_preferences` so the app works offline and starts without a network call
-- [ ] A `ProGate` widget in `lib/views/common/`: shows its child when Pro, otherwise a lock badge that opens the paywall. Only the five Pro features' entry points use it; repositories and DAOs stay unaware of Pro
-- [ ] Trial: when the trial product's purchase date is under 14 days old, `proProvider` is true. After it expires, show one "Your trial ended" notice and fall back to free (Principle 2 applies)
-- [ ] `lib/views/paywall/paywall_view.dart`: a Cupertino sheet listing the five Pro features, a line saying everything else stays free, the price from the store (never hard-coded), Start trial, Buy, Restore Purchases, and links to the privacy policy and terms
-- [ ] Settings: a "Nutriton Pro" row (status, or opens the paywall), Restore Purchases, and the tip jar
-- [ ] Check that the welcome pages and app tour (`lib/views/onboarding/`, `lib/views/tour/`) mention no Pro features (Principle 7)
-- [ ] Review prompt: `in_app_review`, asked once after logs on 7 distinct days. The day count is a pure function in `core/`
-- [ ] Grandfather early users: anyone whose original install predates M21 (`AppTransaction.originalAppVersion`, exposed by RevenueCat) gets Pro free
-- [ ] Sandbox testing: buy, restore on a reinstall, refund (Pro features lock, data remains), offline launch, trial expiry, Family Sharing on a second account. Use a StoreKit configuration file in Xcode for local runs
-- [ ] Tests: `proProvider` overridden in widget tests for both states; `ProGate` shows the lock and opens the paywall; every free feature works with `proProvider` false; trial-expiry and review-prompt date logic as pure functions in `core/`
+Built in October 2026. Notes in *italics* are where the build differs from the first plan.
 
-**Done when:** a sandbox account can start the trial, buy Pro, delete and reinstall the app, restore, and have every Pro feature unlocked with no data lost at any step. A free account can use every feature in the Free column without seeing a paywall.
+- [x] Add `purchases_flutter` (RevenueCat). It handles StoreKit and Play Billing, receipt validation and restore; free under $2.5k monthly revenue. *`lib/data/store/`: a `StoreService` interface, `RevenueCatStoreService` and a no-op default that `main` replaces, as for Health and the widget. The key comes from a dart-define*
+- [ ] RevenueCat dashboard: one entitlement `pro`, granted by `com.nutriton.app.pro` **only**. *Do not attach the trial product: a non-consumable never expires, so RevenueCat would grant Pro forever. The app times the trial itself from the trial's purchase date.* Later, an entitlement `pro_plus` for the subscriptions
+- [x] `lib/providers/entitlement_providers.dart`: a `proProvider` (`bool`) fed by RevenueCat's customer-info stream, cached in `shared_preferences` so the app works offline and starts without a network call. *`proStatusProvider` holds what is owned; `proAccessProvider` turns it into free, trial or owned; `proProvider` is the bool*
+- [x] A `ProGate` widget in `lib/views/common/`: shows its child when Pro, otherwise a lock badge that opens the paywall. Only the Pro features' entry points use it; repositories and DAOs stay unaware of Pro. *Used on the two Apple Health switches. The widget has no in-app entry point, so without Pro the app publishes a locked snapshot and the widget shows "Pro · Unlock in Nutriton"*
+- [x] Trial: when the trial product's purchase date is under 14 days old, `proProvider` is true. After it expires, show one "Your trial ended" notice and fall back to free (Principle 2 applies). *The notice is a card on Home with "See Pro" and "OK", never a pop-up. Expiry is re-checked at each day change and launch*
+- [x] `lib/views/paywall/paywall_view.dart`: a Cupertino sheet listing the Pro features, a line saying everything else stays free, the price from the store (never hard-coded), Start trial, Buy, Restore Purchases, and links to the privacy policy and terms. *Lists only `ProFeature.shipped`, so it never sells a feature that is not built. Pushed on the tab's navigator, not the root one, so the root's sync plans keep running underneath*
+- [x] Settings: a "Nutriton Pro" row (status, or opens the paywall), Restore Purchases, and the tip jar. *Tip rows appear only when the store returns their prices*
+- [x] Check that the welcome pages and app tour (`lib/views/onboarding/`, `lib/views/tour/`) mention no Pro features (Principle 7). *Checked: they don't*
+- [x] Review prompt: `in_app_review`, asked once after logs on 7 distinct days. The day count is a pure function in `core/`. *`core/review_prompt.dart`. Asked once ever, right after something is logged for today, never at launch*
+- [x] Grandfather early users: anyone whose original install predates M21 (`AppTransaction.originalAppVersion`, exposed by RevenueCat) gets Pro free. *Built but off (`grandfatherBeforeBuild = null` in `core/pro.dart`): the app is not on the App Store yet, so nobody qualifies, and the sandbox reports every tester's original build as "1.0". Set it only if a free version ships before Pro*
+- [ ] Sandbox testing: buy, restore on a reinstall, refund (Pro features lock, data remains), offline launch, trial expiry, Family Sharing on a second account. Use a StoreKit configuration file in Xcode for local runs. *`ios/Runner/Nutriton.storekit` holds all five products; pick it under the Runner scheme's Run > Options > StoreKit Configuration. Waits on the prerequisites*
+- [x] Tests: `proProvider` overridden in widget tests for both states; `ProGate` shows the lock and opens the paywall; every free feature works with `proProvider` false; trial-expiry and review-prompt date logic as pure functions in `core/`. *`test/core/pro_test.dart`, `test/views/pro_test.dart` (fake store: buy, cancel, failure, trial, tip, restore, offline cache, refund, trial notice, locked widget, Health paused, review prompt). The rest of the suite runs with Pro off, so it covers the free app*
+
+Development builds installed outside the App Store cannot buy anything. `--dart-define=PRO_UNLOCKED=true` unlocks Pro for them; the `install-iphone` skill passes it by default.
+
+**Done when:** a sandbox account can start the trial, buy Pro, delete and reinstall the app, restore, and have every Pro feature unlocked with no data lost at any step. A free account can use every feature in the Free column without seeing a paywall. *The second half is met and tested; the first needs the prerequisites and a sandbox account.*
 
 ### Later: Pro+
 
@@ -144,10 +152,13 @@ Only start when a feature with a running cost exists (Supabase sync or AI loggin
 
 - **Most features are free; Pro is five extras.** Barcode scan, planned meals, every Summary range and the weight chart are free (they were Pro in an earlier draft).
 - **Family Sharing is on** for the Pro purchase.
+- **Sync is CloudKit, in Pro** (October 2026). Supabase and Pro+ only if Android or web sync is ever wanted.
+- **Pro features ship behind the gate one by one.** M21 came before M20, M22 and M23; the paywall lists only what is built.
 
 ## Open Questions
 
 1. **Price.** $9.99 at launch, then $14.99, is still a guess. Comparable apps: MacroFactor ~$72/yr, Cronometer Gold ~$55/yr, MyFitnessPal Premium ~$80/yr. A one-time price can be much lower and still be good value.
 2. **Is Pro enough to sell?** With most of the app free, fewer people will buy. Watch the purchase rate and tips after launch. If revenue is too low, add new extras to Pro rather than taking anything away from free (Principle 5).
-3. **CloudKit or Supabase (M20).** Decides whether sync is in Pro or Pro+.
+3. ~~**CloudKit or Supabase (M20).**~~ Decided: CloudKit, in Pro.
 4. **Android.** Play Billing works through RevenueCat with the same entitlements, but CloudKit sync doesn't exist there, and Apple Health becomes Health Connect.
+5. **Is Pro ready to sell with two features?** At launch the paywall lists only the widget and Apple Health. Consider waiting for M22 or M20 before turning on sales, or launching at a lower price.

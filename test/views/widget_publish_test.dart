@@ -8,6 +8,7 @@ import 'package:nutriton_project/data/database/app_database.dart';
 import 'package:nutriton_project/data/repositories/log_repository.dart';
 import 'package:nutriton_project/data/widget/widget_publisher.dart';
 import 'package:nutriton_project/providers/preferences_providers.dart';
+import 'package:nutriton_project/providers/entitlement_providers.dart';
 import 'package:nutriton_project/providers/today_providers.dart';
 import 'package:nutriton_project/providers/widget_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -49,6 +50,8 @@ void main() {
     prefs: prefs,
     overrides: [
       widgetPublisherProvider.overrideWithValue(publisher),
+      // A Pro feature; the locked state is covered in pro_test.dart.
+      proProvider.overrideWithValue(true),
       clockProvider.overrideWithValue(() => now),
     ],
   );
