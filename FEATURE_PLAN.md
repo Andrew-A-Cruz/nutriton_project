@@ -308,12 +308,14 @@ Ideas that aren't milestones yet. They aren't ordered: when one is picked up, gi
 
 | Idea | Value | Effort | Schema change | Tier |
 |---|---|---|---|---|
+| Done key on number keyboards | Medium | S | No | Free |
 | Haptics | Low | S | No | Free |
 | VoiceOver labels | Medium | S | No | Free |
 | Comma decimals | Medium | S | No | Free |
 | Water tracking | Medium | M | Yes (new table) | Free |
 | iPad and landscape layout | Low–Med | M | No | Free |
 
+- [ ] **Done key on number keyboards.** In onboarding, the daily calorie goal field (and the other goal fields) opens the iOS decimal pad, which has no return key, so there's no way to finish entering a number except dragging the list. Add a toolbar above the keyboard with a "Done" button that dismisses it, moving to the next goal field where there is one ("Next" on all but the last). The goal fields live in the shared `preferences_form.dart`, so Settings gets it too. Build it as a reusable wrapper so the food, adhoc and meal forms' number fields can use it as well. Add a widget test that tapping Done closes the keyboard and keeps the value
 - [ ] **Haptics.** A light tap when an entry is logged or a plan is confirmed, and a warning tap on delete
 - [ ] **VoiceOver labels.** `Semantics` on the progress bars ("1,450 of 2,000 calories, 550 left") and a text summary on each chart, since VoiceOver can't read an `fl_chart` bar. Add a semantics check to the 2x text / dark mode test
 - [ ] **Comma decimals.** `parseNumber` uses `double.tryParse`, so "1,5" typed on a European keyboard is rejected. Accept a comma as the decimal separator, and format numbers with the device locale
