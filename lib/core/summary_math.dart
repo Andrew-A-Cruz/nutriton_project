@@ -83,6 +83,7 @@ class SummaryReport {
     required this.averages,
     required this.buckets,
     this.coverage = const {},
+    this.dailyTotals = const {},
   });
 
   final SummaryRange range;
@@ -105,6 +106,9 @@ class SummaryReport {
   /// For each optional metric, how many of the range's entries recorded it.
   /// Empty when the source did not count.
   final Map<Metric, Coverage> coverage;
+
+  /// Totals for each logged day in the range, by 'yyyy-MM-dd' key.
+  final Map<String, Macros> dailyTotals;
 }
 
 /// The first day of a window of [days] days ending on [endKey], inclusive.
@@ -158,6 +162,7 @@ SummaryReport buildSummaryReport({
     averages: averageOverLoggedDays(byDay.values),
     buckets: buckets,
     coverage: coverage,
+    dailyTotals: byDay,
   );
 }
 
@@ -261,4 +266,41 @@ int _daysBetween(String start, String end) {
   }
 
   return utc(end).difference(utc(start)).inDays;
+}
+
+/// How far from the goal still counts as on target: 10% either way.
+const goalTolerance = 0.10;
+
+/// Where a value sits against its goal.
+enum GoalStatus { under, onTarget, over }
+
+/// [value] against [goal], with [tolerance] as a share of the goal either
+/// way. A goal of 0 or less has no band, so only 0 is on target.
+GoalStatus goalStatus(
+  double value,
+  double goal, {
+  double tolerance = goalTolerance,
+}) {
+  final band = goal > 0 ? goal * tolerance : 0;
+  if (value < goal - band) return GoalStatus.under;
+  if (value > goal + band) return GoalStatus.over;
+  return GoalStatus.onTarget;
+}
+
+/// How many of [days] (one total per logged day) have [metric] on target
+/// for [goal].
+int daysOnTarget(Iterable<Macros> days, Metric metric, double goal) => days
+    .where((d) => goalStatus(metric.amountIn(d), goal) == GoalStatus.onTarget)
+    .length;
+
+/// The end day one [range] before (`direction` -1) or after (+1) [endKey],
+/// never later than [today]. Summary steps through history with this.
+String stepSummaryEnd(
+  String endKey,
+  SummaryRange range,
+  int direction, {
+  required String today,
+}) {
+  final next = addDays(endKey, direction * range.days);
+  return next.compareTo(today) > 0 ? today : next;
 }

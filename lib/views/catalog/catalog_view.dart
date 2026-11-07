@@ -97,21 +97,23 @@ class CatalogView extends ConsumerWidget {
             },
             child: const Text('Log meal'),
           ),
-          CupertinoActionSheetAction(
-            key: const Key('meal-action-schedule'),
-            onPressed: () {
-              Navigator.of(sheet).pop();
-              Navigator.of(context).push(
-                CupertinoPageRoute<void>(
-                  builder: (_) => ScheduleMealView(
-                    meal: meal,
-                    initialDate: ref.read(selectedDateProvider),
+          // A plan logs whole templates, so recipes are not offered.
+          if (meal.cookedWeightG == null)
+            CupertinoActionSheetAction(
+              key: const Key('meal-action-schedule'),
+              onPressed: () {
+                Navigator.of(sheet).pop();
+                Navigator.of(context).push(
+                  CupertinoPageRoute<void>(
+                    builder: (_) => ScheduleMealView(
+                      meal: meal,
+                      initialDate: ref.read(selectedDateProvider),
+                    ),
                   ),
-                ),
-              );
-            },
-            child: const Text('Schedule...'),
-          ),
+                );
+              },
+              child: const Text('Schedule...'),
+            ),
           CupertinoActionSheetAction(
             onPressed: () {
               Navigator.of(sheet).pop();

@@ -32,7 +32,16 @@ String? positiveNumber(String value) {
 }
 
 /// The number typed into [value], or null if it is not a finite number.
+///
+/// A comma is accepted as the decimal separator ("1,5"), as typed on many
+/// European keyboards. Only a lone comma with no dot is read that way; text
+/// with more separators ("1.234,5", "1,234,567") is rejected rather than
+/// guessed at.
 double? parseNumber(String value) {
-  final n = double.tryParse(value.trim());
+  var text = value.trim();
+  if (!text.contains('.') && ','.allMatches(text).length == 1) {
+    text = text.replaceFirst(',', '.');
+  }
+  final n = double.tryParse(text);
   return n == null || !n.isFinite ? null : n;
 }

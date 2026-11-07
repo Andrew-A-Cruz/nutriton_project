@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'providers/backup_providers.dart';
 import 'providers/health_providers.dart';
 import 'providers/preferences_providers.dart';
 import 'providers/reminder_providers.dart';
@@ -37,6 +38,8 @@ class _RootGate extends ConsumerWidget {
     ref.watch(healthWeightPlanProvider);
     // Asks for one App Store review after a week of logging.
     ref.watch(reviewPromptPlanProvider);
+    // Writes the week's automatic backup after today's first entry.
+    ref.watch(autoBackupPlanProvider);
     final onboarded = ref.watch(
       preferencesProvider.select((s) => s.onboardingComplete),
     );

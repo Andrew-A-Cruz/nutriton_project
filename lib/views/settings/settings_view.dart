@@ -6,6 +6,7 @@ import '../../providers/tour_providers.dart';
 import '../onboarding/preferences_form.dart';
 import 'apple_health_section.dart';
 import 'backup_section.dart';
+import 'error_log_view.dart';
 import 'pro_section.dart';
 import 'reminders_section.dart';
 
@@ -67,6 +68,14 @@ class _HelpSection extends ConsumerWidget {
             ref.read(tourProvider.notifier).start();
             Navigator.of(context).pop();
           },
+        ),
+        CupertinoListTile(
+          key: const Key('open-error-log'),
+          title: const Text('Error log'),
+          trailing: const CupertinoListTileChevron(),
+          onTap: () => Navigator.of(context).push(
+            CupertinoPageRoute<void>(builder: (_) => const ErrorLogView()),
+          ),
         ),
       ],
     );

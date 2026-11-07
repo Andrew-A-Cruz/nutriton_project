@@ -98,6 +98,7 @@ void main() {
     await tester.tap(find.byKey(const Key('lookup-result-0')));
     await tester.pump();
     expect(text(tester, 'food-name'), 'Granola');
+    expect(text(tester, 'food-brand'), 'Acme');
     expect(text(tester, 'food-calories'), '180');
     expect(text(tester, 'food-protein'), '4');
     expect(text(tester, 'food-carbs'), '24');

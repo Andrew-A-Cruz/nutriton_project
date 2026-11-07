@@ -97,6 +97,8 @@ class UserPreferences {
   static const proGrandfatheredKey = 'pro_grandfathered';
   static const trialEndedNoticeKey = 'pro_trial_ended_notice_shown';
   static const reviewAskedKey = 'review_prompt_asked';
+  static const autoBackupEnabledKey = 'auto_backup_enabled';
+  static const lastAutoBackupKey = 'last_auto_backup_at';
   static String goalKey(Metric metric) => 'goal_${metric.name}';
   static String reminderEnabledKey(int slot) => 'reminder_${slot}_enabled';
   static String reminderMinutesKey(int slot) => 'reminder_${slot}_minutes';
@@ -221,4 +223,20 @@ class UserPreferences {
   bool readReviewAsked() => _prefs.getBool(reviewAskedKey) ?? false;
 
   Future<void> writeReviewAsked() => _prefs.setBool(reviewAskedKey, true);
+
+  /// Whether automatic backups are on (the default). Device-local like
+  /// [readLastBackup], so an import does not change it.
+  bool readAutoBackupEnabled() => _prefs.getBool(autoBackupEnabledKey) ?? true;
+
+  Future<void> writeAutoBackupEnabled(bool enabled) =>
+      _prefs.setBool(autoBackupEnabledKey, enabled);
+
+  /// When the last automatic backup was written, or null if never.
+  DateTime? readLastAutoBackup() {
+    final ms = _prefs.getInt(lastAutoBackupKey);
+    return ms == null ? null : DateTime.fromMillisecondsSinceEpoch(ms);
+  }
+
+  Future<void> writeLastAutoBackup(DateTime when) =>
+      _prefs.setInt(lastAutoBackupKey, when.millisecondsSinceEpoch);
 }

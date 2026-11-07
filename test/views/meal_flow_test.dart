@@ -51,7 +51,7 @@ void main() {
   }
 
   Future<List<MealItemRow>> templateItems(String mealId) async =>
-      (await db.mealDao.findItems(mealId));
+      (db.mealDao.findItems(mealId));
 
   testWidgets('builds a meal from catalog foods and lists it with its totals', (
     tester,

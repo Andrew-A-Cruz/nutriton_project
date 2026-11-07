@@ -32,6 +32,13 @@ class FoodItems extends Table {
   /// scan or typed in the food form. Null when unknown.
   TextColumn get barcode => text().nullable()();
 
+  /// Optional brand, e.g. from an Open Food Facts lookup. Shown beside the
+  /// name and matched by search.
+  TextColumn get brand => text().nullable().withLength(max: 100)();
+
+  /// Starred foods are pinned at the top of Add Food.
+  BoolColumn get favorite => boolean().withDefault(const Constant(false))();
+
   @override
   Set<Column> get primaryKey => {id};
 }

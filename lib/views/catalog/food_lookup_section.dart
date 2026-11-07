@@ -6,6 +6,7 @@ import '../../data/database/app_database.dart';
 import '../../data/repositories/food_lookup_repository.dart';
 import '../../providers/food_lookup_providers.dart';
 import '../../providers/infrastructure_providers.dart';
+import '../common/error_feedback.dart';
 import 'barcode_scanner_page.dart';
 
 /// "Look up" block for the new-food form: a barcode field and a name search
@@ -23,9 +24,14 @@ class FoodLookupSection extends ConsumerStatefulWidget {
     required this.onPick,
     this.onCatalogMatch,
     this.onBarcode,
+    this.initialScannedBarcode,
   });
 
   final ValueChanged<FoodLookupResult> onPick;
+
+  /// A code already scanned elsewhere (Add Food's scan button). It is looked up
+  /// as soon as the section opens, as if it had just been scanned here.
+  final String? initialScannedBarcode;
   final ValueChanged<FoodItem>? onCatalogMatch;
   final ValueChanged<String>? onBarcode;
 
@@ -47,6 +53,18 @@ class _FoodLookupSectionState extends ConsumerState<FoodLookupSection> {
 
   /// Bumped per request so a slow, older reply cannot overwrite a newer one.
   int _request = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    final code = widget.initialScannedBarcode;
+    if (code != null && code.isNotEmpty) {
+      _barcode.text = code;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _lookupBarcode(scanned: true);
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -88,11 +106,12 @@ class _FoodLookupSectionState extends ConsumerState<FoodLookupSection> {
         _status = _Status.error;
         _error = e.message;
       });
-    } catch (_) {
+    } catch (e, stack) {
+      final message = reportError(ref, e, stack, 'Could not look up the food');
       if (!mounted || id != _request) return;
       setState(() {
         _status = _Status.error;
-        _error = 'Something went wrong. Try again.';
+        _error = message;
       });
     }
   }
@@ -107,8 +126,9 @@ class _FoodLookupSectionState extends ConsumerState<FoodLookupSection> {
         local = await ref
             .read(catalogRepositoryProvider)
             .findFoodByBarcode(code);
-      } catch (_) {
+      } catch (e, stack) {
         // Fall through to the online lookup.
+        reportError(ref, e, stack, 'Could not check the catalog for a barcode');
       }
       if (!mounted || id != _request) return;
       if (local != null) {

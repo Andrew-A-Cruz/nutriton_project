@@ -35,8 +35,9 @@ const _pages = <_WelcomePage>[
     icon: CupertinoIcons.lock_shield_fill,
     title: 'Your data stays yours',
     body:
-        'No account and no ads. Everything is stored on this device, and you '
-        'can export a backup from Settings at any time.',
+        'No account and no ads. Everything is stored on this device (and in '
+        'your phone\'s own backup, if you have it on). You can export a '
+        'backup from Settings at any time.',
   ),
 ];
 

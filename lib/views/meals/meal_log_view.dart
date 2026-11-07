@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/meal_slot.dart';
 import '../../core/nutrition_math.dart';
+import '../../core/validation.dart';
 import '../../data/database/app_database.dart';
 import '../../providers/catalog_providers.dart';
 import '../../providers/infrastructure_providers.dart';
@@ -14,6 +15,7 @@ import '../home/date_header.dart';
 import 'food_picker_page.dart';
 import 'meal_items_editor.dart';
 import 'schedule_meal_view.dart';
+import '../common/error_feedback.dart';
 
 /// Logs a meal for [logDate]. The foods start as the template's, and can be
 /// added, removed or re-weighed for this one entry. The template only changes
@@ -29,6 +31,8 @@ class MealLogView extends ConsumerStatefulWidget {
 }
 
 class _MealLogViewState extends ConsumerState<MealLogView> {
+  final _portion = TextEditingController();
+  String? _portionError;
   final List<MealDraftItem> _items = [];
   bool _loaded = false;
   bool _updateTemplate = false;
@@ -40,8 +44,21 @@ class _MealLogViewState extends ConsumerState<MealLogView> {
   /// Weights are typed in the user's display unit and stored in grams.
   WeightUnit get _unit => ref.read(preferencesProvider).displayUnit;
 
+  /// Set for a recipe: the whole batch's cooked weight in grams.
+  double? get _cookedWeightG => widget.meal.cookedWeightG;
+
+  /// The share of the recipe typed as eaten, or null when the field is not a
+  /// valid weight yet (or this is not a recipe).
+  double? get _portionShare {
+    final cooked = _cookedWeightG;
+    final typed = parseNumber(_portion.text);
+    if (cooked == null || typed == null || typed <= 0) return null;
+    return recipePortion(portionG: _unit.toGrams(typed), cookedWeightG: cooked);
+  }
+
   @override
   void dispose() {
+    _portion.dispose();
     for (final item in _items) {
       item.dispose();
     }
@@ -63,11 +80,15 @@ class _MealLogViewState extends ConsumerState<MealLogView> {
 
   Future<void> _log() async {
     final valid = validateDrafts(_items);
+    final portionError = _cookedWeightG == null
+        ? null
+        : positiveNumber(_portion.text);
     setState(() {
       _itemsError = _items.isEmpty ? 'Add at least one food' : null;
+      _portionError = portionError;
       _saveError = null;
     });
-    if (!valid) return;
+    if (!valid || portionError != null) return;
 
     setState(() => _saving = true);
     try {
@@ -79,13 +100,14 @@ class _MealLogViewState extends ConsumerState<MealLogView> {
             items: draftInputs(_items),
             updateTemplate: _updateTemplate,
             mealSlot: _slot,
+            portion: _portionShare ?? 1,
           );
       if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
-    } catch (e) {
+    } catch (e, stack) {
       if (mounted) {
         setState(() {
           _saving = false;
-          _saveError = 'Could not log meal: $e';
+          _saveError = reportError(ref, e, stack, 'Could not log meal');
         });
       }
     }
@@ -155,7 +177,34 @@ class _MealLogViewState extends ConsumerState<MealLogView> {
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: FormFieldError(_itemsError),
                     ),
-                  MealTotals(items: _items),
+                  if (_cookedWeightG case final cooked?) ...[
+                    CupertinoFormSection.insetGrouped(
+                      header: const Text('PORTION'),
+                      footer: Text(
+                        'Of ${formatWeight(cooked, _unit)} cooked. The foods '
+                        'above are the whole recipe.',
+                      ),
+                      children: [
+                        formRow(
+                          fieldKey: const Key('meal-portion'),
+                          label: 'Eaten',
+                          controller: _portion,
+                          error: _portionError,
+                          suffix: _unit.name,
+                          onChanged: (_) =>
+                              setState(() => _portionError = null),
+                        ),
+                      ],
+                    ),
+                    MealTotals(
+                      items: _items,
+                      portion: _portionShare ?? 1,
+                      header: _portionShare == null
+                          ? 'WHOLE RECIPE'
+                          : 'YOUR PORTION',
+                    ),
+                  ] else
+                    MealTotals(items: _items),
                   MealSlotFormSection(
                     value: _slot,
                     onChanged: (s) => setState(() => _slot = s),
@@ -177,23 +226,25 @@ class _MealLogViewState extends ConsumerState<MealLogView> {
                       ),
                     ],
                   ),
-                  CupertinoFormSection.insetGrouped(
-                    children: [
-                      CupertinoListTile(
-                        key: const Key('meal-log-schedule'),
-                        title: const Text('Schedule this meal...'),
-                        trailing: const CupertinoListTileChevron(),
-                        onTap: () => Navigator.of(context).push(
-                          CupertinoPageRoute<void>(
-                            builder: (_) => ScheduleMealView(
-                              meal: widget.meal,
-                              initialDate: widget.logDate,
+                  // A plan logs whole templates, so recipes are not offered.
+                  if (_cookedWeightG == null)
+                    CupertinoFormSection.insetGrouped(
+                      children: [
+                        CupertinoListTile(
+                          key: const Key('meal-log-schedule'),
+                          title: const Text('Schedule this meal...'),
+                          trailing: const CupertinoListTileChevron(),
+                          onTap: () => Navigator.of(context).push(
+                            CupertinoPageRoute<void>(
+                              builder: (_) => ScheduleMealView(
+                                meal: widget.meal,
+                                initialDate: widget.logDate,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
                   if (_saveError != null)
                     Padding(
                       padding: const EdgeInsets.all(16),

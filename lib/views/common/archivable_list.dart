@@ -1,10 +1,13 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'error_feedback.dart';
 
 /// A list whose rows can be swiped away to archive them. A dismissed
 /// Dismissible must leave the tree on the frame it is dismissed, so the row is
 /// hidden at once. The database stream then drops it for good. If the archive
 /// fails, the row comes back.
-class ArchivableList<T> extends StatefulWidget {
+class ArchivableList<T> extends ConsumerStatefulWidget {
   const ArchivableList({
     super.key,
     required this.items,
@@ -21,10 +24,10 @@ class ArchivableList<T> extends StatefulWidget {
   final Future<void> Function(T item)? onArchive;
 
   @override
-  State<ArchivableList<T>> createState() => _ArchivableListState<T>();
+  ConsumerState<ArchivableList<T>> createState() => _ArchivableListState<T>();
 }
 
-class _ArchivableListState<T> extends State<ArchivableList<T>> {
+class _ArchivableListState<T> extends ConsumerState<ArchivableList<T>> {
   final _hidden = <String>{};
 
   Future<void> _archive(T item) async {
@@ -32,8 +35,11 @@ class _ArchivableListState<T> extends State<ArchivableList<T>> {
     setState(() => _hidden.add(id));
     try {
       await widget.onArchive!(item);
-    } catch (_) {
-      if (mounted) setState(() => _hidden.remove(id));
+    } catch (e, stack) {
+      final message = reportError(ref, e, stack, 'Could not archive');
+      if (!mounted) return;
+      setState(() => _hidden.remove(id));
+      await showErrorDialog(context, message);
     }
   }
 

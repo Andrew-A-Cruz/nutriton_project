@@ -64,90 +64,110 @@ class WeightChart extends StatelessWidget {
     final labelEvery = ((days + 1) / _maxLabels).ceil();
     final dots = raw.length <= 31;
 
-    return SizedBox(
-      height: 200,
-      child: LineChart(
-        LineChartData(
-          minX: 0,
-          maxX: days.toDouble(),
-          minY: low - pad,
-          maxY: high + pad,
-          borderData: FlBorderData(show: false),
-          gridData: const FlGridData(drawVerticalLine: false),
-          titlesData: FlTitlesData(
-            topTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-            rightTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 44,
-                getTitlesWidget: (value, meta) {
-                  if (value == meta.min || value == meta.max) {
-                    return const SizedBox.shrink();
-                  }
-                  return SideTitleWidget(
-                    meta: meta,
-                    child: Text(
-                      plainWeight(value),
-                      style: TextStyle(fontSize: 11, color: labelColor),
-                    ),
-                  );
-                },
-              ),
-            ),
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 28,
-                interval: 1,
-                getTitlesWidget: (value, meta) {
-                  final i = value.toInt();
-                  if (i < 0 || i > days || i % labelEvery != 0) {
-                    return const SizedBox.shrink();
-                  }
-                  return SideTitleWidget(
-                    meta: meta,
-                    space: 6,
-                    child: Text(
-                      DateFormat('MMM d').format(addDaysTo(_start, i)),
-                      style: TextStyle(fontSize: 11, color: labelColor),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-          lineTouchData: LineTouchData(
-            touchTooltipData: LineTouchTooltipData(
-              getTooltipItems: (spots) => [
-                for (final s in spots)
-                  LineTooltipItem(
-                    '${DateFormat('MMM d').format(addDaysTo(_start, s.x.toInt()))}'
-                    '\n${plainWeight(s.y)} ${unit.name}',
-                    const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+    final latest = raw.last.y;
+    final label = [
+      'Body weight chart, ${raw.length} weigh-in${raw.length == 1 ? '' : 's'}',
+      'lowest ${plainWeight(low)}, highest ${plainWeight(high)} ${unit.name}',
+      'latest ${plainWeight(latest)} ${unit.name}',
+      if (smooth.isNotEmpty)
+        '$movingAverageDays-day average ${plainWeight(smooth.last.y)} '
+            '${unit.name}',
+    ].join(', ');
+
+    return Semantics(
+      key: const Key('weight-chart-semantics'),
+      container: true,
+      label: '$label.',
+      child: ExcludeSemantics(
+        child: SizedBox(
+          height: 200,
+          child: LineChart(
+            LineChartData(
+              minX: 0,
+              maxX: days.toDouble(),
+              minY: low - pad,
+              maxY: high + pad,
+              borderData: FlBorderData(show: false),
+              gridData: const FlGridData(drawVerticalLine: false),
+              titlesData: FlTitlesData(
+                topTitles: const AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
+                rightTitles: const AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 44,
+                    getTitlesWidget: (value, meta) {
+                      if (value == meta.min || value == meta.max) {
+                        return const SizedBox.shrink();
+                      }
+                      return SideTitleWidget(
+                        meta: meta,
+                        child: Text(
+                          plainWeight(value),
+                          style: TextStyle(fontSize: 11, color: labelColor),
+                        ),
+                      );
+                    },
                   ),
+                ),
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 28,
+                    interval: 1,
+                    getTitlesWidget: (value, meta) {
+                      final i = value.toInt();
+                      if (i < 0 || i > days || i % labelEvery != 0) {
+                        return const SizedBox.shrink();
+                      }
+                      return SideTitleWidget(
+                        meta: meta,
+                        space: 6,
+                        child: Text(
+                          DateFormat('MMM d').format(addDaysTo(_start, i)),
+                          style: TextStyle(fontSize: 11, color: labelColor),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              lineTouchData: LineTouchData(
+                touchTooltipData: LineTouchTooltipData(
+                  getTooltipItems: (spots) => [
+                    for (final s in spots)
+                      LineTooltipItem(
+                        '${DateFormat('MMM d').format(addDaysTo(_start, s.x.toInt()))}'
+                        '\n${plainWeight(s.y)} ${unit.name}',
+                        const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              lineBarsData: [
+                LineChartBarData(
+                  spots: raw,
+                  color: lineColor.withValues(alpha: 0.35),
+                  barWidth: 1,
+                  dotData: FlDotData(show: dots),
+                ),
+                LineChartBarData(
+                  spots: smooth,
+                  color: lineColor,
+                  barWidth: 2.5,
+                  isCurved: false,
+                  dotData: const FlDotData(show: false),
+                ),
               ],
             ),
           ),
-          lineBarsData: [
-            LineChartBarData(
-              spots: raw,
-              color: lineColor.withValues(alpha: 0.35),
-              barWidth: 1,
-              dotData: FlDotData(show: dots),
-            ),
-            LineChartBarData(
-              spots: smooth,
-              color: lineColor,
-              barWidth: 2.5,
-              isCurved: false,
-              dotData: const FlDotData(show: false),
-            ),
-          ],
         ),
       ),
     );

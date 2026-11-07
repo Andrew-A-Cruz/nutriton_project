@@ -38,6 +38,7 @@ class CatalogRepository {
     required double servingWeightG,
     WeightUnit displayUnit = WeightUnit.g,
     String? barcode,
+    String? brand,
   }) async {
     final id = _uuid.v4();
     _validateFood(name, perServing, servingWeightG);
@@ -55,6 +56,7 @@ class CatalogRepository {
         servingWeightG: servingWeightG,
         displayUnit: Value(displayUnit.name),
         barcode: Value(_cleanBarcode(barcode)),
+        brand: Value(_cleanBrand(brand)),
       ),
     );
     return id;
@@ -67,6 +69,7 @@ class CatalogRepository {
     required double servingWeightG,
     WeightUnit displayUnit = WeightUnit.g,
     String? barcode,
+    String? brand,
   }) async {
     _validateFood(name, perServing, servingWeightG);
     await _db.foodDao.updateFood(
@@ -83,6 +86,7 @@ class CatalogRepository {
         servingWeightG: Value(servingWeightG),
         displayUnit: Value(displayUnit.name),
         barcode: Value(_cleanBarcode(barcode)),
+        brand: Value(_cleanBrand(brand)),
       ),
     );
   }
@@ -96,6 +100,24 @@ class CatalogRepository {
     return trimmed == null || trimmed.isEmpty ? null : trimmed;
   }
 
+  /// Trimmed; empty is no brand. Throws past [maxNameLength] characters.
+  static String? _cleanBrand(String? brand) {
+    final trimmed = brand?.trim();
+    if (trimmed == null || trimmed.isEmpty) return null;
+    if (trimmed.length > maxNameLength) {
+      throw ArgumentError.value(
+        brand,
+        'brand',
+        'must be at most $maxNameLength characters',
+      );
+    }
+    return trimmed;
+  }
+
+  /// Starred foods are pinned at the top of Add Food.
+  Future<void> setFoodFavorite(String id, {required bool favorite}) =>
+      _db.foodDao.updateFood(id, FoodItemsCompanion(favorite: Value(favorite)));
+
   /// Archived foods leave search results but stay in past log entries.
   Future<void> setFoodArchived(String id, {required bool archived}) =>
       _db.foodDao.setArchived(id, archived: archived);
@@ -108,42 +130,63 @@ class CatalogRepository {
 
   Future<Meal?> findMeal(String id) => _db.mealDao.findById(id);
 
+  /// Starred meals are pinned at the top of Add Food.
+  Future<void> setMealFavorite(String id, {required bool favorite}) =>
+      _db.mealDao.updateMeal(id, MealsCompanion(favorite: Value(favorite)));
+
   Stream<List<MealItemRow>> watchMealItems(String mealId) =>
       _db.mealDao.watchItems(mealId);
 
   Future<List<MealItemRow>> findMealItems(String mealId) =>
       _db.mealDao.findItems(mealId);
 
-  /// Creates a meal and its items in one transaction.
+  /// Creates a meal and its items in one transaction. A [cookedWeightG] makes
+  /// it a recipe, logged by the portion eaten.
   Future<String> createMeal({
     required String name,
     required List<MealItemInput> items,
+    double? cookedWeightG,
   }) async {
     final id = _uuid.v4();
     _validateMeal(name, items);
+    _validateCookedWeight(cookedWeightG);
     await _db.transaction(() async {
       await _db.mealDao.insertMeal(
-        MealsCompanion.insert(id: id, name: name.trim()),
+        MealsCompanion.insert(
+          id: id,
+          name: name.trim(),
+          cookedWeightG: Value(cookedWeightG),
+        ),
       );
       await _writeItems(id, items);
     });
     return id;
   }
 
-  /// Replaces a meal's name and items in one transaction.
+  /// Replaces a meal's name and items in one transaction. The cooked weight
+  /// changes only when [cookedWeightG] is given (`Value(null)` turns a recipe
+  /// back into an ordinary meal).
   Future<void> updateMeal(
     String id, {
     required String name,
     required List<MealItemInput> items,
+    Value<double?> cookedWeightG = const Value.absent(),
   }) async {
     _validateMeal(name, items);
+    if (cookedWeightG.present) _validateCookedWeight(cookedWeightG.value);
     await _db.transaction(() async {
       await _db.mealDao.updateMeal(
         id,
-        MealsCompanion(name: Value(name.trim())),
+        MealsCompanion(name: Value(name.trim()), cookedWeightG: cookedWeightG),
       );
       await _writeItems(id, items);
     });
+  }
+
+  static void _validateCookedWeight(double? grams) {
+    if (grams != null && (!grams.isFinite || grams <= 0)) {
+      throw ArgumentError.value(grams, 'cookedWeightG', 'must be > 0');
+    }
   }
 
   Future<void> setMealArchived(String id, {required bool archived}) =>

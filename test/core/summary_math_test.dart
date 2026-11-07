@@ -319,4 +319,68 @@ void main() {
       expect(report.coverage, isEmpty);
     });
   });
+
+  group('goalStatus', () {
+    test('within 10% either way is on target', () {
+      expect(goalStatus(1800, 2000), GoalStatus.onTarget);
+      expect(goalStatus(2200, 2000), GoalStatus.onTarget);
+      expect(goalStatus(1799, 2000), GoalStatus.under);
+      expect(goalStatus(2201, 2000), GoalStatus.over);
+    });
+
+    test('a zero goal has no band', () {
+      expect(goalStatus(0, 0), GoalStatus.onTarget);
+      expect(goalStatus(1, 0), GoalStatus.over);
+    });
+  });
+
+  test('daysOnTarget counts logged days within the band', () {
+    const days = [
+      Macros(calories: 1900),
+      Macros(calories: 2500),
+      Macros(calories: 1000),
+      Macros(calories: 2100),
+    ];
+    expect(daysOnTarget(days, Metric.calories, 2000), 2);
+  });
+
+  test('the report keeps each logged day totals', () {
+    final report = buildSummaryReport(
+      endKey: '2026-11-03',
+      range: SummaryRange.week,
+      days: const [
+        DayTotal(logDate: '2026-11-01', totals: Macros(calories: 500)),
+        DayTotal(logDate: '2026-11-01', totals: Macros(calories: 700)),
+        DayTotal(logDate: '2026-10-01', totals: Macros(calories: 900)),
+      ],
+    );
+    expect(report.dailyTotals.keys, ['2026-11-01']);
+    expect(report.dailyTotals['2026-11-01']!.calories, 1200);
+  });
+
+  group('stepSummaryEnd', () {
+    const today = '2026-11-03';
+
+    test('steps back and forward by the range', () {
+      expect(
+        stepSummaryEnd(today, SummaryRange.week, -1, today: today),
+        '2026-10-27',
+      );
+      expect(
+        stepSummaryEnd('2026-10-27', SummaryRange.week, 1, today: today),
+        today,
+      );
+      expect(
+        stepSummaryEnd(today, SummaryRange.month, -1, today: today),
+        '2026-10-04',
+      );
+    });
+
+    test('never goes past today', () {
+      expect(
+        stepSummaryEnd('2026-10-30', SummaryRange.week, 1, today: today),
+        today,
+      );
+    });
+  });
 }

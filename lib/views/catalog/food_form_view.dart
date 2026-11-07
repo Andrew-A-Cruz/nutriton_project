@@ -12,6 +12,7 @@ import '../../providers/preferences_providers.dart';
 import '../common/form_widgets.dart';
 import '../meals/schedule_meal_view.dart';
 import 'food_lookup_section.dart';
+import '../common/error_feedback.dart';
 
 /// Creates or edits a catalog food. Pops with the saved [FoodItem], or with
 /// null when cancelled, so the caller can act on it (Add Food logs it).
@@ -19,10 +20,21 @@ class FoodFormView extends ConsumerStatefulWidget {
   const FoodFormView({
     super.key,
     this.existing,
+    this.template,
     this.offerLogAfterSave = false,
+    this.scannedBarcode,
   });
 
+  /// A barcode scanned before the form opened. A new food looks it up at once
+  /// and keeps it.
+  final String? scannedBarcode;
+
   final FoodItem? existing;
+
+  /// A food to copy into a new one ("Duplicate"): its values are filled in and
+  /// its name gets " copy", but saving creates a separate food. Its barcode is
+  /// left out, since a variant is a different product.
+  final FoodItem? template;
 
   /// Labels the save button "Save & Log". The caller logs the popped food.
   final bool offerLogAfterSave;
@@ -33,6 +45,7 @@ class FoodFormView extends ConsumerStatefulWidget {
 
 class _FoodFormViewState extends ConsumerState<FoodFormView> {
   late final TextEditingController _name;
+  late final TextEditingController _brand;
   late final TextEditingController _calories;
   late final TextEditingController _protein;
   late final TextEditingController _carbs;
@@ -55,35 +68,44 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
   void initState() {
     super.initState();
     final existing = widget.existing;
-    _name = TextEditingController(text: existing?.name ?? '');
-    _calories = TextEditingController(text: _macroText(existing?.calories));
-    _protein = TextEditingController(text: _macroText(existing?.protein));
-    _carbs = TextEditingController(text: _macroText(existing?.carbs));
-    _fat = TextEditingController(text: _macroText(existing?.fat));
+    final template = widget.template;
+    // Where the fields start from: the food being edited or the one copied.
+    final source = existing ?? template;
+    _name = TextEditingController(
+      text: existing?.name ?? (template == null ? '' : '${template.name} copy'),
+    );
+    _brand = TextEditingController(text: source?.brand ?? '');
+    _calories = TextEditingController(text: _macroText(source?.calories));
+    _protein = TextEditingController(text: _macroText(source?.protein));
+    _carbs = TextEditingController(text: _macroText(source?.carbs));
+    _fat = TextEditingController(text: _macroText(source?.fat));
     _extras = OptionalNutrientFields(
-      initial: existing == null
+      initial: source == null
           ? null
           : Macros(
-              fiber: existing.fiber,
-              sugar: existing.sugar,
-              sodium: existing.sodium,
+              fiber: source.fiber,
+              sugar: source.sugar,
+              sodium: source.sodium,
             ),
     );
-    _unit = existing == null
+    _unit = source == null
         ? ref.read(preferencesProvider).displayUnit
-        : WeightUnit.values.asNameMap()[existing.displayUnit] ?? WeightUnit.g;
+        : WeightUnit.values.asNameMap()[source.displayUnit] ?? WeightUnit.g;
     _initialUnit = _unit;
-    _initialWeightText = existing == null
+    _initialWeightText = source == null
         ? ''
-        : _weightText(existing.servingWeightG, _unit);
+        : _weightText(source.servingWeightG, _unit);
     _weight = TextEditingController(text: _initialWeightText);
-    _barcode = TextEditingController(text: existing?.barcode ?? '');
+    _barcode = TextEditingController(
+      text: existing?.barcode ?? widget.scannedBarcode ?? '',
+    );
   }
 
   @override
   void dispose() {
     for (final c in [
       _name,
+      _brand,
       _calories,
       _protein,
       _carbs,
@@ -126,6 +148,7 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
   void _applyLookup(FoodLookupResult result) {
     setState(() {
       _name.text = result.name;
+      _brand.text = result.brand ?? '';
       _calories.text = _macroText(result.perServing.calories);
       _protein.text = _macroText(result.perServing.protein);
       _carbs.text = _macroText(result.perServing.carbs);
@@ -164,6 +187,9 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
   Map<String, String> _validate() {
     final checks = {
       'name': requiredName(_name.text),
+      'brand': _brand.text.trim().length > maxNameLength
+          ? 'Use at most $maxNameLength characters'
+          : null,
       'calories': nonNegativeNumber(_calories.text),
       'protein': nonNegativeNumber(_protein.text),
       'carbs': nonNegativeNumber(_carbs.text),
@@ -216,6 +242,7 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
           servingWeightG: grams,
           displayUnit: _unit,
           barcode: barcode,
+          brand: _brand.text,
         );
       } else {
         id = existing.id;
@@ -226,15 +253,16 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
           servingWeightG: grams,
           displayUnit: _unit,
           barcode: barcode,
+          brand: _brand.text,
         );
       }
       final food = await catalog.findFood(id);
       if (mounted) Navigator.of(context).pop(food);
-    } catch (e) {
+    } catch (e, stack) {
       if (mounted) {
         setState(() {
           _saving = false;
-          _saveError = 'Could not save: $e';
+          _saveError = reportError(ref, e, stack, 'Could not save');
         });
       }
     }
@@ -273,6 +301,7 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
                 onCatalogMatch: widget.offerLogAfterSave
                     ? _useCatalogFood
                     : null,
+                initialScannedBarcode: widget.scannedBarcode,
               ),
             if (_lookupNotice != null)
               Padding(
@@ -288,6 +317,14 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
                   controller: _name,
                   error: _errors['name'],
                   placeholder: 'e.g. Chicken breast',
+                  numeric: false,
+                ),
+                formRow(
+                  fieldKey: const Key('food-brand'),
+                  label: 'Brand',
+                  controller: _brand,
+                  error: _errors['brand'],
+                  placeholder: 'Optional',
                   numeric: false,
                 ),
               ],
@@ -389,6 +426,18 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
                           food: existing,
                           initialDate: ref.read(selectedDateProvider),
                         ),
+                      ),
+                    ),
+                  ),
+                  CupertinoListTile(
+                    key: const Key('food-duplicate'),
+                    title: const Text('Duplicate...'),
+                    trailing: const CupertinoListTileChevron(),
+                    // Replaces this form, so saving the copy returns to the
+                    // list rather than to the original.
+                    onTap: () => Navigator.of(context).pushReplacement(
+                      CupertinoPageRoute<FoodItem>(
+                        builder: (_) => FoodFormView(template: existing),
                       ),
                     ),
                   ),

@@ -2,8 +2,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/body_weight.dart';
+import '../../core/validation.dart';
 import '../../providers/body_weight_providers.dart';
 import '../../providers/preferences_providers.dart';
+import '../common/error_feedback.dart';
 
 /// The day's body weight under the totals: the reading, or a "Weigh in"
 /// prompt. Tapping opens [WeighInDialog] to set, replace or clear it.
@@ -133,11 +135,11 @@ class _WeighInDialogState extends ConsumerState<WeighInDialog> {
     try {
       await action();
       if (mounted) Navigator.of(context).pop();
-    } catch (e) {
+    } catch (e, stack) {
       if (mounted) {
         setState(() {
           _saving = false;
-          _error = 'Could not save: $e';
+          _error = reportError(ref, e, stack, 'Could not save');
         });
       }
     }
@@ -149,7 +151,7 @@ class _WeighInDialogState extends ConsumerState<WeighInDialog> {
       setState(() => _error = error);
       return;
     }
-    final kg = widget.unit.toKg(double.parse(_controller.text.trim()));
+    final kg = widget.unit.toKg(parseNumber(_controller.text)!);
     _run(
       () => ref.read(bodyWeightRepositoryProvider).setWeight(widget.date, kg),
     );

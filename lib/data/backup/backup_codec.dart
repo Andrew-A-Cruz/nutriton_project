@@ -181,8 +181,18 @@ class BackupCodec {
         upgrades: upgrades,
       );
       return BackupData(
-        foodItems: _rows(current, 'food_items', FoodItem.fromJson),
-        meals: _rows(current, 'meals', Meal.fromJson),
+        // Foods and meals from before schema v9 have no favorite flag (brand
+        // and cooked weight read as null).
+        foodItems: _rows(
+          current,
+          'food_items',
+          (row) => FoodItem.fromJson({'favorite': false, ...row}),
+        ),
+        meals: _rows(
+          current,
+          'meals',
+          (row) => Meal.fromJson({'favorite': false, ...row}),
+        ),
         mealFoodItems: _rows(current, 'meal_food_items', MealFoodItem.fromJson),
         logEntries: _rows(current, 'food_log_entries', FoodLogEntry.fromJson),
         logEntryItems: _rows(

@@ -309,7 +309,7 @@ void main() {
     });
 
     test('a v1 file with no step to version 2 says it cannot be read', () {
-      final codec = BackupCodec(currentVersion: 2, upgrades: const {});
+      final codec = const BackupCodec(currentVersion: 2, upgrades: {});
       expect(
         () => codec.decode(File(_fixturePath).readAsStringSync()),
         throwsA(
@@ -324,9 +324,9 @@ void main() {
 
     test('a file at the current version is accepted without steps', () {
       final json = fixtureJson()..['version'] = 2;
-      final out = BackupCodec(
+      final out = const BackupCodec(
         currentVersion: 2,
-        upgrades: const {},
+        upgrades: {},
       ).decode(jsonEncode(json));
       expect(out.foodItems, hasLength(1));
     });
@@ -334,9 +334,9 @@ void main() {
     test('a version above the codec current version is rejected as newer', () {
       final json = fixtureJson()..['version'] = 3;
       expect(
-        () => BackupCodec(
+        () => const BackupCodec(
           currentVersion: 2,
-          upgrades: const {},
+          upgrades: {},
         ).decode(jsonEncode(json)),
         throwsA(
           isA<BackupException>().having(

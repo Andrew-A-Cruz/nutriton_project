@@ -38,7 +38,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -105,6 +105,19 @@ class AppDatabase extends _$AppDatabase {
       // v7 -> v8: where a body weight came from; existing rows are manual.
       from7To8: (m, schema) async {
         await m.addColumn(schema.bodyWeights, schema.bodyWeights.source);
+      },
+      // v8 -> v9: brand and favorites on foods, favorites and a cooked weight
+      // (recipes) on meals, and indexes for the queries that scan the log.
+      from8To9: (m, schema) async {
+        await m.addColumn(schema.foodItems, schema.foodItems.brand);
+        await m.addColumn(schema.foodItems, schema.foodItems.favorite);
+        await m.addColumn(schema.meals, schema.meals.favorite);
+        await m.addColumn(schema.meals, schema.meals.cookedWeightG);
+        await m.create(schema.foodLogEntriesCreatedAt);
+        await m.create(schema.foodLogEntriesFoodItemId);
+        await m.create(schema.foodLogEntriesMealId);
+        await m.create(schema.foodLogEntryItemsEntryId);
+        await m.create(schema.mealFoodItemsMealId);
       },
     ),
     beforeOpen: (details) async {

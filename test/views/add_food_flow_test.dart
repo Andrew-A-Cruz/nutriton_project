@@ -48,7 +48,7 @@ void main() {
   }
 
   Future<List<FoodLogEntry>> entriesOn(String day) async =>
-      (await db.logDao.watchEntriesForDate(day).first);
+      (db.logDao.watchEntriesForDate(day).first);
 
   testWidgets(
     'logging a food by grams lands on the day Home is showing, not today',
@@ -88,6 +88,27 @@ void main() {
       await unmount(tester);
     },
   );
+
+  testWidgets('a comma decimal amount is logged like a dot', (tester) async {
+    await tester.runAsync(seedChicken);
+    await pumpHome(tester);
+    await openAddFood(tester);
+    await tester.tap(find.text('Chicken breast'));
+    await settle(tester);
+
+    await tester.enterText(find.byKey(const Key('log-amount')), '1,5');
+    await settle(tester);
+    expect(
+      tester.widget<Text>(find.byKey(const Key('log-preview'))).data,
+      '248 kcal · 46.5 g protein · 0.0 g carbs · 5.4 g fat',
+    );
+    await tester.tap(find.byKey(const Key('log-food-confirm')));
+    await settle(tester);
+
+    final entries = await tester.runAsync(() => entriesOn(today));
+    expect(entries!.single.servings, closeTo(1.5, 1e-9));
+    await unmount(tester);
+  });
 
   testWidgets('servings are the default; switching modes converts the amount', (
     tester,
@@ -173,6 +194,10 @@ void main() {
   testWidgets('a new catalog food is saved and logged in one step', (
     tester,
   ) async {
+    // Tall enough for the whole food form.
+    tester.view.physicalSize = const Size(800, 3000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     await pumpHome(tester);
     await openAddFood(tester);
 

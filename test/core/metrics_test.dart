@@ -96,4 +96,16 @@ void main() {
       );
     });
   });
+
+  test('totalSemanticsLabel reads a total as one sentence', () {
+    expect(
+      totalSemanticsLabel(Metric.calories, 1450, 2000),
+      'Calories: 1450 of 2000 kcal, 550 kcal left',
+    );
+    expect(
+      totalSemanticsLabel(Metric.calories, 2120, 2000),
+      'Calories: 2120 of 2000 kcal, 120 kcal over',
+    );
+    expect(totalSemanticsLabel(Metric.protein, 80, null), 'Protein: 80.0 g');
+  });
 }

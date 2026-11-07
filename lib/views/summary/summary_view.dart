@@ -1,7 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../core/body_weight.dart';
+import '../../core/date_key.dart';
 import '../../core/metrics.dart';
 import '../../core/summary_math.dart';
 import '../../data/preferences/user_preferences.dart';
@@ -9,6 +11,7 @@ import '../../providers/body_weight_providers.dart';
 import '../../providers/preferences_providers.dart';
 import '../../providers/summary_providers.dart';
 import '../../providers/today_providers.dart';
+import '../common/error_feedback.dart';
 import 'summary_chart.dart';
 import 'weight_chart.dart';
 
@@ -21,8 +24,9 @@ class SummaryView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final range = ref.watch(summaryRangeProvider);
     final settings = ref.watch(preferencesProvider);
+    final endDate = ref.watch(summaryEndProvider);
     final reportAsync = ref.watch(
-      summaryReportProvider((endDate: ref.watch(todayProvider), range: range)),
+      summaryReportProvider((endDate: endDate, range: range)),
     );
 
     return CupertinoPageScaffold(
@@ -42,15 +46,21 @@ class SummaryView extends ConsumerWidget {
                 }
               },
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
+            _PeriodRow(range: range, endDate: endDate),
+            const SizedBox(height: 8),
             reportAsync.when(
               loading: () => const Padding(
                 padding: EdgeInsets.only(top: 48),
                 child: Center(child: CupertinoActivityIndicator()),
               ),
-              error: (error, _) => Padding(
+              error: (error, stack) => Padding(
                 padding: const EdgeInsets.only(top: 48),
-                child: Center(child: Text('Could not load: $error')),
+                child: LoadErrorText(
+                  failed: 'Could not load the summary',
+                  error: error,
+                  stack: stack,
+                ),
               ),
               data: (report) => _ReportBody(report: report, settings: settings),
             ),
@@ -72,6 +82,7 @@ class _ReportBody extends ConsumerWidget {
     final primary = settings.primaryMetric;
     final metrics = [primary, ...settings.secondaryMetrics];
     final averages = report.averages;
+    final goal = settings.goalFor(primary);
     // Dynamic colors must be resolved, or dark mode gets the light variant.
     final secondary = CupertinoColors.secondaryLabel.resolveFrom(context);
 
@@ -106,6 +117,14 @@ class _ReportBody extends ConsumerWidget {
               key: const Key('days-logged'),
               style: TextStyle(fontSize: 13, color: secondary),
             ),
+            if (goal != null && goal > 0 && report.daysLogged > 0)
+              Text(
+                'On target (within ${(goalTolerance * 100).round()}% of the '
+                'goal): ${daysOnTarget(report.dailyTotals.values, primary, goal)} '
+                'of ${report.daysLogged} logged days',
+                key: const Key('days-on-target'),
+                style: TextStyle(fontSize: 13, color: secondary),
+              ),
           ],
         ),
         if (report.range != SummaryRange.day) ...[
@@ -126,7 +145,7 @@ class _ReportBody extends ConsumerWidget {
               SummaryChart(
                 buckets: report.buckets,
                 metric: primary,
-                goal: settings.goalFor(primary),
+                goal: goal,
                 bucketSize: report.range.bucketSize,
               ),
             ],
@@ -163,7 +182,9 @@ class _WeightCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final readings = ref.watch(bodyWeightRangeProvider(range)).value;
+    final readings = ref
+        .watch(bodyWeightRangeProvider((endDate: endKey, range: range)))
+        .value;
     final inRange = [
       for (final r in readings ?? const <WeightReading>[])
         if (r.date.compareTo(startKey) >= 0) r,
@@ -195,6 +216,74 @@ class _WeightCard extends ConsumerWidget {
       ],
     );
   }
+}
+
+/// ‹ and › step the Summary back or forward by one range; the label names
+/// the days shown, and "Today" returns to the current range.
+class _PeriodRow extends ConsumerWidget {
+  const _PeriodRow({required this.range, required this.endDate});
+
+  final SummaryRange range;
+  final String endDate;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final today = ref.watch(todayProvider);
+    final notifier = ref.read(summaryEndNotifierProvider.notifier);
+    final atToday = endDate == today;
+    return Row(
+      children: [
+        CupertinoButton(
+          key: const Key('summary-previous'),
+          padding: EdgeInsets.zero,
+          minimumSize: const Size.square(44),
+          onPressed: () => notifier.step(range, -1),
+          child: const Icon(
+            CupertinoIcons.chevron_left,
+            semanticLabel: 'Earlier',
+          ),
+        ),
+        Expanded(
+          child: Text(
+            periodLabel(windowStart(endDate, range.days), endDate),
+            key: const Key('summary-period'),
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+        ),
+        if (!atToday)
+          CupertinoButton(
+            key: const Key('summary-today'),
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            minimumSize: const Size.square(44),
+            onPressed: notifier.showToday,
+            child: const Text('Today'),
+          ),
+        CupertinoButton(
+          key: const Key('summary-next'),
+          padding: EdgeInsets.zero,
+          minimumSize: const Size.square(44),
+          onPressed: atToday ? null : () => notifier.step(range, 1),
+          child: const Icon(
+            CupertinoIcons.chevron_right,
+            semanticLabel: 'Later',
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// "Oct 28 – Nov 3, 2026" for a span, or "Nov 3, 2026" for one day.
+String periodLabel(String startKey, String endKey) {
+  final start = dateFromKey(startKey);
+  final end = dateFromKey(endKey);
+  final full = DateFormat.yMMMd();
+  if (startKey == endKey) return full.format(end);
+  final first = start.year == end.year
+      ? DateFormat.MMMd().format(start)
+      : full.format(start);
+  return '$first – ${full.format(end)}';
 }
 
 class _AverageRow extends StatelessWidget {

@@ -41,6 +41,10 @@ void main() {
       expect(validateBodyWeight(' 177 ', BodyWeightUnit.lb), isNull);
     });
 
+    test('accepts a comma decimal', () {
+      expect(validateBodyWeight('80,5', BodyWeightUnit.kg), isNull);
+    });
+
     test('rejects text, zero and negatives', () {
       expect(validateBodyWeight('', BodyWeightUnit.kg), 'Enter a number');
       expect(validateBodyWeight('abc', BodyWeightUnit.kg), 'Enter a number');

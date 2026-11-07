@@ -23,6 +23,20 @@ void main() {
       expect(parseNumber('NaN'), isNull);
       expect(parseNumber('2.5'), 2.5);
     });
+
+    test('accepts a comma as the decimal separator', () {
+      expect(parseNumber('1,5'), 1.5);
+      expect(parseNumber(' 0,25 '), 0.25);
+      expect(parseNumber(',5'), 0.5);
+      expect(positiveNumber('1,5'), isNull);
+      expect(nonNegativeNumber('0,0'), isNull);
+    });
+
+    test('rejects text with more than one separator instead of guessing', () {
+      expect(parseNumber('1.234,5'), isNull);
+      expect(parseNumber('1,234,567'), isNull);
+      expect(parseNumber('1,2.3'), isNull);
+    });
   });
 
   group('nonNegativeNumber', () {

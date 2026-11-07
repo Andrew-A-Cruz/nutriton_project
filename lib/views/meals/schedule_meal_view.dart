@@ -11,6 +11,7 @@ import '../../providers/today_providers.dart';
 import '../common/form_widgets.dart';
 import '../common/meal_slot_picker.dart';
 import '../home/date_header.dart';
+import '../common/error_feedback.dart';
 
 enum _Repeat { once, weekdays }
 
@@ -89,11 +90,11 @@ class _ScheduleMealViewState extends ConsumerState<ScheduleMealView> {
         );
       }
       if (mounted) Navigator.of(context).pop();
-    } catch (e) {
+    } catch (e, stack) {
       if (mounted) {
         setState(() {
           _saving = false;
-          _error = 'Could not schedule: $e';
+          _error = reportError(ref, e, stack, 'Could not schedule');
         });
       }
     }

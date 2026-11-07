@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 
+import '../../../core/search.dart';
 import '../app_database.dart';
 import '../tables/food_items.dart';
 
@@ -36,31 +37,47 @@ class FoodDao extends DatabaseAccessor<AppDatabase> with _$FoodDaoMixin {
   Future<int> deleteFood(String id) =>
       (delete(foodItems)..where((t) => t.id.equals(id))).go();
 
-  /// Non-archived foods whose name contains [search] (case-insensitive for
-  /// ASCII). An empty search returns everything active.
+  /// Non-archived foods matching [search]: every word of it must appear in the
+  /// name or the brand, in any order (case-insensitive for ASCII; see
+  /// [searchWords]). An empty search returns everything active, by name. A
+  /// search puts the most recently logged foods first, then the rest by name.
   Stream<List<FoodItem>> watchActive({String search = ''}) =>
       _activeQuery(search).watch();
 
   Future<List<FoodItem>> findActive({String search = ''}) =>
       _activeQuery(search).get();
 
+  /// When each food was last logged; null when never.
+  static const _lastLogged = CustomExpression<int>(
+    '(SELECT MAX(e.created_at) FROM food_log_entries e '
+    'WHERE e.food_item_id = food_items.id)',
+  );
+
   SimpleSelectStatement<$FoodItemsTable, FoodItem> _activeQuery(String search) {
+    final words = searchWords(search);
     return select(foodItems)
       ..where((t) {
-        final notArchived = t.archived.equals(false);
-        if (search.trim().isEmpty) return notArchived;
-        return notArchived & _nameContains(t, search.trim());
+        var matches = t.archived.equals(false);
+        for (final word in words) {
+          matches =
+              matches & (_contains(t.name, word) | _contains(t.brand, word));
+        }
+        return matches;
       })
-      ..orderBy([(t) => OrderingTerm.asc(t.name)]);
+      ..orderBy([
+        // SQLite sorts null last when descending, so unlogged foods follow.
+        if (words.isNotEmpty) (t) => OrderingTerm.desc(_lastLogged),
+        (t) => OrderingTerm.asc(t.name),
+      ]);
   }
 
   /// Literal substring match: '%', '_' and the escape character '\' in
   /// [text] are escaped so they are not LIKE wildcards.
-  Expression<bool> _nameContains($FoodItemsTable t, String text) {
+  Expression<bool> _contains(GeneratedColumn<String> column, String text) {
     final escaped = text.replaceAllMapped(
       RegExp(r'[\\%_]'),
       (m) => '\\${m[0]}',
     );
-    return t.name.like('%$escaped%', escapeChar: r'\');
+    return column.like('%$escaped%', escapeChar: r'\');
   }
 }
