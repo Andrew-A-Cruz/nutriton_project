@@ -28,8 +28,16 @@ if [ -z "$DEVICE" ]; then
 fi
 echo "==> Device: $DEVICE"
 
-echo "==> Building release"
-flutter build ios --release
+# A build installed this way cannot buy Pro, so Pro is unlocked unless
+# PRO_UNLOCKED=false (to see the free app and the paywall). A RevenueCat key in
+# REVENUECAT_IOS_KEY is passed through when set.
+DEFINES=(--dart-define=PRO_UNLOCKED="${PRO_UNLOCKED:-true}")
+if [ -n "${REVENUECAT_IOS_KEY:-}" ]; then
+  DEFINES+=(--dart-define=REVENUECAT_IOS_KEY="$REVENUECAT_IOS_KEY")
+fi
+
+echo "==> Building release (Pro unlocked: ${PRO_UNLOCKED:-true})"
+flutter build ios --release "${DEFINES[@]}"
 
 echo "==> Installing"
 xcrun devicectl device install app --device "$DEVICE" "$APP"

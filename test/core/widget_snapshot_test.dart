@@ -100,7 +100,17 @@ void main() {
         'empty_value_text',
         'progress',
         'over_goal',
+        'locked',
       ]);
+      expect(map['locked'], isFalse);
+    });
+
+    test('the locked snapshot shows only the unlock prompt', () {
+      final map = const WidgetSnapshot.locked(dateKey: '2026-10-21').toMap();
+      expect(map['locked'], isTrue);
+      expect(map['value_text'], 'Pro');
+      expect(map['caption'], 'Unlock in Nutriton');
+      expect(map['progress'], 0);
     });
 
     test('equal figures compare equal', () {

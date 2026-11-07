@@ -6,6 +6,7 @@ import '../core/metrics.dart';
 import '../core/widget_snapshot.dart';
 import '../data/widget/widget_publisher.dart';
 import '../data/widget/widget_sync.dart';
+import 'entitlement_providers.dart';
 import '../views/home/macro_summary.dart';
 import 'log_providers.dart';
 import 'preferences_providers.dart';
@@ -25,13 +26,23 @@ final widgetSyncProvider = Provider<WidgetSync>(
 /// metric's goal. Watched from the root, so it runs at launch, whenever today's
 /// entries, the primary metric or its goal change, and when the day rolls
 /// over. Edits to other days do not touch it. (When the app is not running, the
-/// widget resets itself at midnight; see `ios/TodayWidget/`.)
+/// widget resets itself at midnight; see `ios/TodayWidget/`.) The widget is a
+/// Pro feature: without Pro it shows only a prompt to unlock it.
 final widgetPlanProvider = Provider<void>((ref) {
+  final today = ref.watch(todayProvider);
+  if (!ref.watch(proProvider)) {
+    unawaited(
+      ref
+          .read(widgetSyncProvider)
+          .sync(WidgetSnapshot.locked(dateKey: today))
+          .catchError((Object _) {}),
+    );
+    return;
+  }
   final metric = ref.watch(preferencesProvider.select((s) => s.primaryMetric));
   final goal = ref.watch(
     preferencesProvider.select((s) => s.goalFor(s.primaryMetric)),
   );
-  final today = ref.watch(todayProvider);
   final entries = ref.watch(dayEntriesProvider(today));
   // Wait for the log to load: publishing early would show a full day left.
   final list = entries.value;

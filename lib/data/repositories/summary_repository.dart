@@ -15,6 +15,10 @@ class SummaryRepository {
       .watchLoggedDatesUpTo(today)
       .map((dates) => currentStreak(dates, today: today));
 
+  /// How many different days up to [today] ('yyyy-MM-dd') have entries.
+  Future<int> loggedDayCount(String today) =>
+      _db.summaryDao.watchLoggedDatesUpTo(today).first.then((d) => d.length);
+
   /// Totals for each day from [startDate] to [endDate] ('yyyy-MM-dd',
   /// inclusive) that has entries, oldest first. Re-emits whenever the log
   /// changes.

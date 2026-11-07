@@ -12,6 +12,8 @@ Run the script from the repo root:
 .claude/skills/install-iphone/install.sh <device-id> # a specific one
 ```
 
+Pro is unlocked in these builds, since a build installed outside the App Store cannot buy it. Run with `PRO_UNLOCKED=false` to see the free app and the paywall. Set `REVENUECAT_IOS_KEY` to pass the RevenueCat key through.
+
 It finds a physical iOS device with `flutter devices`, runs `flutter build ios --release`, installs `build/ios/iphoneos/Runner.app` with `xcrun devicectl device install app`, and launches `com.nutriton.app`. A full build takes about a minute. Run it with a timeout of at least 10 minutes.
 
 **Do not use `flutter install` or `flutter run`.** `flutter install` uninstalls the old app first, which deletes the user's logged data (the drift database lives in the app container). `devicectl` updates the app in place and keeps the data.
@@ -27,7 +29,7 @@ It finds a physical iOS device with `flutter devices`, runs `flutter build ios -
 - **Installed but not launched:** the phone was locked. The install worked, so tell the user to open the app.
 - **"Untrusted Developer" on the phone, or launch fails with "invalid code signature, inadequate entitlements or its profile has not been explicitly trusted":** the install worked, but the phone does not trust the signing profile yet. The user goes to Settings > General > VPN & Device Management and trusts the developer profile.
 - **App stops opening after 7 days:** builds signed by a free personal team expire. Run the script again.
-- **Provisioning errors about HealthKit or App Groups:** a free team may not support these capabilities. See `ios/HEALTHKIT.md` and `ios/TodayWidget/README.md`.
+- **Provisioning errors about HealthKit or App Groups:** both provisioned on the free team in October 2026. If that changes, see `ios/HEALTHKIT.md` and `ios/TodayWidget/README.md`.
 - **CocoaPods error that a plugin "requires a higher minimum iOS deployment version":** raise `platform :ios` in `ios/Podfile` and `IPHONEOS_DEPLOYMENT_TARGET` in `ios/Runner.xcodeproj/project.pbxproj` to the version the error asks for.
 
 After installing, report what happened: built, installed, and whether it launched.

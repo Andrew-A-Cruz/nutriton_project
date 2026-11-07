@@ -4,10 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/health.dart';
 import '../../providers/health_providers.dart';
 import '../../providers/preferences_providers.dart';
+import '../common/pro_gate.dart';
 
 /// Settings section for Apple Health, off by default and shown only where a
 /// health store exists (iOS). Each switch asks for permission for its own data
 /// when first turned on, and a refusal leaves it off. Changes save at once.
+/// Apple Health is a Pro feature: without Pro each switch is a lock badge.
 class AppleHealthSection extends ConsumerStatefulWidget {
   const AppleHealthSection({super.key});
 
@@ -70,18 +72,22 @@ class _AppleHealthSectionState extends ConsumerState<AppleHealthSection> {
       children: [
         CupertinoListTile(
           title: const Text('Write nutrition'),
-          trailing: CupertinoSwitch(
-            key: const Key('health-write-switch'),
-            value: write,
-            onChanged: (on) => _toggle(HealthGroup.nutrition, on),
+          trailing: ProGate(
+            child: CupertinoSwitch(
+              key: const Key('health-write-switch'),
+              value: write,
+              onChanged: (on) => _toggle(HealthGroup.nutrition, on),
+            ),
           ),
         ),
         CupertinoListTile(
           title: const Text('Read body weight'),
-          trailing: CupertinoSwitch(
-            key: const Key('health-read-switch'),
-            value: read,
-            onChanged: (on) => _toggle(HealthGroup.weight, on),
+          trailing: ProGate(
+            child: CupertinoSwitch(
+              key: const Key('health-read-switch'),
+              value: read,
+              onChanged: (on) => _toggle(HealthGroup.weight, on),
+            ),
           ),
         ),
       ],

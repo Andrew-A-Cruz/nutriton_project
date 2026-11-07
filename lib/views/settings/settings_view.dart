@@ -6,6 +6,7 @@ import '../../providers/tour_providers.dart';
 import '../onboarding/preferences_form.dart';
 import 'apple_health_section.dart';
 import 'backup_section.dart';
+import 'pro_section.dart';
 import 'reminders_section.dart';
 
 /// Settings, opened from the gear on Home. Reuses the onboarding form, so the
@@ -26,6 +27,7 @@ class SettingsView extends ConsumerWidget {
             RemindersSection(),
             AppleHealthSection(),
             BackupSection(),
+            ProSection(),
             _HelpSection(),
           ],
           onSubmit: (settings) async {
