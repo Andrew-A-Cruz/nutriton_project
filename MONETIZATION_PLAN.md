@@ -57,6 +57,8 @@ How the app makes money once the features in [`FEATURE_PLAN.md`](./FEATURE_PLAN.
 | Welcome pages and app tour | | |
 | Enhancement backlog items marked Free in FEATURE_PLAN (quick add, recipes, favorites, automatic backups, goal options, water and more) | | |
 
+*Note (November 2026):* the market research in [`FEATURE_PLAN.md`](./FEATURE_PLAN.md#from-the-november-2026-market-research) recommends skipping AI photo or voice logging: it sends food data off the phone and was measured as inaccurate. An on-device nutrition label scan is planned (free) instead. Keep the Pro+ AI row only as a possible opt-in, or remove it.
+
 **Rule of thumb for new features:** if a new user would want it in their first week, it's free. If it's something only some people want, beyond logging and looking at their own data, it can be Pro.
 
 Shareable reports and the JSON backup aren't the same thing. The backup is for the user's own safety and is always free. A report is a formatted summary meant for someone else, so it's an extra.

@@ -222,6 +222,8 @@ M14 to M19 were built on Windows, with no Xcode or Android SDK. The iOS project 
 - [x] M19 Apple Health: add the HealthKit capability on Runner, following [`ios/HEALTHKIT.md`](./ios/HEALTHKIT.md). *Done (October 2026)*
 - [ ] On the phone: add the "Today" widget from the home screen and check it follows the log, and switch on both Apple Health options and check the data in the Health app. Both are Pro features; the `install-iphone` skill unlocks Pro in its builds
 - [x] ~~If the free personal team refuses to provision App Groups or HealthKit, remove that capability~~ Not needed: both provision on the free team
+- [ ] Privacy manifest (after [`improvements-nov-2026`](#from-the-november-2026-review) is merged, which adds the file): add `ios/Runner/PrivacyInfo.xcprivacy` to the Runner target (drag it into the Runner group with "Add to targets: Runner" ticked). It declares no tracking, no collected data and UserDefaults access (reason `CA92.1`). Check the build's privacy report (Product > Archive, then Generate Privacy Report) for any API a plugin uses without its own manifest
+- [ ] Automatic backups (after `improvements-nov-2026` is merged): check that the Backups folder shows under On My iPhone > Nutriton in the Files app (`UIFileSharingEnabled` and `LSSupportsOpeningDocumentsInPlace` are added to `Info.plist` on that branch)
 
 ---
 
@@ -244,6 +246,8 @@ Problems found in a review of the built app. Do these before new milestones: the
 
 Ideas that aren't milestones yet. They aren't ordered: when one is picked up, give it a milestone number and place it in the table above. Schema changes get their version number at that point too. The tier column follows the rule of thumb in [`MONETIZATION_PLAN.md`](./MONETIZATION_PLAN.md#free-vs-pro).
 
+Items marked *Built on `improvements-nov-2026`* are written and tested on that branch but not merged into main yet. Tick them when it merges.
+
 ### Faster logging
 
 | Idea | Value | Effort | Schema change | Tier |
@@ -255,10 +259,10 @@ Ideas that aren't milestones yet. They aren't ordered: when one is picked up, gi
 | Serving presets | Medium | M | Yes (new table) | Free |
 | Siri Shortcuts / App Intents | Low–Med | L | No | Pro candidate (see Open Questions) |
 
-- [ ] **Quick add.** Log a number of calories (optionally with macros) with no name, e.g. a restaurant estimate. Stored as a one-off entry named "Quick add", so no schema change
-- [ ] **Recipes with a cooked weight.** A meal records the raw ingredients, but batch cooking changes the weight (a pot of chili loses water). A recipe stores its ingredients plus the total cooked weight, so "200 g of chili" logs 200 / cooked weight of the recipe's totals. Either a `cooked_weight_g` column on `meals` or a separate recipe type; decide when planning it
-- [ ] **Favorites.** A `favorite` flag on `food_items` and `meals`, shown as a star in the catalog and pinned at the top of the Add Food sheet, above Recent
-- [ ] **Duplicate a catalog food.** "Duplicate" in the food action sheet opens the food form prefilled with "<name> copy", for variants like a different brand or size
+- [ ] **Quick add.** Log a number of calories (optionally with macros) with no name, e.g. a restaurant estimate. Stored as a one-off entry named "Quick add", so no schema change. *Built on `improvements-nov-2026`:* a "Quick add" mode in Add Food (calories required, macros optional and blank as 0, an optional label)
+- [ ] **Recipes with a cooked weight.** A meal records the raw ingredients, but batch cooking changes the weight (a pot of chili loses water). A recipe stores its ingredients plus the total cooked weight, so "200 g of chili" logs 200 / cooked weight of the recipe's totals. Either a `cooked_weight_g` column on `meals` or a separate recipe type; decide when planning it. *Built on `improvements-nov-2026`:* schema v9 `meals.cooked_weight_g`. The meal builder has an optional Cooked weight; logging a recipe asks for the portion eaten and multiplies the items by portion / cooked weight (`recipePortion`). The template keeps the whole batch. Recipes cannot be scheduled, since a plan logs a whole template
+- [ ] **Favorites.** A `favorite` flag on `food_items` and `meals`, shown as a star in the catalog and pinned at the top of the Add Food sheet, above Recent. *Built on `improvements-nov-2026`:* schema v9 `favorite` on both tables; a star on every catalog row; a Favorites strip above Recent in Add Food
+- [ ] **Duplicate a catalog food.** "Duplicate" in the food action sheet opens the food form prefilled with "<name> copy", for variants like a different brand or size. *Built on `improvements-nov-2026`:* "Duplicate..." in the Edit Food form (the Catalog's tap on a food opens that form, so there is no separate action sheet). The barcode is not copied
 - [ ] **Serving presets.** Named portions per food, such as "1 cup = 240 g" or "1 slice = 28 g", in a new `food_servings` table. The log-by-weight input offers them alongside g/oz. Open Food Facts' `serving_size` text can seed one preset
 - [ ] **Siri Shortcuts / App Intents.** "Log my usual breakfast" or "How many calories are left?" from Siri, Spotlight or the Action button. Needs a Swift App Intents target and a platform channel, like M18
 
@@ -272,9 +276,9 @@ Ideas that aren't milestones yet. They aren't ordered: when one is picked up, gi
 | Calendar of logged days | Medium | M | No | Free |
 | Top foods | Medium | M | No | Free |
 
-- [ ] **Movable Summary end date.** Summary always ends today. Add ‹ › arrows that step by one range (the previous week, the previous month), plus a "Today" button to return. `summary_math` already takes `endDate`
+- [ ] **Movable Summary end date.** Summary always ends today. Add ‹ › arrows that step by one range (the previous week, the previous month), plus a "Today" button to return. `summary_math` already takes `endDate`. *Built on `improvements-nov-2026`:* `summaryEndProvider`; the body weight card follows the same end day
 - [ ] **Macro split chart.** The share of calories from protein, carbs and fat (4 / 4 / 9 kcal per g) for the day on Home and for the range on Summary, as a ring or stacked bar
-- [ ] **Over/under goal on the chart.** Color each Summary bar by whether it is within, over or under the goal (with a tolerance such as ±10%), and show "n days on target" under the averages
+- [ ] **Over/under goal on the chart.** Color each Summary bar by whether it is within, over or under the goal (with a tolerance such as ±10%), and show "n days on target" under the averages. *Built on `improvements-nov-2026`:* blue / green / red for under / within ±10% / over (`goalStatus`), with a legend; "On target ... n of m logged days" under the averages
 - [ ] **Calendar of logged days.** A month grid, reachable by tapping the Home date, with a dot on logged days and tinted days over or under goal. Tapping a day jumps Home there. It doubles as a "go to date" picker
 - [ ] **Top foods.** For the Summary range, the foods and meals that contributed most to the primary metric, by total and by how often they were logged. One `GROUP BY` over `food_log_entries` (meal breakdown rows counted per food)
 
@@ -300,7 +304,7 @@ Ideas that aren't milestones yet. They aren't ordered: when one is picked up, gi
 | Undo last action | Medium | M | No | Free |
 | CSV export of the log | Medium | S | No | See Open Questions |
 
-- [ ] **Automatic backups.** Write a backup to the app's Documents folder after the day's first entry, at most once a week, keeping the newest few. Turning on `UIFileSharingEnabled` and `LSSupportsOpeningDocumentsInPlace` makes that folder visible in the Files app, and Restore can list those files without the file picker. Free, by Principle 1 of the monetization plan
+- [ ] **Automatic backups.** Write a backup to the app's Documents folder after the day's first entry, at most once a week, keeping the newest few. Turning on `UIFileSharingEnabled` and `LSSupportsOpeningDocumentsInPlace` makes that folder visible in the Files app, and Restore can list those files without the file picker. Free, by Principle 1 of the monetization plan. *Built on `improvements-nov-2026`:* a Backups folder in Documents, written after the day's first entry when the last is 7 or more days old, keeping the newest 5 (`core/auto_backup.dart`, `AutoBackupRunner`). Settings has a switch (on by default) and "Restore automatic backup". iOS and Android only; on Android the folder is private to the app, so it helps with mistakes but not with losing the phone
 - [ ] **Undo last action.** Generalizes the swipe-to-delete undo above to edits, copy day and imports: keep the last change's inverse in memory and offer Undo for a few seconds
 - [ ] **CSV export of the log.** One row per entry (date, name, type, macros), readable in a spreadsheet. Overlaps with the Pro "shareable reports"; see Open Questions
 
@@ -317,10 +321,52 @@ Ideas that aren't milestones yet. They aren't ordered: when one is picked up, gi
 
 - [ ] **Done key on number keyboards.** In onboarding, the daily calorie goal field (and the other goal fields) opens the iOS decimal pad, which has no return key, so there's no way to finish entering a number except dragging the list. Add a toolbar above the keyboard with a "Done" button that dismisses it, moving to the next goal field where there is one ("Next" on all but the last). The goal fields live in the shared `preferences_form.dart`, so Settings gets it too. Build it as a reusable wrapper so the food, adhoc and meal forms' number fields can use it as well. Add a widget test that tapping Done closes the keyboard and keeps the value
 - [ ] **Haptics.** A light tap when an entry is logged or a plan is confirmed, and a warning tap on delete
-- [ ] **VoiceOver labels.** `Semantics` on the progress bars ("1,450 of 2,000 calories, 550 left") and a text summary on each chart, since VoiceOver can't read an `fl_chart` bar. Add a semantics check to the 2x text / dark mode test
-- [ ] **Comma decimals.** `parseNumber` uses `double.tryParse`, so "1,5" typed on a European keyboard is rejected. Accept a comma as the decimal separator, and format numbers with the device locale
+- [ ] **VoiceOver labels.** `Semantics` on the progress bars ("1,450 of 2,000 calories, 550 left") and a text summary on each chart, since VoiceOver can't read an `fl_chart` bar. Add a semantics check to the 2x text / dark mode test. *Built on `improvements-nov-2026`:* `totalSemanticsLabel` for every Home total, text summaries for the Summary and body weight charts, checked in `large_text_dark_mode_test.dart`
+- [ ] **Comma decimals.** `parseNumber` uses `double.tryParse`, so "1,5" typed on a European keyboard is rejected. Accept a comma as the decimal separator, and format numbers with the device locale. *Input built on `improvements-nov-2026`:* `parseNumber` reads a lone comma as the decimal point and rejects text with more than one separator. Numbers are still shown with a dot; locale formatting is not done
 - [ ] **Water tracking.** A row on Home with +/- buttons in glasses or ml, an optional daily goal, and a line on Summary. A new `water_log` table (`log_date`, `amount_ml`); include it in the backup format
 - [ ] **iPad and landscape layout.** On wide screens, show the catalog or the day's log beside Home instead of a full-screen push, and give the Summary chart the extra width
+
+### From the November 2026 review
+
+Found by reading the code rather than from the brainstorm. All of these are built on the `improvements-nov-2026` branch (last commit 3 November 2026), which is not merged into main yet.
+
+- [ ] **Plain error messages and an error log.** Saves no longer show raw exception text. Errors go to an on-device log (newest 50, in preferences, never sent anywhere) under Settings > Help > Error log, which can be shared or cleared. Uncaught Flutter and platform errors are recorded too
+- [ ] **CI.** `.github/workflows/checks.yml` runs `flutter analyze` and `flutter test` on every push and pull request, and fails when the committed drift code is out of date
+- [ ] **Stricter lints.** `unawaited_futures`, `avoid_dynamic_calls` (lib only), `prefer_const_constructors`, `prefer_final_locals`, `cancel_subscriptions`, `unnecessary_await_in_return`
+- [ ] **Scan from Add Food.** A scan button beside the Add Food search: a catalog food goes straight to logging, any other code opens New Food and looks it up at once
+- [ ] **Keep the brand.** Schema v9 `food_items.brand`, filled by lookups, shown in the list and searched
+- [ ] **Word search.** Every word must match, in any order, in the name or brand; a search lists recently logged foods first (`core/search.dart`)
+- [ ] **Log indexes.** Schema v9 indexes on `food_log_entries` (`created_at`, `food_item_id`, `meal_id`), `food_log_entry_items.entry_id` and `meal_food_items.meal_id`
+- [ ] **iOS privacy manifest.** The file is written on the branch; adding it to the Xcode target is a [manual Mac step](#manual-mac-steps-before-the-next-ios-build)
+- [ ] **Android backup rules.** Decided to keep Android Auto Backup on (the default): when the user has Google backup on, the database and the automatic backups are copied to their Google account, as iCloud backup does on iOS. The welcome page says so (the wording change is on the branch)
+
+### From the November 2026 market research
+
+A look at MyFitnessPal, Cronometer, MacroFactor, Lose It!, Yazio, Lifesum, the AI photo apps (Cal AI, SnapCalorie) and the small privacy-first trackers (Lokcal, LibreLog, Bite Diary). Most comparison sources are blogs, many run by competing apps, so prices and rankings vary; the points below are the ones that held across sources.
+
+**Positioning.** The loudest complaint in the category is paywall creep, led by MyFitnessPal moving barcode scanning to Premium in 2022. MacroFactor charges about $72 a year mainly for adaptive targets. The privacy-first apps are small and basic. Nutriton's angle: the features people pay for elsewhere, free, with no account and no ads, and the data stays on the phone. Keep barcode scanning, recipes, plans, copy day and backups free (Principle 1 of the monetization plan).
+
+| Idea | Value | Effort | Schema change | Tier |
+|---|---|---|---|---|
+| Adaptive goals (after M25) | High | L | No | Free |
+| Starter generic foods | High | M | No (bundled data) | Free |
+| Nutrition label scan | High | M | No | Free |
+| Mindful mode | Medium | S | No (preferences) | Free |
+| Health Connect on Android | Medium | M | No | Free |
+| Fasting timer | Low–Med | M | Yes (new table) | Free |
+| Copy or move an entry to another day | Medium | S | No | Free |
+
+- [ ] **Adaptive goals (after M25).** Raise [adaptive goals](#goals) to the top of the backlog: it is MacroFactor's main paid feature, and we already store intake and body weight. [M25](#m25--target-weight-guide) (which took over the TDEE helper) gives the starting estimate; adaptive goals then re-estimate weekly from intake and the weight trend. Everything runs on the device; suggest only, never change a goal without confirmation
+- [ ] **Starter generic foods.** A new user has to create every food before logging anything that has no barcode. Bundle a starter set of generic foods ("banana", "chicken breast, cooked", "white rice, cooked") from USDA FoodData Central (public domain, e.g. the Foundation and SR Legacy sets), searchable offline from Add Food and copied into the catalog on first use. Keep the bundle small (a few thousand foods) to limit the app size; decide between a read-only bundled SQLite file and seeding on first launch when planning it. It can share M24's bundled-data loader and "copy into the catalog on first log" logic
+- [ ] **Nutrition label scan.** For products Open Food Facts doesn't know: photograph the printed nutrition table and fill the New Food form from it, using on-device text recognition (Apple Vision on iOS, ML Kit on Android; e.g. `google_mlkit_text_recognition`). Nothing leaves the phone. The user reviews every field before saving. Parse per serving and per 100 g, and kJ as well as kcal; test the parser against saved OCR text fixtures, as for the Open Food Facts mapper
+- [ ] **Mindful mode.** One Settings switch for users who find tracking stressful: hide calorie and macro numbers on Home (show only the foods, or rings without numbers), hide the streak badge, and draw Summary bars in one neutral color instead of under / on / over colors. Reminders stay as they are. Few apps offer this, and it is cheap since it only changes rendering
+- [ ] **Health Connect on Android.** M19 is iOS only. The `health` plugin also covers Health Connect, so the same `HealthService` seam can write nutrition and read body weight on Android. Needs the Health Connect permissions declared in the manifest and a privacy-policy activity. Already planned in detail as [A4 in the Android plan](./ANDROID_PLAN.md)
+- [ ] **Fasting timer.** Yazio's main draw. Start and stop a fast, show the elapsed time on Home, and keep a history (a new `fasts` table: `started_at`, `ended_at`; include it in the backup format). Optional, hidden until switched on in Settings
+- [ ] **Copy or move an entry to another day.** "Log again today" (M10) only copies to today. Add "Copy to..." with a date picker (Tomorrow as a shortcut) for planning ahead, as MacroFactor does. "Move to another day" already exists from the October review, so this is mainly the copy action and the Tomorrow shortcut
+
+**Considered and skipped:**
+- **AI photo or voice logging.** It needs a cloud model, which breaks the "stays on the device" promise, and accuracy is poor: a 2026 study (reported second-hand) found Cal AI underestimated meals by about 345 kcal, and all four apps tested underestimated fat by about 30 g. The label scan above covers the "fill the form for me" need without either problem. Revisit only as an opt-in that is clearly labelled as sending data off the phone. (The monetization plan still lists AI logging under Pro+; see the note there)
+- **Competing on micronutrient depth.** Cronometer tracks 80+ nutrients from curated sources; Open Food Facts data for vitamins and minerals is uneven. Fiber, sugar and sodium (M13) are enough for now
 
 ---
 
@@ -337,6 +383,9 @@ Ideas that aren't milestones yet. They aren't ordered: when one is picked up, gi
 | 7 | M17 | `scheduled_meals` rebuilt: `meal_id` nullable, new nullable `food_item_id`, `meal_slot` (nullable) and `servings` (default 1), with a CHECK that exactly one source is set. The planned `scheduled_items` table was folded into the existing scheduling tables |
 | 8 | M19 | `body_weights.source` (nullable text, default `'manual'`; `'health'` for a weight read from Apple Health) |
 | 9 (planned) | M24 | `food_items.menu_item_id` (nullable, indexed): links a catalog food to its bundled menu item |
+| 9 (on `improvements-nov-2026`) | November 2026 improvements | `food_items.brand` (nullable) and `favorite`; `meals.favorite` and `cooked_weight_g` (nullable, recipes); indexes on `food_log_entries` (`created_at`, `food_item_id`, `meal_id`), `food_log_entry_items.entry_id` and `meal_food_items.meal_id` |
+
+**Version clash:** M24 and the `improvements-nov-2026` branch both claim v9. That branch is already built, with its migration and `drift_schemas/` snapshot, so merge it first and renumber M24 to v10 (its migration test becomes v9 to v10). Its `DATA_MODEL.md` changes come with the merge.
 
 Each step gets a drift migration test (`make-migrations`) and an update to `DATA_MODEL.md` and the backup format.
 
