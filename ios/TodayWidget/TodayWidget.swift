@@ -3,7 +3,7 @@ import WidgetKit
 
 // The app (home_widget) writes these keys to the shared App Group defaults;
 // see lib/core/widget_snapshot.dart. The widget only draws them.
-private let appGroupId = "group.com.nutriton.app"
+private let appGroupId = "group.com.andrewcruz.nutriton"
 
 struct TodayEntry: TimelineEntry {
     let date: Date

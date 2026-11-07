@@ -14,7 +14,7 @@ Run the script from the repo root:
 
 Pro is unlocked in these builds, since a build installed outside the App Store cannot buy it. Run with `PRO_UNLOCKED=false` to see the free app and the paywall. Set `REVENUECAT_IOS_KEY` to pass the RevenueCat key through.
 
-It finds a physical iOS device with `flutter devices`, runs `flutter build ios --release`, installs `build/ios/iphoneos/Runner.app` with `xcrun devicectl device install app`, and launches `com.nutriton.app`. A full build takes about a minute. Run it with a timeout of at least 10 minutes.
+It finds a physical iOS device with `flutter devices`, runs `flutter build ios --release`, installs `build/ios/iphoneos/Runner.app` with `xcrun devicectl device install app`, and launches `com.andrewcruz.nutriton`. A full build takes about a minute. Run it with a timeout of at least 10 minutes.
 
 **Do not use `flutter install` or `flutter run`.** `flutter install` uninstalls the old app first, which deletes the user's logged data (the drift database lives in the app container). `devicectl` updates the app in place and keeps the data.
 
