@@ -27,7 +27,6 @@ The [privacy policy](#write-and-host-a-privacy-policy) is not a blocker yet (it 
 | Item | Size | Tier | Blocked by |
 |---|---|---|---|
 | **Ready now** | | | |
-| [Done key on number keyboards](#done-key-on-number-keyboards) | S | Free | — |
 | [Haptics](#haptics) | S | Free | — |
 | [Macro split chart](#macro-split-chart) | S | Free | — |
 | [Macro goals as percentages](#macro-goals-as-percentages) | S | Free | — |
@@ -66,20 +65,11 @@ The [privacy policy](#write-and-host-a-privacy-policy) is not a blocker yet (it 
 | [A6 — Play Store release](#a6--play-store-release) | M + 14 days | — | B2, A2, privacy policy |
 | [M20 — iCloud sync](#m20--icloud-sync) | XL | Pro | B1, D7 |
 
-**Suggested next:** the Done key (already planned in detail), the privacy policy (it unblocks three items), then M22 (Pro would have three features to sell instead of two; see D6).
+**Suggested next:** the privacy policy (it unblocks three items), then M22 (Pro would have three features to sell instead of two; see D6).
 
 ---
 
 ## Ready Now — Small
-
-### Done key on number keyboards
-**Free · no schema change**
-
-In onboarding, the goal fields open the iOS decimal pad, which has no return key, so the only way to close it is dragging the list.
-
-- [ ] A toolbar above the keyboard with "Done" to dismiss it, or "Next" on every goal field but the last
-- [ ] Build it as a reusable wrapper in the shared `preferences_form.dart` (so Settings gets it too), usable by the food, one-off and meal forms' number fields
-- [ ] Widget test: tapping Done closes the keyboard and keeps the value
 
 ### Haptics
 **Free · no schema change**
@@ -120,7 +110,13 @@ A "Search online" row under the Add Food catalog search, using the existing `Ope
 `ios/Runner/PrivacyInfo.xcprivacy` is written but not in the Runner target. Add it (in Xcode, or with the `xcodeproj` gem as the widget target was). It declares no tracking, no collected data and UserDefaults access (reason `CA92.1`). Then check the build's privacy report (Product > Archive > Generate Privacy Report) for any plugin API without its own manifest.
 
 ### Write and host a privacy policy
-Needed for selling Pro, the App Store and Play listings, and Health Connect. Short: data stays on the device; list the network calls (Open Food Facts lookups send barcodes and search text; RevenueCat handles purchases; Health data stays in Health or Health Connect). Then set `privacyPolicyUrl` in `lib/core/pro.dart` (the paywall hides the link while it is null).
+Needed for selling Pro, the App Store and Play listings, and Health Connect. Written in [`docs/privacy.md`](./docs/privacy.md), to be served by GitHub Pages.
+
+- [x] Write it: data stays on the device; the network calls (Open Food Facts gets barcodes and search text, RevenueCat an anonymous ID and purchases); Health data stays between the app and Health
+- [ ] **Earmarked:** once the support email exists, replace the GitHub issues link under Contact in `docs/privacy.md` with it (Apple and Google expect an email), and use the same address for the App Store and Play listings
+- [x] Turn on GitHub Pages (done with `gh api`: `main`, `/docs`, HTTPS enforced)
+- [ ] Once `https://andrew-a-cruz.github.io/nutriton_project/privacy` loads, set `privacyPolicyUrl` in `lib/core/pro.dart` (the paywall hides the link while it is null)
+- [ ] Keep it in step: a new network call or Health type means a policy update
 
 ### A1 — Android native config leftovers
 The toolchain works and `minSdk` is 26. What's left:
@@ -332,6 +328,7 @@ Built but never tried on a real iPhone:
 - [ ] Add the "Today" widget and check it follows the log (M18)
 - [ ] Turn on both Apple Health options and check the data in the Health app (M19)
 - [ ] Automatic backups: the Backups folder shows under On My iPhone > Nutriton in Files
+- [ ] The Done bar sits flush on the number keyboard (onboarding goals, a food form, the servings dialog) and closes it
 
 Pro features are unlocked in `install-iphone` builds. The Android phone checks are part of [A2](#a2--check-the-free-app-on-android).
 

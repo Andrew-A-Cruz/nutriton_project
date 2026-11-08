@@ -8,6 +8,7 @@ import 'providers/reminder_providers.dart';
 import 'providers/review_providers.dart';
 import 'providers/widget_providers.dart';
 import 'views/catalog/catalog_view.dart';
+import 'views/common/keyboard_done_bar.dart';
 import 'views/home/home_view.dart';
 import 'views/onboarding/onboarding_view.dart';
 import 'views/summary/summary_view.dart';
@@ -19,7 +20,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const CupertinoApp(title: 'Nutriton', home: _RootGate());
+    return CupertinoApp(
+      title: 'Nutriton',
+      home: const _RootGate(),
+      builder: (context, child) => KeyboardDoneBar(child: child!),
+    );
   }
 }
 
