@@ -10,7 +10,7 @@ class HomeWidgetPublisher implements WidgetPublisher {
   HomeWidgetPublisher();
 
   /// The App Group both the app and the widget extension are members of.
-  static const appGroupId = 'group.com.nutriton.app';
+  static const appGroupId = 'group.com.andrewcruz.nutriton';
 
   /// The widget's `kind` in `TodayWidget.swift`.
   static const iosWidgetName = 'TodayWidget';

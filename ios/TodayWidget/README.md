@@ -1,6 +1,6 @@
 # Today widget (iOS)
 
-A small WidgetKit widget showing the calories (or primary metric) left today, with a progress ring. The Flutter app publishes the figures with `home_widget` into the shared App Group `group.com.nutriton.app`; the widget only reads them. See `lib/core/widget_snapshot.dart` for the keys.
+A small WidgetKit widget showing the calories (or primary metric) left today, with a progress ring. The Flutter app publishes the figures with `home_widget` into the shared App Group `group.com.andrewcruz.nutriton`; the widget only reads them. See `lib/core/widget_snapshot.dart` for the keys.
 
 The `TodayWidget` app extension target is in `ios/Runner.xcodeproj` (added in October 2026 with the `xcodeproj` Ruby gem), and `flutter build ios` builds, signs and embeds it. The widget is a Nutriton Pro feature: without Pro the app publishes a locked snapshot (`locked: true`) and the widget shows a lock and "Unlock in Nutriton" instead of the day's figures.
 
@@ -16,7 +16,7 @@ The `TodayWidget` app extension target is in `ios/Runner.xcodeproj` (added in Oc
 
 ## How it is wired
 
-- Target `TodayWidget`: bundle id `com.nutriton.app.TodayWidget`, iOS 15.0, team `D8U7624NXN`, automatic signing, `INFOPLIST_FILE = TodayWidget/Info.plist`, `CODE_SIGN_ENTITLEMENTS = TodayWidget/TodayWidget.entitlements`. Debug, Profile and Release configurations, so Flutter's profile builds work too.
+- Target `TodayWidget`: bundle id `com.andrewcruz.nutriton.TodayWidget`, iOS 15.0, team `D8U7624NXN`, automatic signing, `INFOPLIST_FILE = TodayWidget/Info.plist`, `CODE_SIGN_ENTITLEMENTS = TodayWidget/TodayWidget.entitlements`. Debug, Profile and Release configurations, so Flutter's profile builds work too.
 - Target `Runner`: depends on `TodayWidget`, and an "Embed Foundation Extensions" phase copies `TodayWidget.appex` into `PlugIns`. That phase sits before "Thin Binary" to avoid Flutter's known build cycle. `CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements`.
 - The free personal team provisions the App Group (checked October 2026). Free-team builds still expire after 7 days.
 

@@ -6,7 +6,7 @@
 # uninstalls first, which wipes the app's on-device database.
 set -euo pipefail
 
-BUNDLE_ID="com.nutriton.app"
+BUNDLE_ID="com.andrewcruz.nutriton"
 ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 APP="$ROOT/build/ios/iphoneos/Runner.app"
 cd "$ROOT"
