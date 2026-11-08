@@ -1,6 +1,6 @@
 /// Nutriton Pro: the one-time unlock, its trial, and which features it covers.
 /// Pure Dart, so the rules are tested without a store. See
-/// `MONETIZATION_PLAN.md`.
+/// `PRODUCT.md`.
 library;
 
 /// App Store product ids. They must match App Store Connect and RevenueCat.
