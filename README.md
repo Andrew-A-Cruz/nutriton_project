@@ -2,7 +2,7 @@
 
 A Flutter app for tracking calories and macronutrients day by day. Data stays on the device (SQLite via drift).
 
-See [`GAME_PLAN.md`](./GAME_PLAN.md) for what the app does, [`DATA_MODEL.md`](./DATA_MODEL.md) for the schema, and [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md) for the build order.
+See [`PRODUCT.md`](./PRODUCT.md) for what the app does, its free and Pro rules and what's built, [`ROADMAP.md`](./ROADMAP.md) for open work sorted by size and blockers, and [`DATA_MODEL.md`](./DATA_MODEL.md) for the schema.
 
 ## Setup
 
