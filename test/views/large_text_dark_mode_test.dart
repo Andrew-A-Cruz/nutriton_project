@@ -197,7 +197,7 @@ void main() {
       await tester.tap(find.byKey(const Key('welcome-next')));
       await settle(tester);
     }
-    expect(find.text('Set up Nutriton'), findsOneWidget);
+    expect(find.text('Set up Logbite'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await unmount(tester);
   });

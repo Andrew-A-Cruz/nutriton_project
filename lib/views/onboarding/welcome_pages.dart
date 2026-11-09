@@ -5,7 +5,7 @@ typedef _WelcomePage = ({IconData icon, String title, String body});
 const _pages = <_WelcomePage>[
   (
     icon: CupertinoIcons.heart_circle_fill,
-    title: 'Welcome to Nutriton',
+    title: 'Welcome to Logbite',
     body:
         'A quick, simple food log. Log what you eat and see how it adds up '
         'against your goals.',

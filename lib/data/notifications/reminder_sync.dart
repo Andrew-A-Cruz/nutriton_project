@@ -13,7 +13,7 @@ class ReminderSync {
   // later one has just scheduled.
   Future<void> _tail = Future.value();
 
-  static const title = 'Nutriton';
+  static const title = 'Logbite';
   static const body = 'Nothing logged yet today';
 
   Future<void> sync({

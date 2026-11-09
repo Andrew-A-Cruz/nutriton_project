@@ -109,7 +109,7 @@ void main() {
       final map = const WidgetSnapshot.locked(dateKey: '2026-10-21').toMap();
       expect(map['locked'], isTrue);
       expect(map['value_text'], 'Pro');
-      expect(map['caption'], 'Unlock in Nutriton');
+      expect(map['caption'], 'Unlock in Logbite');
       expect(map['progress'], 0);
     });
 

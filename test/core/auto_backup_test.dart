@@ -22,10 +22,10 @@ void main() {
 
   test('file names carry the date and round-trip', () {
     final name = autoBackupFileName(now);
-    expect(name, 'nutriton-auto-2026-11-03.json');
+    expect(name, 'logbite-auto-2026-11-03.json');
     expect(autoBackupDate(name), DateTime(2026, 11, 3));
-    expect(autoBackupDate('nutriton-backup-2026-11-03.json'), isNull);
-    expect(autoBackupDate('nutriton-auto-2026-02-30.json'), isNull);
+    expect(autoBackupDate('logbite-backup-2026-11-03.json'), isNull);
+    expect(autoBackupDate('logbite-auto-2026-02-30.json'), isNull);
     expect(autoBackupDate('notes.txt'), isNull);
   });
 
@@ -35,14 +35,26 @@ void main() {
         autoBackupFileName(DateTime(2026, 10, d * 3)),
       'notes.txt',
     ];
-    expect(
-      autoBackupsNewestFirst(names).first,
-      'nutriton-auto-2026-10-24.json',
-    );
+    expect(autoBackupsNewestFirst(names).first, 'logbite-auto-2026-10-24.json');
     final pruned = autoBackupsToPrune(names);
     expect(pruned, hasLength(8 - autoBackupsKept));
     expect(pruned, isNot(contains('notes.txt')));
-    expect(pruned.last, 'nutriton-auto-2026-10-03.json');
+    expect(pruned.last, 'logbite-auto-2026-10-03.json');
+  });
+
+  test('backups named before the rename still count and are pruned first', () {
+    final names = [
+      'nutriton-auto-2026-10-01.json',
+      'nutriton-auto-2026-10-08.json',
+      for (var d = 15; d <= 36; d += 7)
+        autoBackupFileName(DateTime(2026, 10, d)),
+    ];
+    expect(
+      autoBackupDate('nutriton-auto-2026-10-08.json'),
+      DateTime(2026, 10, 8),
+    );
+    expect(autoBackupsNewestFirst(names).last, 'nutriton-auto-2026-10-01.json');
+    expect(autoBackupsToPrune(names), ['nutriton-auto-2026-10-01.json']);
   });
 
   test('labels the last automatic backup', () {

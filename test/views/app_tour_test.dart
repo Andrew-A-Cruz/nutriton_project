@@ -36,7 +36,7 @@ void main() {
     await tester.pumpWidget(testApp(db: db, prefs: prefs!));
     await settle(tester);
 
-    expect(find.text('Welcome to Nutriton'), findsOneWidget);
+    expect(find.text('Welcome to Logbite'), findsOneWidget);
     await tester.tap(find.byKey(const Key('welcome-next')));
     await settle(tester);
     expect(find.text('Log in a few taps'), findsOneWidget);
@@ -50,7 +50,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('welcome-next')));
     await settle(tester);
-    expect(find.text('Set up Nutriton'), findsOneWidget);
+    expect(find.text('Set up Logbite'), findsOneWidget);
     await unmount(tester);
   });
 
@@ -63,8 +63,8 @@ void main() {
     await tester.tap(find.byType(CupertinoNavigationBarBackButton));
     await settle(tester);
 
-    expect(find.text('Welcome to Nutriton'), findsOneWidget);
-    expect(find.text('Set up Nutriton'), findsNothing);
+    expect(find.text('Welcome to Logbite'), findsOneWidget);
+    expect(find.text('Set up Logbite'), findsNothing);
     await unmount(tester);
   });
 

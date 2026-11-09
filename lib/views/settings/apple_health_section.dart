@@ -36,7 +36,7 @@ class _AppleHealthSectionState extends ConsumerState<AppleHealthSection> {
       if (!granted) {
         setState(
           () => _denied =
-              'Nutriton does not have access to Apple Health. Allow it in '
+              'Logbite does not have access to Apple Health. Allow it in '
               'the Health app, under Sharing, then try again.',
         );
         return;

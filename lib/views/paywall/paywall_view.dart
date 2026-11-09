@@ -73,7 +73,7 @@ class _PaywallViewState extends ConsumerState<PaywallView> {
 
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
-        middle: const Text('Nutriton Pro'),
+        middle: const Text('Logbite Pro'),
         leading: CupertinoButton(
           key: const Key('paywall-close'),
           padding: EdgeInsets.zero,
@@ -102,7 +102,7 @@ class _PaywallViewState extends ConsumerState<PaywallView> {
             const SizedBox(height: 24),
             switch (access) {
               ProAccess.owned => const Text(
-                'Pro is unlocked. Thank you for supporting Nutriton.',
+                'Pro is unlocked. Thank you for supporting Logbite.',
                 key: Key('paywall-owned'),
                 textAlign: TextAlign.center,
               ),
@@ -167,12 +167,11 @@ class _PaywallViewState extends ConsumerState<PaywallView> {
                 ),
               ),
             const SizedBox(height: 16),
-            Row(
+            const Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                if (privacyPolicyUrl case final url?)
-                  _LinkButton(label: 'Privacy Policy', url: url),
-                const _LinkButton(label: 'Terms of Use', url: termsOfUseUrl),
+                _LinkButton(label: 'Privacy Policy', url: privacyPolicyUrl),
+                _LinkButton(label: 'Terms of Use', url: termsOfUseUrl),
               ],
             ),
           ],

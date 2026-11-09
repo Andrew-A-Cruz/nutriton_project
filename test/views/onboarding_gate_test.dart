@@ -24,9 +24,9 @@ void main() {
       await tester.pumpWidget(testApp(db: db, prefs: prefs!));
       await settle(tester);
 
-      expect(find.text('Welcome to Nutriton'), findsOneWidget);
+      expect(find.text('Welcome to Logbite'), findsOneWidget);
       await skipWelcome(tester);
-      expect(find.text('Set up Nutriton'), findsOneWidget);
+      expect(find.text('Set up Logbite'), findsOneWidget);
       expect(find.byKey(const Key('goal-calories')), findsOneWidget);
       expect(find.byType(CupertinoTabScaffold), findsNothing);
       await unmount(tester);
@@ -73,7 +73,7 @@ void main() {
       delta: -200,
     );
     expect(find.text('Enter a daily goal for Calories'), findsOneWidget);
-    expect(find.text('Set up Nutriton'), findsOneWidget);
+    expect(find.text('Set up Logbite'), findsOneWidget);
     expect(prefs.getBool('onboarding_complete'), isNull);
     await unmount(tester);
   });
@@ -88,7 +88,7 @@ void main() {
     await tester.pumpWidget(testApp(db: db, prefs: prefs!));
     await settle(tester);
 
-    expect(find.text('Set up Nutriton'), findsNothing);
+    expect(find.text('Set up Logbite'), findsNothing);
     expect(find.byType(CupertinoTabScaffold), findsOneWidget);
     await unmount(tester);
   });

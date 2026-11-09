@@ -7,7 +7,7 @@ import '../../providers/entitlement_providers.dart';
 import '../../providers/today_providers.dart';
 import '../paywall/paywall_view.dart';
 
-/// Settings section for Nutriton Pro (its status, opening the paywall,
+/// Settings section for Logbite Pro (its status, opening the paywall,
 /// restoring) and the tip jar.
 class ProSection extends ConsumerStatefulWidget {
   const ProSection({super.key});
@@ -89,7 +89,7 @@ class _ProSectionState extends ConsumerState<ProSection> {
       children: [
         CupertinoListTile(
           key: const Key('pro-row'),
-          title: const Text('Nutriton Pro'),
+          title: const Text('Logbite Pro'),
           additionalInfo: Text(switch (access) {
             ProAccess.owned => 'Unlocked',
             ProAccess.trial =>

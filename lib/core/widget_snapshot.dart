@@ -18,7 +18,7 @@ class WidgetSnapshot {
   /// and none of the day's figures.
   const WidgetSnapshot.locked({required this.dateKey})
     : valueText = 'Pro',
-      caption = 'Unlock in Nutriton',
+      caption = 'Unlock in Logbite',
       emptyValueText = 'Pro',
       progress = 0,
       overGoal = false,

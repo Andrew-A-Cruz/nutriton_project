@@ -2,7 +2,7 @@
 
 A small WidgetKit widget showing the calories (or primary metric) left today, with a progress ring. The Flutter app publishes the figures with `home_widget` into the shared App Group `group.com.andrewcruz.nutriton`; the widget only reads them. See `lib/core/widget_snapshot.dart` for the keys.
 
-The `TodayWidget` app extension target is in `ios/Runner.xcodeproj` (added in October 2026 with the `xcodeproj` Ruby gem), and `flutter build ios` builds, signs and embeds it. The widget is a Nutriton Pro feature: without Pro the app publishes a locked snapshot (`locked: true`) and the widget shows a lock and "Unlock in Nutriton" instead of the day's figures.
+The `TodayWidget` app extension target is in `ios/Runner.xcodeproj` (added in October 2026 with the `xcodeproj` Ruby gem), and `flutter build ios` builds, signs and embeds it. The widget is a Logbite Pro feature: without Pro the app publishes a locked snapshot (`locked: true`) and the widget shows a lock and "Unlock in Logbite" instead of the day's figures.
 
 ## Files
 

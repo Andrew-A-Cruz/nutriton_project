@@ -19,9 +19,9 @@ class BackupRepository {
   final UserPreferences _prefs;
   final BackupCodec _codec;
 
-  /// Suggested file name, e.g. `nutriton-backup-2026-10-21.json`.
+  /// Suggested file name, e.g. `logbite-backup-2026-10-21.json`.
   static String fileNameFor(DateTime date) =>
-      'nutriton-backup-${dateKey(date)}.json';
+      'logbite-backup-${dateKey(date)}.json';
 
   Future<String> exportJson() {
     return _db.transaction(() async {

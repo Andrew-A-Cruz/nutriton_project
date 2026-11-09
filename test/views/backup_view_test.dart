@@ -120,7 +120,7 @@ void main() {
     expect(io.saved, hasLength(1));
     expect(
       io.saved.single.fileName,
-      matches(r'^nutriton-backup-\d{4}-\d{2}-\d{2}\.json$'),
+      matches(r'^logbite-backup-\d{4}-\d{2}-\d{2}\.json$'),
     );
     expect(io.saved.single.contents, contains('Current food'));
     expect(find.text('Backup saved.'), findsOneWidget);

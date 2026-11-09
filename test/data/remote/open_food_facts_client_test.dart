@@ -194,7 +194,7 @@ void main() {
       expect(seen.url.host, 'world.openfoodfacts.org');
       expect(seen.url.path, '/api/v2/product/3017620422003.json');
       expect(seen.headers['User-Agent'], offUserAgent);
-      expect(offUserAgent, contains('NutritonFoodLog'));
+      expect(offUserAgent, contains('LogbiteFoodLog'));
     });
 
     test('unknown barcode is null (status 0 or HTTP 404)', () async {

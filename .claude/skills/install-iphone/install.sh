@@ -1,5 +1,5 @@
 #!/bin/bash
-# Builds a signed release of Nutriton and installs it on a paired iPhone,
+# Builds a signed release of Logbite and installs it on a paired iPhone,
 # over USB or Wi-Fi. Run from anywhere: ./install.sh [device-id]
 #
 # Installs with devicectl, which updates the app in place. `flutter install`
@@ -46,5 +46,5 @@ echo "==> Launching"
 if ! xcrun devicectl device process launch --device "$DEVICE" "$BUNDLE_ID"; then
   echo "Installed, but could not launch. Either the phone is locked, or the" >&2
   echo "developer profile is not trusted yet (Settings > General >" >&2
-  echo "VPN & Device Management). Open Nutriton on the phone." >&2
+  echo "VPN & Device Management). Open Logbite on the phone." >&2
 fi

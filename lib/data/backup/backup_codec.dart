@@ -161,7 +161,7 @@ class BackupCodec {
       throw BackupException('This file is not valid JSON.');
     }
     if (root is! Map<String, dynamic> || root['app'] != appId) {
-      throw BackupException('This file is not a Nutriton backup.');
+      throw BackupException('This file is not a Logbite backup.');
     }
     final version = root['version'];
     if (version is! int || version < 1) {
