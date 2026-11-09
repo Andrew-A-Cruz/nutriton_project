@@ -15,6 +15,8 @@ import 'package:nutriton_project/providers/today_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../support/fake_auto_backup_store.dart';
+import 'package:nutriton_project/views/home/undo_banner.dart';
+
 import '../support/test_app.dart';
 
 void main() {
@@ -129,8 +131,8 @@ void main() {
     expect(find.text('Replace all data?'), findsOneWidget);
     await tester.tap(find.byKey(const Key('import-confirm')));
     await settle(tester);
-    await tester.tap(find.byKey(const Key('import-done')));
     await settle(tester);
+    hideUndoBanner();
 
     final foods = await tester.runAsync(() => db.select(db.foodItems).get());
     expect(foods!.single.name, 'Backed up food');

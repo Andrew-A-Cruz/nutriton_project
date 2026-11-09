@@ -13,6 +13,8 @@ import 'package:nutriton_project/providers/backup_providers.dart';
 import 'package:nutriton_project/providers/infrastructure_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:nutriton_project/views/home/undo_banner.dart';
+
 import '../support/test_app.dart';
 
 class FakeBackupFileIo implements BackupFileIo {
@@ -168,14 +170,37 @@ void main() {
     await settle(tester);
     await tester.tap(find.byKey(const Key('import-confirm')));
     await settle(tester);
-    expect(find.text('Backup restored'), findsOneWidget);
-    await tester.tap(find.byKey(const Key('import-done')));
     await settle(tester);
 
     expect(await tester.runAsync(foodNames), ['Backed up food']);
     expect(prefs.getDouble('goal_calories'), 1500);
     expect(find.byKey(const Key('backup-import')), findsNothing);
     expect(find.text('Food Log'), findsOneWidget);
+    expect(find.text('Backup imported'), findsOneWidget);
+    hideUndoBanner();
+    await unmount(tester);
+  });
+
+  testWidgets('Undo right after an import puts the old data back', (
+    tester,
+  ) async {
+    io.pickResult = backupJson;
+    await openSettingsAndShow(tester, const Key('backup-import'));
+
+    await tester.tap(find.byKey(const Key('backup-import')));
+    await settle(tester);
+    await tester.tap(find.byKey(const Key('import-confirm')));
+    await settle(tester);
+    await settle(tester);
+    expect(await tester.runAsync(foodNames), ['Backed up food']);
+
+    await tester.tap(find.byKey(const Key('undo-button')));
+    await settle(tester);
+    await settle(tester);
+
+    expect(await tester.runAsync(foodNames), ['Current food']);
+    expect(prefs.getDouble('goal_calories'), 2000);
+    hideUndoBanner();
     await unmount(tester);
   });
 
@@ -221,8 +246,8 @@ void main() {
     await settle(tester);
     await tester.tap(find.byKey(const Key('import-confirm')));
     await settle(tester);
-    await tester.tap(find.byKey(const Key('import-done')));
     await settle(tester);
+    hideUndoBanner();
 
     expect(
       prefs.getInt(UserPreferences.lastBackupKey),

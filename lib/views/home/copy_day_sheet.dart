@@ -8,6 +8,7 @@ import '../../providers/today_providers.dart';
 import 'date_header.dart';
 import '../common/error_feedback.dart';
 import '../common/haptics.dart';
+import 'undo_banner.dart';
 
 /// Asks which day to copy and copies its entries onto [toDate]. Resolves to
 /// true if a day was copied.
@@ -44,11 +45,18 @@ class _CopyDaySheetState extends ConsumerState<_CopyDaySheet> {
       _error = null;
     });
     try {
-      await ref
-          .read(logRepositoryProvider)
-          .copyDay(fromDate: fromDate, toDate: widget.toDate);
+      final repo = ref.read(logRepositoryProvider);
+      final before = await repo.entryIdsOn(widget.toDate);
+      await repo.copyDay(fromDate: fromDate, toDate: widget.toDate);
+      final added = (await repo.entryIdsOn(widget.toDate)).difference(before);
       Haptics.logged();
-      if (mounted) Navigator.of(context).pop(true);
+      if (!mounted) return;
+      offerUndo(
+        context,
+        message: 'Day copied',
+        undo: () => repo.deleteEntries(added),
+      );
+      Navigator.of(context).pop(true);
     } catch (e, stack) {
       if (mounted) {
         setState(() {

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:nutriton_project/app.dart';
 import 'package:nutriton_project/data/database/app_database.dart';
 import 'package:nutriton_project/providers/infrastructure_providers.dart';
+import 'package:nutriton_project/views/home/undo_banner.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Sets the mocked preference values and loads them. Call outside
@@ -84,8 +85,11 @@ Future<void> settle(WidgetTester tester) async {
 }
 
 /// Removes the widget tree and lets drift's stream cleanup timers finish, so
-/// the test ends with no pending timers. Call at the end of each testWidgets.
+/// the test ends with no pending timers, and hides any Undo banner. Call at
+/// the end of each testWidgets.
 Future<void> unmount(WidgetTester tester) async {
+  // An Undo banner's timer would otherwise outlive the test.
+  hideUndoBanner();
   await tester.pumpWidget(const SizedBox.shrink());
   await tester.runAsync(
     () => Future<void>.delayed(const Duration(milliseconds: 10)),

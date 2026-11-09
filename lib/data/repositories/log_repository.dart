@@ -405,6 +405,47 @@ class LogRepository {
     });
   }
 
+  /// A copy of [entryId] as it is now, to undo an edit with [revertEntry].
+  /// Null when there is no such entry.
+  Future<DeletedLogEntry?> snapshotEntry(String entryId) {
+    return _db.transaction(() async {
+      final entry = await _db.logDao.findEntry(entryId);
+      if (entry == null) return null;
+      final items = await _db.logDao.findEntryItems(entryId);
+      final rowId = await _db.logDao.findRowId(entryId);
+      final outcomes = await _db.scheduledMealDao.findOutcomesForEntry(entryId);
+      return DeletedLogEntry(
+        entry: entry,
+        items: items,
+        outcomeIds: [for (final o in outcomes) o.id],
+        rowId: rowId,
+      );
+    });
+  }
+
+  /// Puts an edited entry back as [snapshot] (from [snapshotEntry]), keeping
+  /// its id and its place in the day.
+  Future<void> revertEntry(DeletedLogEntry snapshot) {
+    return _db.transaction(() async {
+      await _db.logDao.deleteEntry(snapshot.entry.id);
+      await restoreEntry(snapshot);
+    });
+  }
+
+  /// The ids of the entries on [date] ('yyyy-MM-dd').
+  Future<Set<String>> entryIdsOn(String date) async => {
+    for (final e in await _db.logDao.findEntriesForDate(date)) e.id,
+  };
+
+  /// Deletes the entries with [ids], e.g. to undo a copied day.
+  Future<void> deleteEntries(Iterable<String> ids) {
+    return _db.transaction(() async {
+      for (final id in ids) {
+        await _db.logDao.deleteEntry(id);
+      }
+    });
+  }
+
   /// Puts back an entry deleted by [deleteEntryForUndo], with the same id,
   /// date, macros and breakdown. Catalog links to foods or meals that have
   /// since been removed are dropped rather than failing the restore.

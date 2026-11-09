@@ -89,23 +89,31 @@ class _EditAdhocSheetState extends ConsumerState<EditAdhocSheet> {
 
     setState(() => _saving = true);
     try {
-      await ref
-          .read(logRepositoryProvider)
-          .updateAdhoc(
-            widget.entry.id,
-            name: _name.text,
-            macros: _extras.applyTo(
-              Macros(
-                calories: parseNumber(_calories.text)!,
-                protein: parseNumber(_protein.text)!,
-                carbs: parseNumber(_carbs.text)!,
-                fat: parseNumber(_fat.text)!,
-              ),
-              _tracked,
-            ),
-          );
+      final repo = ref.read(logRepositoryProvider);
+      final before = await repo.snapshotEntry(widget.entry.id);
+      await repo.updateAdhoc(
+        widget.entry.id,
+        name: _name.text,
+        macros: _extras.applyTo(
+          Macros(
+            calories: parseNumber(_calories.text)!,
+            protein: parseNumber(_protein.text)!,
+            carbs: parseNumber(_carbs.text)!,
+            fat: parseNumber(_fat.text)!,
+          ),
+          _tracked,
+        ),
+      );
       await _applySlot(ref, widget.entry, _slot);
-      if (mounted) Navigator.of(context).pop();
+      if (!mounted) return;
+      if (before != null) {
+        offerUndo(
+          context,
+          message: 'Entry updated',
+          undo: () => repo.revertEntry(before),
+        );
+      }
+      Navigator.of(context).pop();
     } catch (e, stack) {
       if (mounted) {
         setState(() {
@@ -296,8 +304,16 @@ class _EntryDayPickerState extends ConsumerState<_EntryDayPicker> {
       _error = null;
     });
     try {
-      await ref.read(logRepositoryProvider).moveEntry(widget.entry.id, key);
-      if (mounted) Navigator.of(context).pop(key);
+      final repo = ref.read(logRepositoryProvider);
+      final from = widget.entry.logDate;
+      await repo.moveEntry(widget.entry.id, key);
+      if (!mounted) return;
+      offerUndo(
+        context,
+        message: 'Moved to ${dayLabel(key, today: ref.read(todayProvider))}',
+        undo: () => repo.moveEntry(widget.entry.id, from),
+      );
+      Navigator.of(context).pop(key);
     } catch (e, stack) {
       if (mounted) {
         setState(() {
