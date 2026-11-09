@@ -18,7 +18,7 @@ When an item is finished, delete it here and add a line to [What's Built](./PROD
 | **D1–D7** | A decision that is yours to make | Accept the proposed answer, or choose another | [Waiting on a decision](#waiting-on-a-decision) |
 | **Dep** | Another roadmap item has to come first | Finish that item | [Waiting on another item](#waiting-on-another-item) |
 
-The [privacy policy](#write-and-host-a-privacy-policy) is live, with the support email, so it no longer blocks selling Pro, Health Connect or the Play listing.
+The privacy policy is live ([`docs/privacy.md`](./docs/privacy.md), contact logbite.app@gmail.com), so it no longer blocks selling Pro, Health Connect or the Play listing. A new network call or Health type means a policy update.
 
 ---
 
@@ -35,7 +35,6 @@ The [privacy policy](#write-and-host-a-privacy-policy) is live, with the support
 | [Locale number formatting](#locale-number-formatting) | S | Free | — |
 | [Search Open Food Facts from the catalog](#search-open-food-facts-from-the-catalog) | S | Free | — |
 | [Add the privacy manifest to Xcode](#add-the-privacy-manifest-to-xcode) | S | — | — |
-| [Write and host a privacy policy](#write-and-host-a-privacy-policy) | S | — | — |
 | [A1 — Android native config leftovers](#a1--android-native-config-leftovers) | S | — | — |
 | [Calendar of logged days](#calendar-of-logged-days) | M | Free | — |
 | [Top foods](#top-foods) | M | Free | — |
@@ -48,7 +47,6 @@ The [privacy policy](#write-and-host-a-privacy-policy) is live, with the support
 | [Nutrition label scan](#nutrition-label-scan) | M | Free | — |
 | [Starter generic foods](#starter-generic-foods) | M | Free | — |
 | [iPad and landscape layout](#ipad-and-landscape-layout) | M | Free | — |
-| [M22 — Shareable reports](#m22--shareable-reports) | M | Pro | — |
 | [M23 — Themes and app icons](#m23--themes-and-app-icons) | M | Pro | — |
 | [A2 — Check the free app on Android](#a2--check-the-free-app-on-android) | M | — | — (emulator now; a physical phone for the last checks) |
 | **Blocked** | | | |
@@ -60,12 +58,12 @@ The [privacy policy](#write-and-host-a-privacy-policy) is live, with the support
 | [A4 — Health Connect](#a4--health-connect) | M | Pro | Dep: A3 |
 | [A5 — Android home screen widget](#a5--android-home-screen-widget) | M | Pro | Dep: A3 |
 | [iPhone checks](#iphone-checks) | S | — | B3 |
-| [Sell Pro on iOS (M21 launch)](#sell-pro-on-ios-m21-launch) | M | Pro | B1, D6, privacy policy |
+| [Sell Pro on iOS (M21 launch)](#sell-pro-on-ios-m21-launch) | M | Pro | B1, D6 |
 | [A3 — Pro purchase on Google Play](#a3--pro-purchase-on-google-play) | M | Pro | B2, D5 |
-| [A6 — Play Store release](#a6--play-store-release) | M + 14 days | — | B2, A2, privacy policy |
+| [A6 — Play Store release](#a6--play-store-release) | M + 14 days | — | B2, A2 |
 | [M20 — iCloud sync](#m20--icloud-sync) | XL | Pro | B1, D7 |
 
-**Suggested next:** M22 (Pro would have three features to sell instead of two; see D6).
+**Suggested next:** the small free items (Haptics, Macro split chart and so on), or M23 for a fourth Pro feature.
 
 ---
 
@@ -108,15 +106,6 @@ A "Search online" row under the Add Food catalog search, using the existing `Ope
 
 ### Add the privacy manifest to Xcode
 `ios/Runner/PrivacyInfo.xcprivacy` is written but not in the Runner target. Add it (in Xcode, or with the `xcodeproj` gem as the widget target was). It declares no tracking, no collected data and UserDefaults access (reason `CA92.1`). Then check the build's privacy report (Product > Archive > Generate Privacy Report) for any plugin API without its own manifest.
-
-### Write and host a privacy policy
-Needed for selling Pro, the App Store and Play listings, and Health Connect. Written in [`docs/privacy.md`](./docs/privacy.md), to be served by GitHub Pages.
-
-- [x] Write it: data stays on the device; the network calls (Open Food Facts gets barcodes and search text, RevenueCat an anonymous ID and purchases); Health data stays between the app and Health
-- [x] Contact email `logbite.app@gmail.com` under Contact in `docs/privacy.md`. Use the same address as the support email in the App Store and Play listings
-- [x] Turn on GitHub Pages (done with `gh api`: `main`, `/docs`, HTTPS enforced)
-- [x] `privacyPolicyUrl` in `lib/core/pro.dart` is `https://andrew-a-cruz.github.io/nutriton_project/privacy`, linked from the paywall. Use the same URL in the store listings
-- [ ] Keep it in step: a new network call or Health type means a policy update
 
 ### A1 — Android native config leftovers
 The application ID is `com.andrewcruz.logbite` (permanent after the first Play upload) and `minSdk` is 26. Builds use Homebrew's `openjdk@17` (`flutter config --jdk-dir`); Android Studio's bundled Java 11 is too old. What's left:
@@ -184,18 +173,6 @@ A new user has to create every food that has no barcode. Bundle a few thousand g
 
 On wide screens, show the catalog or the day's log beside Home instead of a full-screen push, and give the Summary chart the extra width.
 
-### M22 — Shareable reports
-**Pro · no schema change · packages: `pdf`, `share_plus`**
-
-A formatted summary of a date range for a dietitian or doctor. Not the backup, which stays free.
-
-- [ ] Summary: a "Share report" action for the range shown. A PDF with the date range, daily averages against goals, a table of daily totals, and the weight trend when there are weigh-ins, sent through the share sheet
-- [ ] The report data as a pure function, `buildReport(days, goals, weights)` in `core/`, tested without rendering
-- [ ] The action goes behind `ProGate`; set `ProFeature.reports.available` to true
-- [ ] Tests: report math (averages, empty days, metrics without a goal), locked and unlocked action, a text check of the PDF's contents
-
-**Done when:** a Pro user can share a PDF of last month from Summary, and a free user sees the lock on that action and nothing else changes.
-
 ### M23 — Themes and app icons
 **Pro · no schema change**
 
@@ -230,7 +207,7 @@ Each decision has a proposed answer. Accepting it unblocks the item.
 | **D3** | Where fast food menu values come from, and whether the license lets them ship in the app | Hand-entered from each chain's published nutrition info for a short list of US chains, USDA FoodData Central where it covers an item, and the source and date stored on each item. Open Food Facts (ODbL share-alike) and paid APIs are out | M24 |
 | **D4** | Target weight guide defaults and wording | Steady pace by default, the calorie floor rule, the screen's text reviewed by someone outside the project before release. Decide too whether to offer the WHO's lower BMI cutoffs for Asian populations | M25, and then adaptive goals |
 | **D5** | Trial on Android (Play has no $0 one-time products) | No trial on Android for the first release, just Buy; a trial kept on the device if purchase rates are low. (A Play subscription trial would change the model) | A3 |
-| **D6** | Pro price, and whether to start selling with only two Pro features | $9.99 launch then $14.99 is a guess (MacroFactor ~$72/yr, Cronometer Gold ~$55/yr). Consider shipping M22 first, or launching lower | Selling Pro |
+| **D6** | Pro price | $9.99 launch then $14.99 is a guess (MacroFactor ~$72/yr, Cronometer Gold ~$55/yr). Pro now has three features (widget, Apple Health, reports); M23 would make four | Selling Pro |
 | **D7** | Is a second device actually planned? If not, M20 can be cut | No proposal yet | M20 |
 
 ### CSV export of the log
@@ -328,6 +305,7 @@ Built but never tried on a real iPhone:
 - [ ] Turn on both Apple Health options and check the data in the Health app (M19)
 - [ ] Automatic backups: the Backups folder shows under On My iPhone > Logbite in Files
 - [ ] The Done bar sits flush on the number keyboard (onboarding goals, a food form, the servings dialog) and closes it
+- [ ] Share a month's report from Summary (the share sheet, then open the PDF in Files or Mail) and read it as a dietitian would (M22)
 
 Pro features are unlocked in `install-iphone` builds. The Android phone checks are part of [A2](#a2--check-the-free-app-on-android).
 
@@ -336,7 +314,7 @@ Pro features are unlocked in `install-iphone` builds. The Android phone checks a
 ## Needs a Paid Account or Store (B1, B2)
 
 ### Sell Pro on iOS (M21 launch)
-**M · B1, D6, privacy policy**
+**M · B1, D6**
 
 M21 is built and tested in code. To sell it:
 
@@ -364,7 +342,7 @@ RevenueCat handles Play Billing with the same entitlements.
 **Done when:** the iOS "Done when" above passes with a Play test account.
 
 ### A6 — Play Store release
-**M + at least 14 days · B2, after A2, privacy policy**
+**M + at least 14 days · B2, after A2**
 
 - [ ] Developer account with identity verification
 - [ ] Upload keystore and `android/key.properties` (see README), backed up outside the repo; opt in to Play App Signing

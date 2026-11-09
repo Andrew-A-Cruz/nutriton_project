@@ -104,9 +104,10 @@ void main() {
       await settle(tester);
       expect(find.text('Home Screen Widget'), findsOneWidget);
       expect(find.text('Apple Health'), findsOneWidget);
+      expect(find.text('Shareable Reports'), findsOneWidget);
       // Unbuilt Pro features are never sold.
       expect(find.text('iCloud Sync'), findsNothing);
-      expect(find.text('Shareable Reports'), findsNothing);
+      expect(find.text('Themes and App Icons'), findsNothing);
       expect(find.text(r'Unlock Pro for $9.99'), findsOneWidget);
       await unmount(tester);
     });
@@ -150,7 +151,15 @@ void main() {
       expect(lock, findsNothing);
       await tester.tap(find.text('Summary'));
       await settle(tester);
-      expect(lock, findsNothing);
+      // Summary's only lock is the Pro report action in its navigation bar.
+      expect(lock, findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(CupertinoNavigationBar),
+          matching: lock,
+        ),
+        findsOneWidget,
+      );
       await unmount(tester);
     });
 
