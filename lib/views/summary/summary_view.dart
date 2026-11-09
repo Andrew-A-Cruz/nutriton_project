@@ -164,6 +164,7 @@ class _ReportBody extends ConsumerWidget {
                 metric: primary,
                 goal: goal,
                 bucketSize: report.range.bucketSize,
+                neutral: ref.watch(mindfulModeProvider),
               ),
             ],
           ),

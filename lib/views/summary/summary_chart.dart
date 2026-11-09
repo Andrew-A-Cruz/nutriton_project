@@ -18,12 +18,16 @@ class SummaryChart extends StatelessWidget {
     required this.metric,
     required this.goal,
     required this.bucketSize,
+    this.neutral = false,
   });
 
   final List<Bucket> buckets;
   final Metric metric;
   final double? goal;
   final BucketSize bucketSize;
+
+  /// Mindful mode: every bar one colour, with no under / over legend.
+  final bool neutral;
 
   /// At most this many x-axis labels, so they never overlap.
   static const _maxLabels = 6;
@@ -43,7 +47,7 @@ class SummaryChart extends StatelessWidget {
     final underColor = CupertinoColors.activeBlue.resolveFrom(context);
     final onTargetColor = CupertinoColors.systemGreen.resolveFrom(context);
     final overColor = CupertinoColors.systemRed.resolveFrom(context);
-    Color colorFor(double value) => !hasGoal
+    Color colorFor(double value) => !hasGoal || neutral
         ? underColor
         : switch (goalStatus(value, goal!)) {
             GoalStatus.under => underColor,
@@ -154,7 +158,7 @@ class SummaryChart extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             chart,
-            if (hasGoal) ...[
+            if (hasGoal && !neutral) ...[
               const SizedBox(height: 8),
               Wrap(
                 key: const Key('summary-legend'),

@@ -27,7 +27,6 @@ The privacy policy is live ([`docs/privacy.md`](./docs/privacy.md), contact logb
 | Item | Size | Tier | Blocked by |
 |---|---|---|---|
 | **Ready now** | | | |
-| [Mindful mode](#mindful-mode) | S | Free | — |
 | [Locale number formatting](#locale-number-formatting) | S | Free | — |
 | [Search Open Food Facts from the catalog](#search-open-food-facts-from-the-catalog) | S | Free | — |
 | [Add the privacy manifest to Xcode](#add-the-privacy-manifest-to-xcode) | S | — | — |
@@ -59,16 +58,11 @@ The privacy policy is live ([`docs/privacy.md`](./docs/privacy.md), contact logb
 | [A6 — Play Store release](#a6--play-store-release) | M + 14 days | — | B2, A2 |
 | [M20 — iCloud sync](#m20--icloud-sync) | XL | Pro | B1, D7 |
 
-**Suggested next:** the small free items (Mindful mode and so on), or M23 for a fourth Pro feature.
+**Suggested next:** the small free items (Locale number formatting and so on), or M23 for a fourth Pro feature.
 
 ---
 
 ## Ready Now — Small
-
-### Mindful mode
-**Free · preferences only**
-
-One Settings switch for users who find tracking stressful: hide calorie and macro numbers on Home (foods only, or rings without numbers), hide the streak badge, and draw Summary bars in one neutral colour. Reminders stay. Only rendering changes.
 
 ### Locale number formatting
 **Free · no schema change**

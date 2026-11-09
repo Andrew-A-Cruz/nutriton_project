@@ -116,6 +116,7 @@ class UserPreferences {
   static const reviewAskedKey = 'review_prompt_asked';
   static const autoBackupEnabledKey = 'auto_backup_enabled';
   static const lastAutoBackupKey = 'last_auto_backup_at';
+  static const mindfulModeKey = 'mindful_mode';
   static String goalKey(Metric metric) => 'goal_${metric.name}';
   static String goalPercentKey(Metric metric) => 'goal_percent_${metric.name}';
   static String reminderEnabledKey(int slot) => 'reminder_${slot}_enabled';
@@ -264,6 +265,12 @@ class UserPreferences {
 
   Future<void> writeAutoBackupEnabled(bool enabled) =>
       _prefs.setBool(autoBackupEnabledKey, enabled);
+
+  /// Whether mindful mode hides the numbers (off by default). Device-local,
+  /// like [readAutoBackupEnabled].
+  bool readMindfulMode() => _prefs.getBool(mindfulModeKey) ?? false;
+
+  Future<void> writeMindfulMode(bool on) => _prefs.setBool(mindfulModeKey, on);
 
   /// When the last automatic backup was written, or null if never.
   DateTime? readLastAutoBackup() {
