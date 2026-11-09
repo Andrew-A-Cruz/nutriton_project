@@ -59,13 +59,15 @@ class _AddFoodViewState extends ConsumerState<AddFoodView> {
   }
 
   /// Creates a catalog food, then logs it straight away. A [scannedBarcode]
-  /// is looked up on Open Food Facts as the form opens.
-  Future<void> _newFood({String? scannedBarcode}) async {
+  /// is looked up, or a [searchQuery] searched, on Open Food Facts as the form
+  /// opens.
+  Future<void> _newFood({String? scannedBarcode, String? searchQuery}) async {
     final food = await Navigator.of(context).push<FoodItem>(
       CupertinoPageRoute<FoodItem>(
         builder: (_) => FoodFormView(
           offerLogAfterSave: true,
           scannedBarcode: scannedBarcode,
+          searchQuery: searchQuery,
         ),
       ),
     );
@@ -143,6 +145,7 @@ class _AddFoodViewState extends ConsumerState<AddFoodView> {
                       : null,
                   onFoodTap: _logFood,
                   onMealTap: _logMeal,
+                  onSearchOnline: (query) => _newFood(searchQuery: query),
                 ),
                 _AddMode.quick => QuickAddForm(logDate: widget.logDate),
                 _AddMode.adhoc => AdhocFoodForm(logDate: widget.logDate),

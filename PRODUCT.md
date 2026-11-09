@@ -124,7 +124,7 @@ As of November 2026, schema v9. Known gaps that are worth doing are in the roadm
 | M13 | Fiber, sugar, sodium (v4) | |
 | M14 | Streak badge, up to three daily reminders (cancelled once the day has an entry) | Android scheduling is inexact. Not yet checked on an iPhone |
 | M15 | Body weight (v5), kg or lb, weight chart with a 7-day average | |
-| M16 | Barcode scan (v6), local match first, then Open Food Facts | No "Search online" row in catalog search. A real barcode decode is untested on a physical device |
+| M16 | Barcode scan (v6), local match first, then Open Food Facts | A real barcode decode is untested on a physical device |
 | M17 | Planned foods as well as meals, with slot and servings (v7) | A backup with a food-only plan reads as damaged in a pre-M17 app |
 | M18 | iOS home screen widget (Pro) | The Swift is untested on a phone |
 | M19 | Apple Health (Pro, iOS): writes nutrition, reads body weight (v8 `source`) | A weight deleted in Health is not removed here. Untested on a phone |
@@ -137,6 +137,7 @@ As of November 2026, schema v9. Known gaps that are worth doing are in the roadm
 | Copy an entry | Long-press an entry > "Copy to another day": a date picker (tomorrow by default) or a "Copy to tomorrow" shortcut, then an undo banner | |
 | Mindful mode | Settings > Display: Today shows foods and goal progress bars with no calorie or macro numbers, the streak badge is hidden, and Summary bars are one colour with no legend | Device-local, not in backups. Summary averages and reports still show numbers |
 | Locale decimals | Decimals display with the phone's separator (`12,5 g` in a comma region), read once at launch (`core/number_locale.dart`) | Separator only: no thousands grouping, and dates stay English |
+| Search online | Typing in Add Food's catalog search shows "Search Open Food Facts for …"; it opens New Food with that search already run, and Save & Log logs the pick | Add Food only, not the Catalog tab |
 | Haptics | A light tap when something is logged (food, meal, quick add, plan, log again, copy day) and a firmer one on delete (`views/common/haptics.dart`) | The phone's haptics setting applies. Untested on a phone |
 | Privacy policy | Hosted on GitHub Pages from `docs/privacy.md`, linked from the paywall, contact logbite.app@gmail.com | Update it with any new network call or Health type |
 | Done key | A Done bar above the iOS number keyboard, app-wide (`KeyboardDoneBar` in `CupertinoApp.builder`) | iOS only; Done, no Next. Untested on a phone |
