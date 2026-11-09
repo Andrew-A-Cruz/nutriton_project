@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../core/date_key.dart';
 import '../../providers/log_providers.dart';
 import '../../providers/today_providers.dart';
+import 'calendar_view.dart';
 
 /// 'Today', 'Yesterday', 'Mon, Oct 20', or 'Mon, Oct 20, 2025' when the
 /// date is not in the same year as [today].
@@ -35,16 +36,21 @@ class DateHeader extends ConsumerWidget {
             child: const Icon(CupertinoIcons.chevron_left),
           ),
           Expanded(
-            child: GestureDetector(
-              key: const Key('date-title'),
-              behavior: HitTestBehavior.opaque,
-              onTap: days.goToToday,
-              child: Text(
-                dayLabel(date, today: ref.watch(todayProvider)),
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
+            child: Semantics(
+              button: true,
+              hint: 'Opens the calendar',
+              child: GestureDetector(
+                key: const Key('date-title'),
+                behavior: HitTestBehavior.opaque,
+                // The calendar, which also has a Today button.
+                onTap: () => showLogCalendar(context, date: date),
+                child: Text(
+                  dayLabel(date, today: ref.watch(todayProvider)),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),

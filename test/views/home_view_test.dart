@@ -102,7 +102,7 @@ void main() {
   });
 
   testWidgets(
-    'previous day shows that day; tapping the title returns to today',
+    'previous day shows that day; the calendar\'s Today returns to today',
     (tester) async {
       await tester.runAsync(seedDay);
       await pumpHome(tester);
@@ -115,6 +115,8 @@ void main() {
       expect(find.text('Protein bar'), findsNothing);
 
       await tester.tap(find.byKey(const Key('date-title')));
+      await settle(tester);
+      await tester.tap(find.byKey(const Key('calendar-today')));
       await settle(tester);
 
       expect(find.text('Protein bar'), findsOneWidget);

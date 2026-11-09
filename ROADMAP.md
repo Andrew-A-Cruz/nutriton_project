@@ -28,7 +28,6 @@ The privacy policy is live ([`docs/privacy.md`](./docs/privacy.md), contact logb
 |---|---|---|---|
 | **Ready now** | | | |
 | [A1 — Android native config leftovers](#a1--android-native-config-leftovers) | S | — | D: bundled or unbundled scanner model |
-| [Calendar of logged days](#calendar-of-logged-days) | M | Free | — |
 | [Top foods](#top-foods) | M | Free | — |
 | [Goals per weekday](#goals-per-weekday) | M | Free | — |
 | [Undo last action](#undo-last-action) | M | Free | — |
@@ -55,7 +54,7 @@ The privacy policy is live ([`docs/privacy.md`](./docs/privacy.md), contact logb
 | [A6 — Play Store release](#a6--play-store-release) | M + 14 days | — | B2, A2 |
 | [M20 — iCloud sync](#m20--icloud-sync) | XL | Pro | B1, D7 |
 
-**Suggested next:** the small free items (the medium items: Calendar of logged days and so on), or M23 for a fourth Pro feature.
+**Suggested next:** the small free items (the medium items: Top foods and so on), or M23 for a fourth Pro feature.
 
 ---
 
@@ -69,11 +68,6 @@ The application ID is `com.andrewcruz.logbite` (permanent after the first Play u
 ---
 
 ## Ready Now — Medium
-
-### Calendar of logged days
-**Free · no schema change**
-
-A month grid, opened by tapping the Home date, with a dot on logged days and days tinted over or under goal. Tapping a day jumps Home there, so it doubles as a "go to date" picker.
 
 ### Top foods
 **Free · no schema change**
