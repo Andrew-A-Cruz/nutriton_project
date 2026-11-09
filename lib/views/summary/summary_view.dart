@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/body_weight.dart';
 import '../../core/date_key.dart';
+import '../../core/macro_split.dart';
 import '../../core/metrics.dart';
 import '../../core/report.dart';
 import '../../core/summary_math.dart';
@@ -15,6 +16,8 @@ import '../../providers/report_providers.dart';
 import '../../providers/summary_providers.dart';
 import '../../providers/today_providers.dart';
 import '../common/error_feedback.dart';
+import '../common/macro_split_bar.dart';
+import '../home/macro_summary.dart' show showMacroSplit;
 import '../common/pro_gate.dart';
 import 'summary_chart.dart';
 import 'weight_chart.dart';
@@ -120,6 +123,11 @@ class _ReportBody extends ConsumerWidget {
                       ? null
                       : coverageText(m, report.coverage[m]!),
                 ),
+            if (averages != null && showMacroSplit(settings))
+              if (macroSplit(averages) case final split?) ...[
+                const SizedBox(height: 8),
+                MacroSplitBar(split: split),
+              ],
             const SizedBox(height: 8),
             Text(
               'Days logged: ${report.daysLogged} of ${report.totalDays}',

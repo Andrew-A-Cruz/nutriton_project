@@ -1,9 +1,11 @@
 import 'package:flutter/cupertino.dart';
 
+import '../../core/macro_split.dart';
 import '../../core/metrics.dart';
 import '../../core/nutrition_math.dart';
 import '../../data/database/app_database.dart';
 import '../../data/preferences/user_preferences.dart';
+import '../common/macro_split_bar.dart';
 
 /// The macros stored on a log entry.
 Macros macrosOfEntry(FoodLogEntry e) => Macros(
@@ -19,6 +21,14 @@ Macros macrosOfEntry(FoodLogEntry e) => Macros(
 /// Sum of the macros of [entries].
 Macros totalsOf(Iterable<FoodLogEntry> entries) =>
     sumMacros(entries.map(macrosOfEntry));
+
+/// Whether to show the macro split: only to people who track at least one
+/// of protein, carbs and fat.
+bool showMacroSplit(UserSettings settings) => const [
+  Metric.protein,
+  Metric.carbs,
+  Metric.fat,
+].any(settings.trackedMetrics.contains);
 
 /// Day totals: the primary metric large with progress toward its goal, and
 /// each secondary metric below.
@@ -69,6 +79,11 @@ class MacroSummary extends StatelessWidget {
                   goal: settings.goalFor(m),
                   coverageHint: hintFor(m),
                 ),
+              ],
+              if (showMacroSplit(settings) ? macroSplit(totals) : null
+                  case final split?) ...[
+                const SizedBox(height: 14),
+                MacroSplitBar(split: split),
               ],
             ],
           ),
