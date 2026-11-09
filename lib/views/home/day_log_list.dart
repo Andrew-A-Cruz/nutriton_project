@@ -301,11 +301,16 @@ class _EmptyLogStateState extends ConsumerState<EmptyLogState> {
   Future<void> _copy(String previous) async {
     if (_copying) return;
     setState(() => _copying = true);
+    // This view is replaced once the copied entries arrive, so take what
+    // the Undo banner needs now.
+    final offer = UndoOffer.of(context);
     try {
-      await ref
-          .read(logRepositoryProvider)
-          .copyDay(fromDate: previous, toDate: widget.date);
+      final repo = ref.read(logRepositoryProvider);
+      final before = await repo.entryIdsOn(widget.date);
+      await repo.copyDay(fromDate: previous, toDate: widget.date);
+      final added = (await repo.entryIdsOn(widget.date)).difference(before);
       Haptics.logged();
+      offer.show(message: 'Day copied', undo: () => repo.deleteEntries(added));
     } finally {
       if (mounted) setState(() => _copying = false);
     }

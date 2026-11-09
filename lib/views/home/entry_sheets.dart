@@ -11,6 +11,7 @@ import '../../providers/preferences_providers.dart';
 import '../common/form_widgets.dart';
 import '../common/meal_slot_picker.dart';
 import '../common/error_feedback.dart';
+import 'undo_banner.dart';
 
 /// Edits the serving count of a logged food entry.
 class EditServingsDialog extends ConsumerStatefulWidget {
@@ -47,16 +48,22 @@ class _EditServingsDialogState extends ConsumerState<EditServingsDialog> {
       _error = null;
     });
     try {
-      await ref
-          .read(logRepositoryProvider)
-          .updateServings(widget.entry.id, servings: value);
+      final repo = ref.read(logRepositoryProvider);
+      final before = await repo.snapshotEntry(widget.entry.id);
+      await repo.updateServings(widget.entry.id, servings: value);
       final slot = _slot;
       if (slot != null && slot.name != widget.entry.mealSlot) {
-        await ref
-            .read(logRepositoryProvider)
-            .updateMealSlot(widget.entry.id, slot);
+        await repo.updateMealSlot(widget.entry.id, slot);
       }
-      if (mounted) Navigator.of(context).pop();
+      if (!mounted) return;
+      if (before != null) {
+        offerUndo(
+          context,
+          message: 'Entry updated',
+          undo: () => repo.revertEntry(before),
+        );
+      }
+      Navigator.of(context).pop();
     } catch (e, stack) {
       if (mounted) {
         setState(() {
@@ -137,9 +144,18 @@ class _MealBreakdownSheetState extends ConsumerState<MealBreakdownSheet> {
     final previous = _slot;
     setState(() => _slot = slot);
     try {
-      await ref
-          .read(logRepositoryProvider)
-          .updateMealSlot(widget.entry.id, slot);
+      final repo = ref.read(logRepositoryProvider);
+      await repo.updateMealSlot(widget.entry.id, slot);
+      if (mounted && previous != null && previous != slot) {
+        offerUndo(
+          context,
+          message: 'Moved to ${slot.label}',
+          undo: () async {
+            await repo.updateMealSlot(widget.entry.id, previous);
+            if (mounted) setState(() => _slot = previous);
+          },
+        );
+      }
     } catch (e, stack) {
       reportError(ref, e, stack, 'Could not change the meal slot');
       if (mounted) setState(() => _slot = previous);

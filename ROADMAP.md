@@ -28,7 +28,6 @@ The privacy policy is live ([`docs/privacy.md`](./docs/privacy.md), contact logb
 |---|---|---|---|
 | **Ready now** | | | |
 | [A1 — Android native config leftovers](#a1--android-native-config-leftovers) | S | — | D: bundled or unbundled scanner model |
-| [Undo last action](#undo-last-action) | M | Free | — |
 | [Manage planned meals](#manage-planned-meals) | M | Free | — |
 | [Serving presets](#serving-presets) | M | Free | — |
 | [Water tracking](#water-tracking) | M | Free | — |
@@ -52,7 +51,7 @@ The privacy policy is live ([`docs/privacy.md`](./docs/privacy.md), contact logb
 | [A6 — Play Store release](#a6--play-store-release) | M + 14 days | — | B2, A2 |
 | [M20 — iCloud sync](#m20--icloud-sync) | XL | Pro | B1, D7 |
 
-**Suggested next:** the small free items (the medium items: Undo last action and so on), or M23 for a fourth Pro feature.
+**Suggested next:** the small free items (the medium items: Manage planned meals and so on), or M23 for a fourth Pro feature.
 
 ---
 
@@ -66,11 +65,6 @@ The application ID is `com.andrewcruz.logbite` (permanent after the first Play u
 ---
 
 ## Ready Now — Medium
-
-### Undo last action
-**Free · no schema change**
-
-Generalize the swipe-to-delete undo to edits, copy day and imports: keep the last change's inverse in memory and offer Undo for a few seconds.
 
 ### Manage planned meals
 **Free · schema change only for the end date**

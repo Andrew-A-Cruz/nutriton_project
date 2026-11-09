@@ -8,6 +8,7 @@ import '../../data/repositories/backup_repository.dart';
 import '../../providers/backup_providers.dart';
 import '../../providers/preferences_providers.dart';
 import '../common/error_feedback.dart';
+import '../home/undo_banner.dart';
 
 /// Settings section to export all data to a JSON file and restore from one.
 /// Restoring replaces everything, so it asks first.
@@ -100,7 +101,7 @@ class _BackupSectionState extends ConsumerState<BackupSection> {
           content: Text(
             'This file has $summary.\n\n'
             'Importing replaces your foods, meals, log, plans and settings '
-            'with its contents. This cannot be undone.',
+            'with its contents. You can undo it right afterwards.',
             key: const Key('import-summary'),
           ),
           actions: [
@@ -119,25 +120,22 @@ class _BackupSectionState extends ConsumerState<BackupSection> {
         ),
       );
       if (confirmed != true || !mounted) return;
+      // Kept in memory so the import can be undone.
+      final previous = await repo.exportJson();
       await repo.restore(data);
       ref.invalidate(preferencesProvider);
       if (!mounted) return;
-      await showCupertinoDialog<void>(
-        context: context,
-        builder: (context) => CupertinoAlertDialog(
-          title: const Text('Backup restored'),
-          content: const Text('Your data has been replaced.'),
-          actions: [
-            CupertinoDialogAction(
-              key: const Key('import-done'),
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
+      final container = ProviderScope.containerOf(context, listen: false);
+      offerUndo(
+        context,
+        message: 'Backup imported',
+        undo: () async {
+          await repo.restore(repo.readBackup(previous));
+          container.invalidate(preferencesProvider);
+        },
       );
       // The settings form on screen is stale now; go back to Home.
-      if (mounted) Navigator.of(context).pop();
+      Navigator.of(context).pop();
     } on BackupException catch (e) {
       _setStatus(e.message, error: true);
     } on Exception {
