@@ -138,6 +138,7 @@ As of November 2026, schema v9. Known gaps that are worth doing are in the roadm
 | Mindful mode | Settings > Display: Today shows foods and goal progress bars with no calorie or macro numbers, the streak badge is hidden, and Summary bars are one colour with no legend | Device-local, not in backups. Summary averages and reports still show numbers |
 | Locale decimals | Decimals display with the phone's separator (`12,5 g` in a comma region), read once at launch (`core/number_locale.dart`) | Separator only: no thousands grouping, and dates stay English |
 | Search online | Typing in Add Food's catalog search shows "Search Open Food Facts for …"; it opens New Food with that search already run, and Save & Log logs the pick | Add Food only, not the Catalog tab |
+| Privacy manifests | `ios/Runner/PrivacyInfo.xcprivacy` (no tracking, no collected data; UserDefaults CA92.1 and 1C8F.1, file timestamps C617.1) and one for the widget (1C8F.1), both in their Xcode targets | Xcode's archive privacy report not yet run |
 | Haptics | A light tap when something is logged (food, meal, quick add, plan, log again, copy day) and a firmer one on delete (`views/common/haptics.dart`) | The phone's haptics setting applies. Untested on a phone |
 | Privacy policy | Hosted on GitHub Pages from `docs/privacy.md`, linked from the paywall, contact logbite.app@gmail.com | Update it with any new network call or Health type |
 | Done key | A Done bar above the iOS number keyboard, app-wide (`KeyboardDoneBar` in `CupertinoApp.builder`) | iOS only; Done, no Next. Untested on a phone |

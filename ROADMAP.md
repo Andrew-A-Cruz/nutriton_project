@@ -27,7 +27,6 @@ The privacy policy is live ([`docs/privacy.md`](./docs/privacy.md), contact logb
 | Item | Size | Tier | Blocked by |
 |---|---|---|---|
 | **Ready now** | | | |
-| [Add the privacy manifest to Xcode](#add-the-privacy-manifest-to-xcode) | S | — | — |
 | [A1 — Android native config leftovers](#a1--android-native-config-leftovers) | S | — | — |
 | [Calendar of logged days](#calendar-of-logged-days) | M | Free | — |
 | [Top foods](#top-foods) | M | Free | — |
@@ -56,14 +55,11 @@ The privacy policy is live ([`docs/privacy.md`](./docs/privacy.md), contact logb
 | [A6 — Play Store release](#a6--play-store-release) | M + 14 days | — | B2, A2 |
 | [M20 — iCloud sync](#m20--icloud-sync) | XL | Pro | B1, D7 |
 
-**Suggested next:** the small free items (the privacy manifest and the Android leftovers), or M23 for a fourth Pro feature.
+**Suggested next:** the small free items (the Android leftovers), or M23 for a fourth Pro feature.
 
 ---
 
 ## Ready Now — Small
-
-### Add the privacy manifest to Xcode
-`ios/Runner/PrivacyInfo.xcprivacy` is written but not in the Runner target. Add it (in Xcode, or with the `xcodeproj` gem as the widget target was). It declares no tracking, no collected data and UserDefaults access (reason `CA92.1`). Then check the build's privacy report (Product > Archive > Generate Privacy Report) for any plugin API without its own manifest.
 
 ### A1 — Android native config leftovers
 The application ID is `com.andrewcruz.logbite` (permanent after the first Play upload) and `minSdk` is 26. Builds use Homebrew's `openjdk@17` (`flutter config --jdk-dir`); Android Studio's bundled Java 11 is too old. What's left:
@@ -281,7 +277,7 @@ M21 is built and tested in code. To sell it:
 - [ ] Paid Apple Developer account; App Store Small Business Program (15%); Paid Applications agreement, tax and banking
 - [ ] Create the [store products](./PRODUCT.md#store-products) in App Store Connect, Family Sharing on for Pro
 - [ ] RevenueCat project with the App Store app; entitlement `pro` granted by `com.nutriton.app.pro` **only**. Builds read the key from `--dart-define=REVENUECAT_IOS_KEY=...`
-- [ ] Set `privacyPolicyUrl` in `lib/core/pro.dart`
+- [ ] On the first archive, check Xcode's privacy report (Organizer > Generate Privacy Report). The app and widget manifests are in place; health, home_widget, purchases_flutter and sqlite3 ship none of their own, and the app manifest covers their UserDefaults and file timestamp use
 - [ ] Sandbox testing (StoreKit config `ios/Runner/Nutriton.storekit` for local runs): buy, restore after reinstall, refund (Pro locks, data stays), offline launch, trial expiry, Family Sharing on a second account
 - [ ] Decide grandfathering: it stays off unless a free version ships before Pro (`grandfatherBeforeBuild` in `core/pro.dart`)
 
