@@ -364,7 +364,7 @@ void main() {
       );
     });
 
-    test('a real v1 file on disk reopens as v9 with its data', () async {
+    test('a real v1 file on disk reopens as v10 with its data', () async {
       final dir = Directory.systemTemp.createTempSync('food_log_migration');
       addTearDown(() => dir.deleteSync(recursive: true));
       final file = File('${dir.path}/food_log.sqlite');
@@ -388,7 +388,7 @@ void main() {
       addTearDown(db.close);
 
       await expectV1DataSurvived(db);
-      expect(await userVersion(db), 9);
+      expect(await userVersion(db), 10);
       expect(await hasStartDateIndex(db), isTrue);
       expect(await db.scheduledMealDao.findSchedulesForMeal('m1'), isEmpty);
     });
@@ -521,7 +521,7 @@ void main() {
       expect(await userVersion(db), 3);
     });
 
-    test('a real v2 file on disk reopens as v9 with its data', () async {
+    test('a real v2 file on disk reopens as v10 with its data', () async {
       final dir = Directory.systemTemp.createTempSync('food_log_v2');
       addTearDown(() => dir.deleteSync(recursive: true));
       final file = File('${dir.path}/food_log.sqlite');
@@ -539,7 +539,7 @@ void main() {
       final db = AppDatabase(NativeDatabase(file));
       addTearDown(db.close);
       await expectSurvived(db);
-      expect(await userVersion(db), 9);
+      expect(await userVersion(db), 10);
     });
   });
 
@@ -667,7 +667,7 @@ void main() {
       }
     });
 
-    test('a real v3 file on disk reopens as v9 with its data', () async {
+    test('a real v3 file on disk reopens as v10 with its data', () async {
       final dir = Directory.systemTemp.createTempSync('food_log_v3');
       addTearDown(() => dir.deleteSync(recursive: true));
       final file = File('${dir.path}/food_log.sqlite');
@@ -685,7 +685,7 @@ void main() {
       final db = AppDatabase(NativeDatabase(file));
       addTearDown(db.close);
       await expectSurvived(db);
-      expect(await userVersion(db), 9);
+      expect(await userVersion(db), 10);
     });
   });
 
@@ -773,7 +773,7 @@ void main() {
       }
     });
 
-    test('a real v4 file on disk reopens as v9 with its data', () async {
+    test('a real v4 file on disk reopens as v10 with its data', () async {
       final dir = Directory.systemTemp.createTempSync('food_log_v4');
       addTearDown(() => dir.deleteSync(recursive: true));
       final file = File('${dir.path}/food_log.sqlite');
@@ -791,7 +791,7 @@ void main() {
       final db = AppDatabase(NativeDatabase(file));
       addTearDown(db.close);
       await expectSurvived(db);
-      expect(await userVersion(db), 9);
+      expect(await userVersion(db), 10);
       expect(await db.select(db.bodyWeights).get(), isEmpty);
     });
   });
@@ -888,7 +888,7 @@ void main() {
       }
     });
 
-    test('a real v5 file on disk reopens as v9 with its data', () async {
+    test('a real v5 file on disk reopens as v10 with its data', () async {
       final dir = Directory.systemTemp.createTempSync('food_log_v5');
       addTearDown(() => dir.deleteSync(recursive: true));
       final file = File('${dir.path}/food_log.sqlite');
@@ -906,7 +906,7 @@ void main() {
       final db = AppDatabase(NativeDatabase(file));
       addTearDown(db.close);
       await expectSurvived(db);
-      expect(await userVersion(db), 9);
+      expect(await userVersion(db), 10);
     });
   });
 
@@ -1069,7 +1069,7 @@ void main() {
       }
     });
 
-    test('a real v6 file on disk reopens as v9 with its data', () async {
+    test('a real v6 file on disk reopens as v10 with its data', () async {
       final dir = Directory.systemTemp.createTempSync('food_log_v6');
       addTearDown(() => dir.deleteSync(recursive: true));
       final file = File('${dir.path}/food_log.sqlite');
@@ -1087,7 +1087,7 @@ void main() {
       final db = AppDatabase(NativeDatabase(file));
       addTearDown(db.close);
       await expectSurvived(db);
-      expect(await userVersion(db), 9);
+      expect(await userVersion(db), 10);
     });
   });
 
@@ -1143,7 +1143,7 @@ void main() {
       },
     );
 
-    test('a real v7 file on disk reopens as v9 with its data', () async {
+    test('a real v7 file on disk reopens as v10 with its data', () async {
       final dir = Directory.systemTemp.createTempSync('food_log_v7');
       addTearDown(() => dir.deleteSync(recursive: true));
       final file = File('${dir.path}/food_log.sqlite');
@@ -1161,7 +1161,7 @@ void main() {
       final db = AppDatabase(NativeDatabase(file));
       addTearDown(db.close);
       await expectSurvived(db);
-      expect(await userVersion(db), 9);
+      expect(await userVersion(db), 10);
     });
   });
 
@@ -1284,7 +1284,7 @@ void main() {
       }
     });
 
-    test('a real v8 file on disk reopens as v9 with its data', () async {
+    test('a real v8 file on disk reopens as v10 with its data', () async {
       final dir = Directory.systemTemp.createTempSync('food_log_v8');
       addTearDown(() => dir.deleteSync(recursive: true));
       final file = File('${dir.path}/food_log.sqlite');
@@ -1302,16 +1302,38 @@ void main() {
       final db = AppDatabase(NativeDatabase(file));
       addTearDown(db.close);
       await expectSurvived(db);
-      expect(await userVersion(db), 9);
+      expect(await userVersion(db), 10);
+    });
+  });
+
+  group('v9 to v10', () {
+    test('keeps plans, with no end date', () async {
+      final schema = await verifier.schemaAt(9);
+      schema.rawDatabase
+        ..execute("INSERT INTO meals (id, name) VALUES ('m1', 'Lunch')")
+        ..execute(
+          'INSERT INTO scheduled_meals '
+          '(id, meal_id, start_date, weekdays, servings, created_at) '
+          "VALUES ('s1', 'm1', '2026-10-01', 31, 1.5, 1760000000)",
+        );
+      final db = AppDatabase(schema.newConnection());
+      addTearDown(db.close);
+
+      final plan = (await db.scheduledMealDao.findSchedule('s1'))!;
+      expect(plan.weekdays, 31);
+      expect(plan.servings, 1.5);
+      expect(plan.endDate, isNull);
+      expect(await userVersion(db), 10);
+      await db.validateDatabaseSchema();
     });
   });
 
   group('fresh database', () {
-    test('starts at v9 with empty scheduling tables', () async {
+    test('starts at v10 with empty scheduling tables', () async {
       final db = AppDatabase(NativeDatabase.memory());
       addTearDown(db.close);
 
-      expect(await userVersion(db), 9);
+      expect(await userVersion(db), 10);
       expect(await db.scheduledMealDao.findSchedulesForMeal('x'), isEmpty);
       expect(await hasStartDateIndex(db), isTrue);
       await db.validateDatabaseSchema();

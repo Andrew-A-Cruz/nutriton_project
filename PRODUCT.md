@@ -111,12 +111,12 @@ Family Sharing is on for Pro. Development builds can't buy anything; `--dart-def
 
 ## What's Built
 
-As of November 2026, schema v9. Known gaps that are worth doing are in the roadmap.
+As of November 2026, schema v10. Known gaps that are worth doing are in the roadmap.
 
 | Milestone | What | Notes and known limits |
 |---|---|---|
 | v1 (M0–M8) | Onboarding, Home, Catalog, Add Food, meals, Summary, Settings, dark mode and 2x text, app icon, release build on iPhone | |
-| Scheduling (v2, extended in M17) | Plan a meal or food for one day or weekly, with slot and servings; shown dimmed on Home, tap to log, swipe to skip | No screen to browse or edit plans, no end date. Recipes can't be scheduled |
+| Scheduling (v2, extended in M17) | Plan a meal or food for one day or weekly, with slot and servings; shown dimmed on Home, tap to log, swipe to skip. Settings > Planned meals lists every plan to edit or remove, and repeating plans can end on a date (v10) | Recipes can't be scheduled |
 | M9 | Recent and frequent foods in Add Food, servings prefilled from last time | |
 | M10 | Log again, copy day, Copy yesterday | |
 | M11 | JSON backup: share-sheet export, import with a counts preview | |

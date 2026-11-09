@@ -360,7 +360,8 @@ lib/
 | 7 | M17 | `scheduled_meals` rebuilt: `meal_id` nullable, new nullable `food_item_id`, `meal_slot` (nullable) and `servings` (default 1), with a CHECK that exactly one source is set |
 | 8 | M19 | `body_weights.source` (nullable text, default `'manual'`; `'health'` for a weight read from Apple Health) |
 | 9 | November 2026 improvements | `food_items.brand` (nullable) and `favorite`; `meals.favorite` and `cooked_weight_g` (nullable, recipes); indexes on `food_log_entries` (`created_at`, `food_item_id`, `meal_id`), `food_log_entry_items.entry_id` and `meal_food_items.meal_id` |
-| 10 (planned) | M24 | `food_items.menu_item_id` (nullable, indexed): links a catalog food to its bundled menu item |
+| 10 | Manage planned meals | `scheduled_meals.end_date` (nullable): the last day of a repeating plan |
+| 11 (planned) | M24 | `food_items.menu_item_id` (nullable, indexed): links a catalog food to its bundled menu item |
 
 Each step has a drift migration test (`make-migrations`), a row here, and a backup that still reads older files.
 

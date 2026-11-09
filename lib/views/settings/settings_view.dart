@@ -7,6 +7,7 @@ import '../onboarding/preferences_form.dart';
 import 'apple_health_section.dart';
 import 'backup_section.dart';
 import 'error_log_view.dart';
+import 'planned_meals_view.dart';
 import 'pro_section.dart';
 import 'reminders_section.dart';
 import 'weekday_goals_view.dart';
@@ -27,6 +28,7 @@ class SettingsView extends ConsumerWidget {
           submitLabel: 'Save',
           extraSections: const [
             WeekdayGoalsSection(),
+            PlannedMealsSection(),
             _MindfulSection(),
             RemindersSection(),
             AppleHealthSection(),

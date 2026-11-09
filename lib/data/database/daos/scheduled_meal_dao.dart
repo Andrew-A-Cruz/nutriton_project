@@ -28,6 +28,36 @@ class ScheduledMealDao extends DatabaseAccessor<AppDatabase>
     with _$ScheduledMealDaoMixin {
   ScheduledMealDao(super.attachedDatabase);
 
+  /// Every plan with its meal or food, oldest first. Re-emits on change.
+  Stream<List<PendingScheduledMeal>> watchAllPlans() {
+    final query =
+        select(scheduledMeals).join([
+            leftOuterJoin(meals, meals.id.equalsExp(scheduledMeals.mealId)),
+            leftOuterJoin(
+              foodItems,
+              foodItems.id.equalsExp(scheduledMeals.foodItemId),
+            ),
+          ])
+          ..where(meals.id.isNotNull() | foodItems.id.isNotNull())
+          ..orderBy([
+            OrderingTerm.asc(scheduledMeals.createdAt),
+            OrderingTerm.asc(scheduledMeals.rowId),
+          ]);
+    return query.watch().map(
+      (rows) => [
+        for (final r in rows)
+          PendingScheduledMeal(
+            schedule: r.readTable(scheduledMeals),
+            meal: r.readTableOrNull(meals),
+            food: r.readTableOrNull(foodItems),
+          ),
+      ],
+    );
+  }
+
+  Future<void> updateSchedule(String id, ScheduledMealsCompanion changes) =>
+      (update(scheduledMeals)..where((s) => s.id.equals(id))).write(changes);
+
   Future<void> insertSchedule(ScheduledMealsCompanion schedule) =>
       into(scheduledMeals).insert(schedule);
 
@@ -67,7 +97,7 @@ class ScheduledMealDao extends DatabaseAccessor<AppDatabase>
   /// Plans due on [date] ('yyyy-MM-dd') that have no outcome for that day yet,
   /// oldest plan first; plans whose meal or food is archived are left out. [weekdayBit] is the bit of [date]'s weekday (see
   /// `weekdayBit`). A one-off is due on its start date; a repeating plan on
-  /// matching weekdays from its start date on.
+  /// matching weekdays from its start date to its end date, if any.
   Stream<List<PendingScheduledMeal>> watchPendingForDate(
     String date,
     int weekdayBit,
@@ -96,6 +126,8 @@ class ScheduledMealDao extends DatabaseAccessor<AppDatabase>
                         scheduledMeals.startDate.equals(date)) |
                     (scheduledMeals.weekdays.isNotNull() &
                         scheduledMeals.startDate.isSmallerOrEqualValue(date) &
+                        (scheduledMeals.endDate.isNull() |
+                            scheduledMeals.endDate.isBiggerOrEqualValue(date)) &
                         scheduledMeals.weekdays
                             .bitwiseAnd(Constant(weekdayBit))
                             .isBiggerThanValue(0))),

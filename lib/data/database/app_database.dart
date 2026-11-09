@@ -38,7 +38,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -118,6 +118,10 @@ class AppDatabase extends _$AppDatabase {
         await m.create(schema.foodLogEntriesMealId);
         await m.create(schema.foodLogEntryItemsEntryId);
         await m.create(schema.mealFoodItemsMealId);
+      },
+      // v9 -> v10: an optional end date on repeating plans.
+      from9To10: (m, schema) async {
+        await m.addColumn(schema.scheduledMeals, schema.scheduledMeals.endDate);
       },
     ),
     beforeOpen: (details) async {

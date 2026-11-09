@@ -3319,6 +3319,17 @@ class $ScheduledMealsTable extends ScheduledMeals
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _endDateMeta = const VerificationMeta(
+    'endDate',
+  );
+  @override
+  late final GeneratedColumn<String> endDate = GeneratedColumn<String>(
+    'end_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _weekdaysMeta = const VerificationMeta(
     'weekdays',
   );
@@ -3374,6 +3385,7 @@ class $ScheduledMealsTable extends ScheduledMeals
     mealId,
     foodItemId,
     startDate,
+    endDate,
     weekdays,
     mealSlot,
     servings,
@@ -3418,6 +3430,12 @@ class $ScheduledMealsTable extends ScheduledMeals
       );
     } else if (isInserting) {
       context.missing(_startDateMeta);
+    }
+    if (data.containsKey('end_date')) {
+      context.handle(
+        _endDateMeta,
+        endDate.isAcceptableOrUnknown(data['end_date']!, _endDateMeta),
+      );
     }
     if (data.containsKey('weekdays')) {
       context.handle(
@@ -3470,6 +3488,10 @@ class $ScheduledMealsTable extends ScheduledMeals
         DriftSqlType.string,
         data['${effectivePrefix}start_date'],
       )!,
+      endDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}end_date'],
+      ),
       weekdays: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}weekdays'],
@@ -3503,6 +3525,10 @@ class ScheduledMeal extends DataClass implements Insertable<ScheduledMeal> {
   /// 'yyyy-MM-dd'. The day of a one-off, or the first day of a repeating plan.
   final String startDate;
 
+  /// 'yyyy-MM-dd'. The last day of a repeating plan (inclusive), or null for
+  /// no end. Unused on a one-off.
+  final String? endDate;
+
   /// Bitmask of weekdays, bit 0 = Monday ... bit 6 = Sunday (1..127), or null
   /// for a one-off.
   final int? weekdays;
@@ -3519,6 +3545,7 @@ class ScheduledMeal extends DataClass implements Insertable<ScheduledMeal> {
     this.mealId,
     this.foodItemId,
     required this.startDate,
+    this.endDate,
     this.weekdays,
     this.mealSlot,
     required this.servings,
@@ -3535,6 +3562,9 @@ class ScheduledMeal extends DataClass implements Insertable<ScheduledMeal> {
       map['food_item_id'] = Variable<String>(foodItemId);
     }
     map['start_date'] = Variable<String>(startDate);
+    if (!nullToAbsent || endDate != null) {
+      map['end_date'] = Variable<String>(endDate);
+    }
     if (!nullToAbsent || weekdays != null) {
       map['weekdays'] = Variable<int>(weekdays);
     }
@@ -3556,6 +3586,9 @@ class ScheduledMeal extends DataClass implements Insertable<ScheduledMeal> {
           ? const Value.absent()
           : Value(foodItemId),
       startDate: Value(startDate),
+      endDate: endDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endDate),
       weekdays: weekdays == null && nullToAbsent
           ? const Value.absent()
           : Value(weekdays),
@@ -3577,6 +3610,7 @@ class ScheduledMeal extends DataClass implements Insertable<ScheduledMeal> {
       mealId: serializer.fromJson<String?>(json['mealId']),
       foodItemId: serializer.fromJson<String?>(json['foodItemId']),
       startDate: serializer.fromJson<String>(json['startDate']),
+      endDate: serializer.fromJson<String?>(json['endDate']),
       weekdays: serializer.fromJson<int?>(json['weekdays']),
       mealSlot: serializer.fromJson<String?>(json['mealSlot']),
       servings: serializer.fromJson<double>(json['servings']),
@@ -3591,6 +3625,7 @@ class ScheduledMeal extends DataClass implements Insertable<ScheduledMeal> {
       'mealId': serializer.toJson<String?>(mealId),
       'foodItemId': serializer.toJson<String?>(foodItemId),
       'startDate': serializer.toJson<String>(startDate),
+      'endDate': serializer.toJson<String?>(endDate),
       'weekdays': serializer.toJson<int?>(weekdays),
       'mealSlot': serializer.toJson<String?>(mealSlot),
       'servings': serializer.toJson<double>(servings),
@@ -3603,6 +3638,7 @@ class ScheduledMeal extends DataClass implements Insertable<ScheduledMeal> {
     Value<String?> mealId = const Value.absent(),
     Value<String?> foodItemId = const Value.absent(),
     String? startDate,
+    Value<String?> endDate = const Value.absent(),
     Value<int?> weekdays = const Value.absent(),
     Value<String?> mealSlot = const Value.absent(),
     double? servings,
@@ -3612,6 +3648,7 @@ class ScheduledMeal extends DataClass implements Insertable<ScheduledMeal> {
     mealId: mealId.present ? mealId.value : this.mealId,
     foodItemId: foodItemId.present ? foodItemId.value : this.foodItemId,
     startDate: startDate ?? this.startDate,
+    endDate: endDate.present ? endDate.value : this.endDate,
     weekdays: weekdays.present ? weekdays.value : this.weekdays,
     mealSlot: mealSlot.present ? mealSlot.value : this.mealSlot,
     servings: servings ?? this.servings,
@@ -3625,6 +3662,7 @@ class ScheduledMeal extends DataClass implements Insertable<ScheduledMeal> {
           ? data.foodItemId.value
           : this.foodItemId,
       startDate: data.startDate.present ? data.startDate.value : this.startDate,
+      endDate: data.endDate.present ? data.endDate.value : this.endDate,
       weekdays: data.weekdays.present ? data.weekdays.value : this.weekdays,
       mealSlot: data.mealSlot.present ? data.mealSlot.value : this.mealSlot,
       servings: data.servings.present ? data.servings.value : this.servings,
@@ -3639,6 +3677,7 @@ class ScheduledMeal extends DataClass implements Insertable<ScheduledMeal> {
           ..write('mealId: $mealId, ')
           ..write('foodItemId: $foodItemId, ')
           ..write('startDate: $startDate, ')
+          ..write('endDate: $endDate, ')
           ..write('weekdays: $weekdays, ')
           ..write('mealSlot: $mealSlot, ')
           ..write('servings: $servings, ')
@@ -3653,6 +3692,7 @@ class ScheduledMeal extends DataClass implements Insertable<ScheduledMeal> {
     mealId,
     foodItemId,
     startDate,
+    endDate,
     weekdays,
     mealSlot,
     servings,
@@ -3666,6 +3706,7 @@ class ScheduledMeal extends DataClass implements Insertable<ScheduledMeal> {
           other.mealId == this.mealId &&
           other.foodItemId == this.foodItemId &&
           other.startDate == this.startDate &&
+          other.endDate == this.endDate &&
           other.weekdays == this.weekdays &&
           other.mealSlot == this.mealSlot &&
           other.servings == this.servings &&
@@ -3677,6 +3718,7 @@ class ScheduledMealsCompanion extends UpdateCompanion<ScheduledMeal> {
   final Value<String?> mealId;
   final Value<String?> foodItemId;
   final Value<String> startDate;
+  final Value<String?> endDate;
   final Value<int?> weekdays;
   final Value<String?> mealSlot;
   final Value<double> servings;
@@ -3687,6 +3729,7 @@ class ScheduledMealsCompanion extends UpdateCompanion<ScheduledMeal> {
     this.mealId = const Value.absent(),
     this.foodItemId = const Value.absent(),
     this.startDate = const Value.absent(),
+    this.endDate = const Value.absent(),
     this.weekdays = const Value.absent(),
     this.mealSlot = const Value.absent(),
     this.servings = const Value.absent(),
@@ -3698,6 +3741,7 @@ class ScheduledMealsCompanion extends UpdateCompanion<ScheduledMeal> {
     this.mealId = const Value.absent(),
     this.foodItemId = const Value.absent(),
     required String startDate,
+    this.endDate = const Value.absent(),
     this.weekdays = const Value.absent(),
     this.mealSlot = const Value.absent(),
     this.servings = const Value.absent(),
@@ -3711,6 +3755,7 @@ class ScheduledMealsCompanion extends UpdateCompanion<ScheduledMeal> {
     Expression<String>? mealId,
     Expression<String>? foodItemId,
     Expression<String>? startDate,
+    Expression<String>? endDate,
     Expression<int>? weekdays,
     Expression<String>? mealSlot,
     Expression<double>? servings,
@@ -3722,6 +3767,7 @@ class ScheduledMealsCompanion extends UpdateCompanion<ScheduledMeal> {
       if (mealId != null) 'meal_id': mealId,
       if (foodItemId != null) 'food_item_id': foodItemId,
       if (startDate != null) 'start_date': startDate,
+      if (endDate != null) 'end_date': endDate,
       if (weekdays != null) 'weekdays': weekdays,
       if (mealSlot != null) 'meal_slot': mealSlot,
       if (servings != null) 'servings': servings,
@@ -3735,6 +3781,7 @@ class ScheduledMealsCompanion extends UpdateCompanion<ScheduledMeal> {
     Value<String?>? mealId,
     Value<String?>? foodItemId,
     Value<String>? startDate,
+    Value<String?>? endDate,
     Value<int?>? weekdays,
     Value<String?>? mealSlot,
     Value<double>? servings,
@@ -3746,6 +3793,7 @@ class ScheduledMealsCompanion extends UpdateCompanion<ScheduledMeal> {
       mealId: mealId ?? this.mealId,
       foodItemId: foodItemId ?? this.foodItemId,
       startDate: startDate ?? this.startDate,
+      endDate: endDate ?? this.endDate,
       weekdays: weekdays ?? this.weekdays,
       mealSlot: mealSlot ?? this.mealSlot,
       servings: servings ?? this.servings,
@@ -3768,6 +3816,9 @@ class ScheduledMealsCompanion extends UpdateCompanion<ScheduledMeal> {
     }
     if (startDate.present) {
       map['start_date'] = Variable<String>(startDate.value);
+    }
+    if (endDate.present) {
+      map['end_date'] = Variable<String>(endDate.value);
     }
     if (weekdays.present) {
       map['weekdays'] = Variable<int>(weekdays.value);
@@ -3794,6 +3845,7 @@ class ScheduledMealsCompanion extends UpdateCompanion<ScheduledMeal> {
           ..write('mealId: $mealId, ')
           ..write('foodItemId: $foodItemId, ')
           ..write('startDate: $startDate, ')
+          ..write('endDate: $endDate, ')
           ..write('weekdays: $weekdays, ')
           ..write('mealSlot: $mealSlot, ')
           ..write('servings: $servings, ')
@@ -7767,6 +7819,7 @@ typedef $$ScheduledMealsTableCreateCompanionBuilder =
       Value<String?> mealId,
       Value<String?> foodItemId,
       required String startDate,
+      Value<String?> endDate,
       Value<int?> weekdays,
       Value<String?> mealSlot,
       Value<double> servings,
@@ -7779,6 +7832,7 @@ typedef $$ScheduledMealsTableUpdateCompanionBuilder =
       Value<String?> mealId,
       Value<String?> foodItemId,
       Value<String> startDate,
+      Value<String?> endDate,
       Value<int?> weekdays,
       Value<String?> mealSlot,
       Value<double> servings,
@@ -7879,6 +7933,11 @@ class $$ScheduledMealsTableFilterComposer
 
   ColumnFilters<String> get startDate => $composableBuilder(
     column: $table.startDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get endDate => $composableBuilder(
+    column: $table.endDate,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7994,6 +8053,11 @@ class $$ScheduledMealsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get endDate => $composableBuilder(
+    column: $table.endDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get weekdays => $composableBuilder(
     column: $table.weekdays,
     builder: (column) => ColumnOrderings(column),
@@ -8075,6 +8139,9 @@ class $$ScheduledMealsTableAnnotationComposer
 
   GeneratedColumn<String> get startDate =>
       $composableBuilder(column: $table.startDate, builder: (column) => column);
+
+  GeneratedColumn<String> get endDate =>
+      $composableBuilder(column: $table.endDate, builder: (column) => column);
 
   GeneratedColumn<int> get weekdays =>
       $composableBuilder(column: $table.weekdays, builder: (column) => column);
@@ -8199,6 +8266,7 @@ class $$ScheduledMealsTableTableManager
                 Value<String?> mealId = const Value.absent(),
                 Value<String?> foodItemId = const Value.absent(),
                 Value<String> startDate = const Value.absent(),
+                Value<String?> endDate = const Value.absent(),
                 Value<int?> weekdays = const Value.absent(),
                 Value<String?> mealSlot = const Value.absent(),
                 Value<double> servings = const Value.absent(),
@@ -8209,6 +8277,7 @@ class $$ScheduledMealsTableTableManager
                 mealId: mealId,
                 foodItemId: foodItemId,
                 startDate: startDate,
+                endDate: endDate,
                 weekdays: weekdays,
                 mealSlot: mealSlot,
                 servings: servings,
@@ -8221,6 +8290,7 @@ class $$ScheduledMealsTableTableManager
                 Value<String?> mealId = const Value.absent(),
                 Value<String?> foodItemId = const Value.absent(),
                 required String startDate,
+                Value<String?> endDate = const Value.absent(),
                 Value<int?> weekdays = const Value.absent(),
                 Value<String?> mealSlot = const Value.absent(),
                 Value<double> servings = const Value.absent(),
@@ -8231,6 +8301,7 @@ class $$ScheduledMealsTableTableManager
                 mealId: mealId,
                 foodItemId: foodItemId,
                 startDate: startDate,
+                endDate: endDate,
                 weekdays: weekdays,
                 mealSlot: mealSlot,
                 servings: servings,
