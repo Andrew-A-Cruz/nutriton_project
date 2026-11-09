@@ -10,6 +10,7 @@ import '../../providers/preferences_providers.dart';
 import '../common/form_widgets.dart';
 import '../common/meal_slot_picker.dart';
 import '../common/error_feedback.dart';
+import '../common/haptics.dart';
 
 /// Logs a one-off food for [logDate]. Nothing is written to the catalog.
 /// Pops to the root after logging.
@@ -87,6 +88,7 @@ class _AdhocFoodFormState extends ConsumerState<AdhocFoodForm> {
             ),
             mealSlot: _slot,
           );
+      Haptics.logged();
       if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
     } catch (e, stack) {
       if (mounted) {

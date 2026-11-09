@@ -7,6 +7,7 @@ import '../../providers/log_providers.dart';
 import '../../providers/today_providers.dart';
 import 'date_header.dart';
 import '../common/error_feedback.dart';
+import '../common/haptics.dart';
 
 /// Asks which day to copy and copies its entries onto [toDate]. Resolves to
 /// true if a day was copied.
@@ -46,6 +47,7 @@ class _CopyDaySheetState extends ConsumerState<_CopyDaySheet> {
       await ref
           .read(logRepositoryProvider)
           .copyDay(fromDate: fromDate, toDate: widget.toDate);
+      Haptics.logged();
       if (mounted) Navigator.of(context).pop(true);
     } catch (e, stack) {
       if (mounted) {
