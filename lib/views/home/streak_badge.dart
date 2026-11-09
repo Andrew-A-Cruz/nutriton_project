@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../providers/preferences_providers.dart';
 import '../../providers/summary_providers.dart';
 
 /// The logging streak in the Home header: a flame and the number of days.
@@ -11,7 +12,9 @@ class StreakBadge extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final days = ref.watch(streakProvider).value ?? 0;
-    if (days == 0) return const SizedBox.shrink();
+    if (days == 0 || ref.watch(mindfulModeProvider)) {
+      return const SizedBox.shrink();
+    }
     return Semantics(
       label: days == 1 ? '1 day streak' : '$days day streak',
       excludeSemantics: true,

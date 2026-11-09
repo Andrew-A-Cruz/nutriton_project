@@ -25,3 +25,20 @@ class PreferencesNotifier extends Notifier<UserSettings> {
 final preferencesProvider = NotifierProvider<PreferencesNotifier, UserSettings>(
   PreferencesNotifier.new,
 );
+
+/// Mindful mode: Home shows foods and goal progress without calorie or macro
+/// numbers, the streak badge is hidden and Summary bars are one colour. Only
+/// rendering changes; the log, goals and reminders stay as they are.
+class MindfulModeNotifier extends Notifier<bool> {
+  @override
+  bool build() => ref.watch(userPreferencesProvider).readMindfulMode();
+
+  Future<void> set(bool on) async {
+    state = on;
+    await ref.read(userPreferencesProvider).writeMindfulMode(on);
+  }
+}
+
+final mindfulModeProvider = NotifierProvider<MindfulModeNotifier, bool>(
+  MindfulModeNotifier.new,
+);

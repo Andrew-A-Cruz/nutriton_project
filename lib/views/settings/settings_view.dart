@@ -25,6 +25,7 @@ class SettingsView extends ConsumerWidget {
           initial: initial,
           submitLabel: 'Save',
           extraSections: const [
+            _MindfulSection(),
             RemindersSection(),
             AppleHealthSection(),
             BackupSection(),
@@ -47,6 +48,33 @@ class SettingsView extends ConsumerWidget {
           },
         ),
       ),
+    );
+  }
+}
+
+/// The mindful mode switch. Saves as it changes, like the reminders.
+class _MindfulSection extends ConsumerWidget {
+  const _MindfulSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return CupertinoFormSection.insetGrouped(
+      header: const Text('DISPLAY'),
+      footer: const Text(
+        'Mindful mode hides calorie and macro numbers on Today and the streak '
+        'badge, and draws Summary bars in one colour. Your log, goals and '
+        'reminders stay as they are.',
+      ),
+      children: [
+        CupertinoListTile(
+          title: const Text('Mindful mode'),
+          trailing: CupertinoSwitch(
+            key: const Key('mindful-mode'),
+            value: ref.watch(mindfulModeProvider),
+            onChanged: (on) => ref.read(mindfulModeProvider.notifier).set(on),
+          ),
+        ),
+      ],
     );
   }
 }

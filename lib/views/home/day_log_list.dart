@@ -10,6 +10,7 @@ import '../../data/database/app_database.dart';
 import '../../providers/infrastructure_providers.dart';
 import '../../data/repositories/schedule_repository.dart';
 import '../../providers/log_providers.dart';
+import '../../providers/preferences_providers.dart';
 import '../../providers/today_providers.dart';
 import '../common/error_feedback.dart';
 import 'edit_entry_sheets.dart';
@@ -154,7 +155,9 @@ class _EntryTile extends ConsumerWidget {
           ),
           title: Text(entry.name),
           subtitle: Text(_describe(entry)),
-          trailing: Text('${Metric.calories.format(entry.calories)} kcal'),
+          trailing: ref.watch(mindfulModeProvider)
+              ? null
+              : Text('${Metric.calories.format(entry.calories)} kcal'),
           onTap: () => _open(context),
         ),
       ),
@@ -357,18 +360,18 @@ class _EmptyLogStateState extends ConsumerState<EmptyLogState> {
 
 /// Heading of one meal section: its label and the calories of its entries.
 /// Entries without a slot go under "Other".
-class _SectionHeader extends StatelessWidget {
+class _SectionHeader extends ConsumerWidget {
   const _SectionHeader({required this.slot, required this.entries});
 
   final MealSlot? slot;
   final List<FoodLogEntry> entries;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final id = slot?.name ?? 'other';
     final total = entries.fold<double>(0, (sum, e) => sum + e.calories);
     // A section holding only planned items has no total yet.
-    final showTotal = entries.isNotEmpty;
+    final showTotal = entries.isNotEmpty && !ref.watch(mindfulModeProvider);
     final style = TextStyle(
       fontSize: 13,
       fontWeight: FontWeight.w600,

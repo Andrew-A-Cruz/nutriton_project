@@ -94,7 +94,11 @@ class HomeView extends ConsumerWidget {
             SliverToBoxAdapter(
               child: TourAnchor(
                 target: TourTargets.totals,
-                child: MacroSummary(entries: entries, settings: settings),
+                child: MacroSummary(
+                  entries: entries,
+                  settings: settings,
+                  mindful: ref.watch(mindfulModeProvider),
+                ),
               ),
             ),
             const SliverToBoxAdapter(child: TrialEndedNotice()),

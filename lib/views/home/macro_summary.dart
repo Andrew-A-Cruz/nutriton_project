@@ -37,14 +37,19 @@ class MacroSummary extends StatelessWidget {
     super.key,
     required this.entries,
     required this.settings,
+    this.mindful = false,
   });
 
   final List<FoodLogEntry> entries;
   final UserSettings settings;
 
+  /// Mindful mode: goal progress as bars only, no numbers.
+  final bool mindful;
+
   @override
   Widget build(BuildContext context) {
     final totals = totalsOf(entries);
+    if (mindful) return _MindfulTotals(totals: totals, settings: settings);
     final primary = settings.primaryMetric;
     final macros = entries.map(macrosOfEntry).toList();
     // Only the optional nutrients can be missing from an entry.
@@ -84,6 +89,70 @@ class MacroSummary extends StatelessWidget {
                   case final split?) ...[
                 const SizedBox(height: 14),
                 MacroSplitBar(split: split),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Mindful mode's card: each tracked metric with a goal as a label and a
+/// bar, in one calm colour that does not change when over. Nothing when no
+/// metric has a goal.
+class _MindfulTotals extends StatelessWidget {
+  const _MindfulTotals({required this.totals, required this.settings});
+
+  final Macros totals;
+  final UserSettings settings;
+
+  @override
+  Widget build(BuildContext context) {
+    final withGoals = [
+      for (final m in [settings.primaryMetric, ...settings.secondaryMetrics])
+        if (settings.goalFor(m) case final goal? when goal > 0) (m, goal),
+    ];
+    if (withGoals.isEmpty) return const SizedBox.shrink();
+    final secondary = CupertinoColors.secondaryLabel.resolveFrom(context);
+    return Padding(
+      key: const Key('mindful-totals'),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: CupertinoColors.secondarySystemGroupedBackground.resolveFrom(
+            context,
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (final (i, (m, goal)) in withGoals.indexed) ...[
+                if (i > 0) const SizedBox(height: 12),
+                Semantics(
+                  label:
+                      '${m.label}: ${(m.amountIn(totals) / goal * 100).clamp(0, 999).round()}% of goal',
+                  child: ExcludeSemantics(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          m.label,
+                          style: TextStyle(fontSize: 13, color: secondary),
+                        ),
+                        const SizedBox(height: 4),
+                        _ProgressBar(
+                          fraction: m.amountIn(totals) / goal,
+                          over: false,
+                          neutral: true,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ],
           ),
@@ -267,15 +336,26 @@ class _TotalSemantics extends StatelessWidget {
 }
 
 class _ProgressBar extends StatelessWidget {
-  const _ProgressBar({required this.fraction, required this.over});
+  const _ProgressBar({
+    required this.fraction,
+    required this.over,
+    this.neutral = false,
+  });
 
   final double fraction;
   final bool over;
 
+  /// One calm colour whatever the progress (mindful mode).
+  final bool neutral;
+
   @override
   Widget build(BuildContext context) {
     final fill =
-        (over ? CupertinoColors.systemOrange : CupertinoColors.activeGreen)
+        (neutral
+                ? CupertinoColors.systemTeal
+                : over
+                ? CupertinoColors.systemOrange
+                : CupertinoColors.activeGreen)
             .resolveFrom(context);
     return ClipRRect(
       borderRadius: BorderRadius.circular(3),
