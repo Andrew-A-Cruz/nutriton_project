@@ -9,6 +9,7 @@ import 'backup_section.dart';
 import 'error_log_view.dart';
 import 'pro_section.dart';
 import 'reminders_section.dart';
+import 'weekday_goals_view.dart';
 
 /// Settings, opened from the gear on Home. Reuses the onboarding form, so the
 /// two screens cannot drift apart. Saving applies at once and pops back.
@@ -25,6 +26,7 @@ class SettingsView extends ConsumerWidget {
           initial: initial,
           submitLabel: 'Save',
           extraSections: const [
+            WeekdayGoalsSection(),
             _MindfulSection(),
             RemindersSection(),
             AppleHealthSection(),
@@ -42,6 +44,8 @@ class SettingsView extends ConsumerWidget {
                 reminders: current.reminders,
                 healthWriteNutrition: current.healthWriteNutrition,
                 healthReadWeight: current.healthReadWeight,
+                // Edited on their own page, so the form never has them.
+                weekdayGoals: current.weekdayGoals,
               ),
             );
             if (context.mounted) Navigator.of(context).pop();

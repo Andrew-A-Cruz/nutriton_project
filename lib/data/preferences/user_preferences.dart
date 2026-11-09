@@ -1,6 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/body_weight.dart';
+import '../../core/date_key.dart';
 import '../../core/macro_split.dart';
 import '../../core/metrics.dart';
 import '../../core/nutrition_math.dart';
@@ -21,8 +22,23 @@ class UserSettings {
     this.healthWriteNutrition = false,
     this.healthReadWeight = false,
     this.macroGoalPercents,
+    Map<int, Map<Metric, double>> weekdayGoals = const {},
   }) : trackedMetrics = {...trackedMetrics, primaryMetric},
        goals = Map.unmodifiable(_withMacroGoals(goals, macroGoalPercents)),
+       weekdayGoals = Map.unmodifiable({
+         for (final e in weekdayGoals.entries)
+           if (e.value.isNotEmpty)
+             e.key: Map<Metric, double>.unmodifiable(e.value),
+       }),
+       _goalsByWeekday = List.unmodifiable([
+         for (var d = DateTime.monday; d <= DateTime.sunday; d++)
+           Map<Metric, double>.unmodifiable(
+             _withMacroGoals({
+               ...goals,
+               ...?weekdayGoals[d],
+             }, macroGoalPercents),
+           ),
+       ]),
        reminders = List.unmodifiable([
          for (var i = 0; i < reminderSlots; i++)
            i < reminders.length ? reminders[i] : Reminder.defaults[i],
@@ -55,6 +71,14 @@ class UserSettings {
   /// [goals] holds the grams derived from it, so everything else reads grams.
   final MacroSplit? macroGoalPercents;
 
+  /// Goals that differ on one weekday ([DateTime.monday] .. [DateTime.sunday]),
+  /// e.g. more calories on training days. A metric missing here uses
+  /// [goals]. In percent mode a day's macro grams follow its calorie goal.
+  final Map<int, Map<Metric, double>> weekdayGoals;
+
+  /// The goals in effect on each weekday, Monday first.
+  final List<Map<Metric, double>> _goalsByWeekday;
+
   static Map<Metric, double> _withMacroGoals(
     Map<Metric, double> goals,
     MacroSplit? percents,
@@ -70,7 +94,32 @@ class UserSettings {
       if (m != primaryMetric && trackedMetrics.contains(m)) m,
   ];
 
-  double? goalFor(Metric metric) => goals[metric];
+  /// The goal for [metric]: on the day [date] ('yyyy-MM-dd') when given, so
+  /// a weekday goal applies, otherwise the usual one.
+  double? goalFor(Metric metric, {String? date}) =>
+      date == null ? goals[metric] : goalsOn(date)[metric];
+
+  /// Every goal in effect on [date] ('yyyy-MM-dd').
+  Map<Metric, double> goalsOn(String date) =>
+      _goalsByWeekday[dateFromKey(date).weekday - 1];
+
+  /// Whether any weekday has goals of its own.
+  bool get hasWeekdayGoals => weekdayGoals.isNotEmpty;
+
+  /// The mean goal for [metric] over [startKey]..[endKey] (inclusive), counting
+  /// only days that have one; null when none does. Summary's goal line.
+  double? averageGoal(Metric metric, String startKey, String endKey) {
+    var sum = 0.0;
+    var days = 0;
+    for (var k = startKey; k.compareTo(endKey) <= 0; k = addDays(k, 1)) {
+      final g = goalFor(metric, date: k);
+      if (g != null && g > 0) {
+        sum += g;
+        days++;
+      }
+    }
+    return days == 0 ? null : sum / days;
+  }
 
   UserSettings copyWith({
     bool? onboardingComplete,
@@ -82,6 +131,7 @@ class UserSettings {
     List<Reminder>? reminders,
     bool? healthWriteNutrition,
     bool? healthReadWeight,
+    Map<int, Map<Metric, double>>? weekdayGoals,
   }) => UserSettings(
     onboardingComplete: onboardingComplete ?? this.onboardingComplete,
     primaryMetric: primaryMetric ?? this.primaryMetric,
@@ -93,8 +143,12 @@ class UserSettings {
     healthWriteNutrition: healthWriteNutrition ?? this.healthWriteNutrition,
     healthReadWeight: healthReadWeight ?? this.healthReadWeight,
     macroGoalPercents: macroGoalPercents,
+    weekdayGoals: weekdayGoals ?? this.weekdayGoals,
   );
 }
+
+/// Short keys for weekdays in storage and backups, Monday first.
+const weekdayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 
 /// Typed access to the `shared_preferences` keys. Metrics are stored by name,
 /// so adding a [Metric] needs no migration: its goal key simply starts to exist.
@@ -118,6 +172,8 @@ class UserPreferences {
   static const lastAutoBackupKey = 'last_auto_backup_at';
   static const mindfulModeKey = 'mindful_mode';
   static String goalKey(Metric metric) => 'goal_${metric.name}';
+  static String weekdayGoalKey(Metric metric, int weekday) =>
+      'goal_${metric.name}_${weekdayKeys[weekday - 1]}';
   static String goalPercentKey(Metric metric) => 'goal_percent_${metric.name}';
   static String reminderEnabledKey(int slot) => 'reminder_${slot}_enabled';
   static String reminderMinutesKey(int slot) => 'reminder_${slot}_minutes';
@@ -162,6 +218,14 @@ class UserPreferences {
       healthWriteNutrition: _prefs.getBool(healthWriteNutritionKey) ?? false,
       healthReadWeight: _prefs.getBool(healthReadWeightKey) ?? false,
       macroGoalPercents: _readMacroGoalPercents(),
+      weekdayGoals: {
+        for (var d = DateTime.monday; d <= DateTime.sunday; d++)
+          d: {
+            for (final m in Metric.values)
+              if (_prefs.getDouble(weekdayGoalKey(m, d)) case final double g)
+                m: g,
+          },
+      },
     );
   }
 
@@ -195,6 +259,16 @@ class UserPreferences {
       settings.healthWriteNutrition,
     );
     await _prefs.setBool(healthReadWeightKey, settings.healthReadWeight);
+    for (var d = DateTime.monday; d <= DateTime.sunday; d++) {
+      for (final m in Metric.values) {
+        final goal = settings.weekdayGoals[d]?[m];
+        if (goal == null) {
+          await _prefs.remove(weekdayGoalKey(m, d));
+        } else {
+          await _prefs.setDouble(weekdayGoalKey(m, d), goal);
+        }
+      }
+    }
     for (final m in macroMetrics) {
       final percents = settings.macroGoalPercents;
       if (percents == null) {

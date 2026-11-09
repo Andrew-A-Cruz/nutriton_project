@@ -98,6 +98,7 @@ class HomeView extends ConsumerWidget {
                   entries: entries,
                   settings: settings,
                   mindful: ref.watch(mindfulModeProvider),
+                  date: date,
                 ),
               ),
             ),

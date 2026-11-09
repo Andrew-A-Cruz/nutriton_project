@@ -47,7 +47,16 @@ class _LogCalendarViewState extends ConsumerState<LogCalendarView> {
     final settings = ref.watch(preferencesProvider);
     final mindful = ref.watch(mindfulModeProvider);
     final metric = settings.primaryMetric;
-    final goal = mindful ? null : settings.goalFor(metric);
+    double? goalOn(String day) =>
+        mindful ? null : settings.goalFor(metric, date: day);
+    final withGoal =
+        !mindful &&
+        settings.averageGoal(
+              metric,
+              monthSpan(_month).$1,
+              monthSpan(_month).$2,
+            ) !=
+            null;
     final totals = ref.watch(monthTotalsProvider(_month)).value ?? const {};
     final title = DateFormat.yMMMM().format(
       DateTime(_month.year, _month.month),
@@ -131,7 +140,7 @@ class _LogCalendarViewState extends ConsumerState<LogCalendarView> {
                           ? const SizedBox(height: 48)
                           : _DayCell(
                               dateKey: key,
-                              mark: dayMark(totals[key], metric, goal),
+                              mark: dayMark(totals[key], metric, goalOn(key)),
                               isToday: key == today,
                               isSelected: key == widget.initialDate,
                               onTap: () => _pick(key),
@@ -140,7 +149,7 @@ class _LogCalendarViewState extends ConsumerState<LogCalendarView> {
                 ],
               ),
             const SizedBox(height: 12),
-            _Legend(withGoal: goal != null && goal > 0),
+            _Legend(withGoal: withGoal),
           ],
         ),
       ),

@@ -95,7 +95,8 @@ class _ReportBody extends ConsumerWidget {
     final primary = settings.primaryMetric;
     final metrics = [primary, ...settings.secondaryMetrics];
     final averages = report.averages;
-    final goal = settings.goalFor(primary);
+    // With weekday goals, the goal line is the range's average goal.
+    final goal = settings.averageGoal(primary, report.startKey, report.endKey);
     // Dynamic colors must be resolved, or dark mode gets the light variant.
     final secondary = CupertinoColors.secondaryLabel.resolveFrom(context);
 
@@ -138,7 +139,7 @@ class _ReportBody extends ConsumerWidget {
             if (goal != null && goal > 0 && report.daysLogged > 0)
               Text(
                 'On target (within ${(goalTolerance * 100).round()}% of the '
-                'goal): ${daysOnTarget(report.dailyTotals.values, primary, goal)} '
+                'goal): ${daysOnTargetEach(report.dailyTotals, primary, (d) => settings.goalFor(primary, date: d))} '
                 'of ${report.daysLogged} logged days',
                 key: const Key('days-on-target'),
                 style: TextStyle(fontSize: 13, color: secondary),
@@ -371,7 +372,11 @@ class _ShareReportButtonState extends ConsumerState<_ShareReportButton> {
         endKey: summary.endKey,
         days: summary.dailyTotals,
         metrics: [settings.primaryMetric, ...settings.secondaryMetrics],
-        goals: settings.goals,
+        goals: {
+          for (final m in Metric.values)
+            m: ?settings.averageGoal(m, summary.startKey, summary.endKey),
+        },
+        goalOn: (m, day) => settings.goalFor(m, date: day),
         weights: weights,
       );
       final bytes = await renderReportPdf(

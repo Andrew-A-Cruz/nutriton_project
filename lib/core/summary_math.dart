@@ -287,6 +287,19 @@ GoalStatus goalStatus(
   return GoalStatus.onTarget;
 }
 
+/// How many of [days] (totals by day key) have [metric] on target for that
+/// day's goal from [goalOn]. Days without a goal do not count.
+int daysOnTargetEach(
+  Map<String, Macros> days,
+  Metric metric,
+  double? Function(String day) goalOn,
+) => days.entries.where((e) {
+  final goal = goalOn(e.key);
+  return goal != null &&
+      goal > 0 &&
+      goalStatus(metric.amountIn(e.value), goal) == GoalStatus.onTarget;
+}).length;
+
 /// How many of [days] (one total per logged day) have [metric] on target
 /// for [goal].
 int daysOnTarget(Iterable<Macros> days, Metric metric, double goal) => days

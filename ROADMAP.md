@@ -28,7 +28,6 @@ The privacy policy is live ([`docs/privacy.md`](./docs/privacy.md), contact logb
 |---|---|---|---|
 | **Ready now** | | | |
 | [A1 — Android native config leftovers](#a1--android-native-config-leftovers) | S | — | D: bundled or unbundled scanner model |
-| [Goals per weekday](#goals-per-weekday) | M | Free | — |
 | [Undo last action](#undo-last-action) | M | Free | — |
 | [Manage planned meals](#manage-planned-meals) | M | Free | — |
 | [Serving presets](#serving-presets) | M | Free | — |
@@ -53,7 +52,7 @@ The privacy policy is live ([`docs/privacy.md`](./docs/privacy.md), contact logb
 | [A6 — Play Store release](#a6--play-store-release) | M + 14 days | — | B2, A2 |
 | [M20 — iCloud sync](#m20--icloud-sync) | XL | Pro | B1, D7 |
 
-**Suggested next:** the small free items (the medium items: Goals per weekday and so on), or M23 for a fourth Pro feature.
+**Suggested next:** the small free items (the medium items: Undo last action and so on), or M23 for a fourth Pro feature.
 
 ---
 
@@ -67,11 +66,6 @@ The application ID is `com.andrewcruz.logbite` (permanent after the first Play u
 ---
 
 ## Ready Now — Medium
-
-### Goals per weekday
-**Free · preferences only**
-
-Different goals on training and rest days. Optional `goal_<metric>_<weekday>` preferences that fall back to `goal_<metric>`. Home and the Summary goal line read the goal for the day shown; Summary uses the average goal across the range.
 
 ### Undo last action
 **Free · no schema change**
