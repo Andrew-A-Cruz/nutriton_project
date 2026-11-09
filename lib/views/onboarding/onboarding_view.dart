@@ -36,7 +36,7 @@ class _SetupView extends ConsumerWidget {
     final initial = ref.read(preferencesProvider);
     return CupertinoPageScaffold(
       navigationBar: const CupertinoNavigationBar(
-        middle: Text('Set up Nutriton'),
+        middle: Text('Set up Logbite'),
       ),
       child: SafeArea(
         child: Column(

@@ -9,7 +9,11 @@ const autoBackupIntervalDays = 7;
 /// How many automatic backups are kept; older ones are deleted.
 const autoBackupsKept = 5;
 
-const _prefix = 'nutriton-auto-';
+const _prefix = 'logbite-auto-';
+
+/// The prefix from before the app was renamed. Those files still count, so
+/// they are pruned like any other automatic backup.
+const _legacyPrefix = 'nutriton-auto-';
 const _suffix = '.json';
 
 /// True when no automatic backup was written yet, or the last one is at least
@@ -30,14 +34,21 @@ String autoBackupFileName(DateTime date) => '$_prefix${dateKey(date)}$_suffix';
 
 /// Whether [name] is an automatic backup's file name.
 bool isAutoBackupFileName(String name) =>
-    name.startsWith(_prefix) && name.endsWith(_suffix);
+    _prefixOf(name) != null && name.endsWith(_suffix);
+
+String? _prefixOf(String name) => name.startsWith(_prefix)
+    ? _prefix
+    : name.startsWith(_legacyPrefix)
+    ? _legacyPrefix
+    : null;
 
 /// The day an automatic backup was written, read from its [name], or null.
 DateTime? autoBackupDate(String name) {
   if (!isAutoBackupFileName(name)) return null;
+  final prefix = _prefixOf(name)!;
   try {
     return dateFromKey(
-      name.substring(_prefix.length, name.length - _suffix.length),
+      name.substring(prefix.length, name.length - _suffix.length),
     );
   } on FormatException {
     return null;
@@ -45,11 +56,11 @@ DateTime? autoBackupDate(String name) {
 }
 
 /// The automatic backups among [names], newest first. Other files are left
-/// out.
+/// out. Sorted by date, not by name, so old- and new-prefix files mix.
 List<String> autoBackupsNewestFirst(Iterable<String> names) => [
   for (final n in names)
     if (autoBackupDate(n) != null) n,
-]..sort((a, b) => b.compareTo(a));
+]..sort((a, b) => autoBackupDate(b)!.compareTo(autoBackupDate(a)!));
 
 /// The automatic backups to delete so that only [autoBackupsKept] remain.
 List<String> autoBackupsToPrune(Iterable<String> names) =>

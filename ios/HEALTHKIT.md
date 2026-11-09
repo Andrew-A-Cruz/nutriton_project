@@ -1,6 +1,6 @@
 # Apple Health (iOS)
 
-The app writes daily nutrition to Apple Health and reads body weight from it, through the `health` package. Both are opt-in switches under Settings > Apple Health, and both are Nutriton Pro features: without Pro the switches are lock badges, and no sync runs (what was already written to Health, or read from it, stays).
+The app writes daily nutrition to Apple Health and reads body weight from it, through the `health` package. Both are opt-in switches under Settings > Apple Health, and both are Logbite Pro features: without Pro the switches are lock badges, and no sync runs (what was already written to Health, or read from it, stays).
 
 ## What is already in the repo
 
@@ -13,7 +13,7 @@ Runner's `CODE_SIGN_ENTITLEMENTS` is `Runner/Runner.entitlements` (set in Octobe
 
 1. Install with the `install-iphone` skill (it unlocks Pro in its builds).
 2. In the app: Settings > Apple Health, switch on "Write nutrition" or "Read body weight". iOS shows its permission sheet for just that data.
-3. In the Health app: Browse > Nutrition shows Nutriton's samples; Sharing > Apps > Nutriton shows the permissions.
+3. In the Health app: Browse > Nutrition shows Logbite's samples; Sharing > Apps > Logbite shows the permissions.
 
 ## How it behaves
 

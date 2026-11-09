@@ -1,4 +1,4 @@
-# Nutriton — Roadmap
+# Logbite — Roadmap
 
 Every open item in one place. Items are grouped first by whether they can start now, then by size. The rules for what is free or Pro, the technical decisions and what's already built are in [`PRODUCT.md`](./PRODUCT.md); the schema is in [`DATA_MODEL.md`](./DATA_MODEL.md).
 
@@ -18,7 +18,7 @@ When an item is finished, delete it here and add a line to [What's Built](./PROD
 | **D1–D7** | A decision that is yours to make | Accept the proposed answer, or choose another | [Waiting on a decision](#waiting-on-a-decision) |
 | **Dep** | Another roadmap item has to come first | Finish that item | [Waiting on another item](#waiting-on-another-item) |
 
-The [privacy policy](#write-and-host-a-privacy-policy) is not a blocker yet (it is a small task you can start now), but selling Pro, Health Connect and the Play listing all need it.
+The [privacy policy](#write-and-host-a-privacy-policy) is live, with the support email, so it no longer blocks selling Pro, Health Connect or the Play listing.
 
 ---
 
@@ -65,7 +65,7 @@ The [privacy policy](#write-and-host-a-privacy-policy) is not a blocker yet (it 
 | [A6 — Play Store release](#a6--play-store-release) | M + 14 days | — | B2, A2, privacy policy |
 | [M20 — iCloud sync](#m20--icloud-sync) | XL | Pro | B1, D7 |
 
-**Suggested next:** the privacy policy (it unblocks three items), then M22 (Pro would have three features to sell instead of two; see D6).
+**Suggested next:** M22 (Pro would have three features to sell instead of two; see D6).
 
 ---
 
@@ -113,16 +113,16 @@ A "Search online" row under the Add Food catalog search, using the existing `Ope
 Needed for selling Pro, the App Store and Play listings, and Health Connect. Written in [`docs/privacy.md`](./docs/privacy.md), to be served by GitHub Pages.
 
 - [x] Write it: data stays on the device; the network calls (Open Food Facts gets barcodes and search text, RevenueCat an anonymous ID and purchases); Health data stays between the app and Health
-- [ ] **Earmarked:** once the support email exists, replace the GitHub issues link under Contact in `docs/privacy.md` with it (Apple and Google expect an email), and use the same address for the App Store and Play listings
+- [x] Contact email `logbite.app@gmail.com` under Contact in `docs/privacy.md`. Use the same address as the support email in the App Store and Play listings
 - [x] Turn on GitHub Pages (done with `gh api`: `main`, `/docs`, HTTPS enforced)
-- [ ] Once `https://andrew-a-cruz.github.io/nutriton_project/privacy` loads, set `privacyPolicyUrl` in `lib/core/pro.dart` (the paywall hides the link while it is null)
+- [x] `privacyPolicyUrl` in `lib/core/pro.dart` is `https://andrew-a-cruz.github.io/nutriton_project/privacy`, linked from the paywall. Use the same URL in the store listings
 - [ ] Keep it in step: a new network call or Health type means a policy update
 
 ### A1 — Android native config leftovers
 The toolchain works and `minSdk` is 26. What's left:
 
 - [ ] `MainActivity` extends `FlutterFragmentActivity` (Health Connect's permission flow needs it; harmless otherwise)
-- [ ] Notification small icon: `@mipmap/ic_launcher` in `local_notification_scheduler.dart` draws as a white square. Add a monochrome `drawable/ic_stat_nutriton` and use it
+- [ ] Notification small icon: `@mipmap/ic_launcher` in `local_notification_scheduler.dart` draws as a white square. Add a monochrome `drawable/ic_stat_logbite` and use it
 - [ ] Remove the leftover `TODO` comment on `applicationId` in `android/app/build.gradle.kts`
 - [ ] Barcode scanner size: `mobile_scanner` bundles ML Kit (a few MB per ABI). Keep it, or switch to the unbundled model through its Gradle property
 
@@ -327,7 +327,7 @@ Built but never tried on a real iPhone:
 - [ ] Reminders and their permission prompt (M14), camera barcode scanning (M16), the live Open Food Facts lookup
 - [ ] Add the "Today" widget and check it follows the log (M18)
 - [ ] Turn on both Apple Health options and check the data in the Health app (M19)
-- [ ] Automatic backups: the Backups folder shows under On My iPhone > Nutriton in Files
+- [ ] Automatic backups: the Backups folder shows under On My iPhone > Logbite in Files
 - [ ] The Done bar sits flush on the number keyboard (onboarding goals, a food form, the servings dialog) and closes it
 
 Pro features are unlocked in `install-iphone` builds. The Android phone checks are part of [A2](#a2--check-the-free-app-on-android).

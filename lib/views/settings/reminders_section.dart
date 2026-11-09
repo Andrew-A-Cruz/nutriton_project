@@ -37,7 +37,7 @@ class _RemindersSectionState extends ConsumerState<RemindersSection> {
       if (!granted) {
         setState(
           () => _denied =
-              'Notifications are not allowed for Nutriton. Turn them on in '
+              'Notifications are not allowed for Logbite. Turn them on in '
               'your device settings to use reminders.',
         );
         return;

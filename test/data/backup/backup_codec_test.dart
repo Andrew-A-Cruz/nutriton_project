@@ -78,9 +78,9 @@ void main() {
     expect(failure('not json {').message, contains('not valid JSON'));
   });
 
-  test('rejects JSON that is not a Nutriton backup', () {
-    expect(failure([1, 2]).message, contains('not a Nutriton backup'));
-    expect(failure({'version': 1}).message, contains('not a Nutriton backup'));
+  test('rejects JSON that is not a Logbite backup', () {
+    expect(failure([1, 2]).message, contains('not a Logbite backup'));
+    expect(failure({'version': 1}).message, contains('not a Logbite backup'));
   });
 
   test('rejects a newer version with a clear message', () {

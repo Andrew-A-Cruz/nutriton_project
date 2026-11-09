@@ -9,7 +9,7 @@
         android:name="android.hardware.camera"
         android:required="false" />
     <application
-        android:label="Nutriton"
+        android:label="Logbite"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

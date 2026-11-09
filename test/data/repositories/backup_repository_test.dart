@@ -231,7 +231,7 @@ void main() {
   test('names the file after the date', () {
     expect(
       BackupRepository.fileNameFor(DateTime(2026, 10, 21, 8)),
-      'nutriton-backup-2026-10-21.json',
+      'logbite-backup-2026-10-21.json',
     );
   });
 

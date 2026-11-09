@@ -1,4 +1,4 @@
-# Nutriton
+# Logbite
 
 A Flutter app for tracking calories and macronutrients day by day. Data stays on the device (SQLite via drift).
 

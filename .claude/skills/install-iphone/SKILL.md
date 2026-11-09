@@ -1,6 +1,6 @@
 ---
 name: install-iphone
-description: Build a signed release of Nutriton and install it on the user's paired iPhone, over USB or Wi-Fi. Use when asked to build, install, deploy or run the app on the iPhone or a physical iOS device.
+description: Build a signed release of Logbite and install it on the user's paired iPhone, over USB or Wi-Fi. Use when asked to build, install, deploy or run the app on the iPhone or a physical iOS device.
 ---
 
 # Install on iPhone

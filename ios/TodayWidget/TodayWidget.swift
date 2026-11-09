@@ -11,7 +11,7 @@ struct TodayEntry: TimelineEntry {
     let caption: String
     let progress: Double
     let overGoal: Bool
-    /// No Nutriton Pro: shows a prompt to unlock instead of a ring.
+    /// No Logbite Pro: shows a prompt to unlock instead of a ring.
     var locked = false
 
     static let placeholder = TodayEntry(
@@ -51,7 +51,7 @@ struct TodayProvider: TimelineProvider {
         if defaults?.bool(forKey: "locked") == true {
             return TodayEntry(
                 date: date, valueText: defaults?.string(forKey: "value_text") ?? "Pro",
-                caption: defaults?.string(forKey: "caption") ?? "Unlock in Nutriton",
+                caption: defaults?.string(forKey: "caption") ?? "Unlock in Logbite",
                 progress: 0, overGoal: false, locked: true)
         }
         let caption = defaults?.string(forKey: "caption") ?? "kcal left"

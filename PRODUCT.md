@@ -1,4 +1,4 @@
-# Nutriton — Product
+# Logbite — Product
 
 What the app is, the rules that decide what goes in it and what it costs, the technical decisions, and what is already built. Open work lives in [`ROADMAP.md`](./ROADMAP.md); the schema is in [`DATA_MODEL.md`](./DATA_MODEL.md).
 
@@ -10,7 +10,7 @@ This file replaces `GAME_PLAN.md`, `IMPLEMENTATION_PLAN.md`, `MONETIZATION_PLAN.
 
 A calorie and macro tracker for iPhone (Android planned), built in Flutter. Local-first: data stays on the device in SQLite, with no account, no tracking and no ads.
 
-**Positioning.** The loudest complaint in the category is paywall creep (MyFitnessPal moved barcode scanning to Premium in 2022; MacroFactor charges about $72 a year mainly for adaptive targets). The privacy-first apps are small and basic. Nutriton's angle: the features people pay for elsewhere, free, with no account, and the data stays on the phone.
+**Positioning.** The loudest complaint in the category is paywall creep (MyFitnessPal moved barcode scanning to Premium in 2022; MacroFactor charges about $72 a year mainly for adaptive targets). The privacy-first apps are small and basic. Logbite's angle: the features people pay for elsewhere, free, with no account, and the data stays on the phone.
 
 **Screens.** Three tabs, Today (Home), Catalog and Summary, plus onboarding and Settings.
 

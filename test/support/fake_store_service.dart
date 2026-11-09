@@ -50,7 +50,7 @@ class FakeStoreService implements StoreService {
   static const _catalog = {
     ProProducts.pro: StoreItem(
       id: ProProducts.pro,
-      title: 'Nutriton Pro',
+      title: 'Logbite Pro',
       priceText: r'$9.99',
     ),
     ProProducts.trial: StoreItem(

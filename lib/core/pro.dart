@@ -1,4 +1,4 @@
-/// Nutriton Pro: the one-time unlock, its trial, and which features it covers.
+/// Logbite Pro: the one-time unlock, its trial, and which features it covers.
 /// Pure Dart, so the rules are tested without a store. See
 /// `PRODUCT.md`.
 library;
@@ -35,9 +35,10 @@ const proTrialDays = 14;
 /// sandbox reports every tester's original build as "1.0".
 const int? grandfatherBeforeBuild = null;
 
-/// The privacy policy, linked from the paywall. Null hides the link; it must
-/// be set before the App Store submission.
-const String? privacyPolicyUrl = null;
+/// The privacy policy, linked from the paywall (GitHub Pages, from
+/// docs/privacy.md).
+const privacyPolicyUrl =
+    'https://andrew-a-cruz.github.io/nutriton_project/privacy';
 
 /// Apple's standard licence agreement, used as the terms of use.
 const termsOfUseUrl =
@@ -155,7 +156,7 @@ enum ProFeature {
   ),
   themes(
     'Themes and App Icons',
-    'Make Nutriton look the way you like.',
+    'Make Logbite look the way you like.',
     available: false,
   );
 
