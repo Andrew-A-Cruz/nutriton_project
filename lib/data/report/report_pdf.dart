@@ -100,7 +100,12 @@ String weightSummary(ReportWeight? weight, BodyWeightUnit unit) {
         '(1 weigh-in).';
   }
   final last = formatBodyWeight(weight.last.kg, unit);
-  final change = roundTo(unit.fromKg(weight.changeKg), 1);
+  // From the rounded readings, so the change matches the numbers shown.
+  final change = roundTo(
+    roundTo(unit.fromKg(weight.last.kg), 1) -
+        roundTo(unit.fromKg(weight.first.kg), 1),
+    1,
+  );
   final changeText =
       '${change > 0 ? '+' : ''}${plainNumber(change)} ${unit.name}';
   return '$first on ${f.format(dateFromKey(weight.first.date))} to $last on '

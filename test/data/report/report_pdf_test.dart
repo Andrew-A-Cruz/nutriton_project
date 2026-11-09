@@ -90,6 +90,18 @@ void main() {
     expect(text, contains('change: -1.5 kg, 2 weigh-ins'));
   });
 
+  test('the change matches the rounded readings shown', () {
+    const loss = ReportWeight(
+      first: (date: '2026-10-11', kg: 82.4),
+      last: (date: '2026-11-07', kg: 80.8),
+      count: 3,
+    );
+    expect(
+      weightSummary(loss, BodyWeightUnit.lb),
+      '181.7 lb on Oct 11 to 178.1 lb on Nov 7 (change: -3.6 lb, 3 weigh-ins).',
+    );
+  });
+
   test('weight summary wording', () {
     expect(
       weightSummary(null, BodyWeightUnit.kg),
