@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The notification icon: the app logo's ring and leaf disc in white on
+     transparent, as Android draws status bar icons as a silhouette. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="1024"
+    android:viewportHeight="1024">
+    <!-- Ring. -->
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="56"
+        android:pathData="M512,166 A346,346 0 1,1 511.9,166 Z" />
+    <!-- Disc with the leaf cut out. -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M512,302 A210,210 0 1,1 511.9,302 Z
+            M410,618 C392,500 470,392 622,400 C640,522 552,632 410,618 Z" />
+</vector>
