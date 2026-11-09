@@ -1,5 +1,6 @@
 package com.andrewcruz.logbite
 
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 
-class MainActivity : FlutterActivity()
+// A FragmentActivity, because Health Connect's permission flow needs one.
+class MainActivity : FlutterFragmentActivity()

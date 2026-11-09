@@ -27,7 +27,7 @@ The privacy policy is live ([`docs/privacy.md`](./docs/privacy.md), contact logb
 | Item | Size | Tier | Blocked by |
 |---|---|---|---|
 | **Ready now** | | | |
-| [A1 — Android native config leftovers](#a1--android-native-config-leftovers) | S | — | — |
+| [A1 — Android native config leftovers](#a1--android-native-config-leftovers) | S | — | D: bundled or unbundled scanner model |
 | [Calendar of logged days](#calendar-of-logged-days) | M | Free | — |
 | [Top foods](#top-foods) | M | Free | — |
 | [Goals per weekday](#goals-per-weekday) | M | Free | — |
@@ -55,7 +55,7 @@ The privacy policy is live ([`docs/privacy.md`](./docs/privacy.md), contact logb
 | [A6 — Play Store release](#a6--play-store-release) | M + 14 days | — | B2, A2 |
 | [M20 — iCloud sync](#m20--icloud-sync) | XL | Pro | B1, D7 |
 
-**Suggested next:** the small free items (the Android leftovers), or M23 for a fourth Pro feature.
+**Suggested next:** the small free items (the medium items: Calendar of logged days and so on), or M23 for a fourth Pro feature.
 
 ---
 
@@ -64,8 +64,6 @@ The privacy policy is live ([`docs/privacy.md`](./docs/privacy.md), contact logb
 ### A1 — Android native config leftovers
 The application ID is `com.andrewcruz.logbite` (permanent after the first Play upload) and `minSdk` is 26. Builds use Homebrew's `openjdk@17` (`flutter config --jdk-dir`); Android Studio's bundled Java 11 is too old. What's left:
 
-- [ ] `MainActivity` extends `FlutterFragmentActivity` (Health Connect's permission flow needs it; harmless otherwise)
-- [ ] Notification small icon: `@mipmap/ic_launcher` in `local_notification_scheduler.dart` draws as a white square. Add a monochrome `drawable/ic_stat_logbite` and use it
 - [ ] Barcode scanner size: `mobile_scanner` bundles ML Kit (a few MB per ABI). Keep it, or switch to the unbundled model through its Gradle property
 
 ---
