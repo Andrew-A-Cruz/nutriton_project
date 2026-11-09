@@ -119,11 +119,11 @@ Needed for selling Pro, the App Store and Play listings, and Health Connect. Wri
 - [ ] Keep it in step: a new network call or Health type means a policy update
 
 ### A1 — Android native config leftovers
-The toolchain works and `minSdk` is 26. What's left:
+The application ID is `com.andrewcruz.logbite` (permanent after the first Play upload) and `minSdk` is 26. What's left:
 
 - [ ] `MainActivity` extends `FlutterFragmentActivity` (Health Connect's permission flow needs it; harmless otherwise)
 - [ ] Notification small icon: `@mipmap/ic_launcher` in `local_notification_scheduler.dart` draws as a white square. Add a monochrome `drawable/ic_stat_logbite` and use it
-- [ ] Remove the leftover `TODO` comment on `applicationId` in `android/app/build.gradle.kts`
+- [ ] The Android build needs JDK 17 or newer, and this Mac only has Android Studio's Java 11. Update Android Studio (newer versions bundle a JDK 21) or install JDK 17, then `flutter config --jdk-dir=...` and check that `flutter build apk --debug` works
 - [ ] Barcode scanner size: `mobile_scanner` bundles ML Kit (a few MB per ABI). Keep it, or switch to the unbundled model through its Gradle property
 
 ---

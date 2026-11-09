@@ -1,6 +1,6 @@
 # App name contenders
 
-**Chosen 2026-11-08: Logbite.** Support email: logbite.app@gmail.com. Internal IDs (bundle ID `com.andrewcruz.nutriton`, App Group, product IDs `com.nutriton.app.*`, the backup file's `"app": "nutriton"`) keep the old name on purpose.
+**Chosen 2026-11-08: Logbite.** Support email: logbite.app@gmail.com. The Android application ID is `com.andrewcruz.logbite`. Internal IDs (iOS bundle ID `com.andrewcruz.nutriton`, App Group, product IDs `com.nutriton.app.*`, the backup file's `"app": "nutriton"`) keep the old name on purpose.
 
 Working notes for renaming Nutriton before launch. These are the results of name searches on the US App Store (Apple's search API) and the US Google Play store, last run 2026-11-08. "Clear" means no app had that name in its title or package ID. That isn't a trademark search, so do one before committing to a name.
 

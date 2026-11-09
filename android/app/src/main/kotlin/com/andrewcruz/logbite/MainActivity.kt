@@ -1,4 +1,4 @@
-package com.nutriton.app
+package com.andrewcruz.logbite
 
 import io.flutter.embedding.android.FlutterActivity
 
