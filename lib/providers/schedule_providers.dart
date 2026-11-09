@@ -17,3 +17,8 @@ final pendingScheduledProvider =
       (ref, date) =>
           ref.watch(scheduleRepositoryProvider).watchPendingForDate(date),
     );
+
+/// Every plan with its meal or food, for the Planned meals screen.
+final allPlansProvider = StreamProvider<List<PendingScheduledMeal>>(
+  (ref) => ref.watch(scheduleRepositoryProvider).watchPlans(),
+);

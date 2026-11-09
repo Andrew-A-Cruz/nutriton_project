@@ -57,10 +57,12 @@ class ScheduleRepository {
     required Set<int> weekdays,
     MealSlot? mealSlot,
     double servings = 1,
+    String? endDate,
   }) async {
     if (weekdays.isEmpty) {
       throw ArgumentError.value(weekdays, 'weekdays', 'pick at least one day');
     }
+    _checkEnd(startDate, endDate);
     return _create(
       mealId: mealId,
       foodItemId: foodItemId,
@@ -68,7 +70,54 @@ class ScheduleRepository {
       weekdays: weekdayMask(weekdays),
       mealSlot: mealSlot,
       servings: servings,
+      endDate: endDate,
     );
+  }
+
+  /// Every plan with its meal or food, oldest first. For the Planned meals
+  /// screen.
+  Stream<List<PendingScheduledMeal>> watchPlans() =>
+      _db.scheduledMealDao.watchAllPlans();
+
+  /// Changes a plan's days, slot, servings and end date. [weekdays] null
+  /// makes it a one-off on [startDate]; a one-off has no end date. Past
+  /// outcomes are kept.
+  Future<void> updatePlan(
+    String id, {
+    required String startDate,
+    required Set<int>? weekdays,
+    required MealSlot? mealSlot,
+    required double servings,
+    String? endDate,
+  }) async {
+    if (weekdays != null && weekdays.isEmpty) {
+      throw ArgumentError.value(weekdays, 'weekdays', 'pick at least one day');
+    }
+    if (!servings.isFinite || servings <= 0) {
+      throw ArgumentError.value(servings, 'servings', 'must be > 0');
+    }
+    dateFromKey(startDate);
+    final end = weekdays == null ? null : endDate;
+    _checkEnd(startDate, end);
+    await _requireSchedule(id);
+    await _db.scheduledMealDao.updateSchedule(
+      id,
+      ScheduledMealsCompanion(
+        startDate: Value(startDate),
+        weekdays: Value(weekdays == null ? null : weekdayMask(weekdays)),
+        mealSlot: Value(mealSlot?.name),
+        servings: Value(servings),
+        endDate: Value(end),
+      ),
+    );
+  }
+
+  static void _checkEnd(String startDate, String? endDate) {
+    if (endDate == null) return;
+    dateFromKey(endDate);
+    if (endDate.compareTo(startDate) < 0) {
+      throw ArgumentError.value(endDate, 'endDate', 'is before the start');
+    }
   }
 
   Future<String> _create({
@@ -78,6 +127,7 @@ class ScheduleRepository {
     required int? weekdays,
     required MealSlot? mealSlot,
     required double servings,
+    String? endDate,
   }) async {
     if ((mealId == null) == (foodItemId == null)) {
       throw ArgumentError('give exactly one of mealId and foodItemId');
@@ -102,6 +152,7 @@ class ScheduleRepository {
         weekdays: Value(weekdays),
         mealSlot: Value(mealSlot?.name),
         servings: Value(servings),
+        endDate: Value(endDate),
         createdAt: DateTime.now(),
       ),
     );
@@ -199,6 +250,8 @@ class ScheduleRepository {
     final due = mask == null
         ? schedule.startDate == date
         : schedule.startDate.compareTo(date) <= 0 &&
+              (schedule.endDate == null ||
+                  schedule.endDate!.compareTo(date) >= 0) &&
               maskHasWeekday(mask, dateFromKey(date).weekday);
     if (!due) {
       throw StateError('Scheduled meal ${schedule.id} is not due on $date');

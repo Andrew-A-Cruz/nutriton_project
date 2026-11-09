@@ -4,7 +4,7 @@ Every open item in one place. Items are grouped first by whether they can start 
 
 **Sizes:** **S** = about a day or less · **M** = 2–5 days · **L** = 1–2 weeks · **XL** = needs its own detailed plan first.
 
-When an item is finished, delete it here and add a line to [What's Built](./PRODUCT.md#whats-built). When a new idea comes up, give it a size and a blocker and put it in the right section. A schema change takes the next version number when work starts (v10 is next).
+When an item is finished, delete it here and add a line to [What's Built](./PRODUCT.md#whats-built). When a new idea comes up, give it a size and a blocker and put it in the right section. A schema change takes the next version number when work starts (v11 is next).
 
 ---
 
@@ -28,7 +28,6 @@ The privacy policy is live ([`docs/privacy.md`](./docs/privacy.md), contact logb
 |---|---|---|---|
 | **Ready now** | | | |
 | [A1 — Android native config leftovers](#a1--android-native-config-leftovers) | S | — | D: bundled or unbundled scanner model |
-| [Manage planned meals](#manage-planned-meals) | M | Free | — |
 | [Serving presets](#serving-presets) | M | Free | — |
 | [Water tracking](#water-tracking) | M | Free | — |
 | [Fasting timer](#fasting-timer) | M | Free | — |
@@ -51,7 +50,7 @@ The privacy policy is live ([`docs/privacy.md`](./docs/privacy.md), contact logb
 | [A6 — Play Store release](#a6--play-store-release) | M + 14 days | — | B2, A2 |
 | [M20 — iCloud sync](#m20--icloud-sync) | XL | Pro | B1, D7 |
 
-**Suggested next:** the small free items (the medium items: Manage planned meals and so on), or M23 for a fourth Pro feature.
+**Suggested next:** the small free items (the medium items: Serving presets and so on), or M23 for a fourth Pro feature.
 
 ---
 
@@ -65,11 +64,6 @@ The application ID is `com.andrewcruz.logbite` (permanent after the first Play u
 ---
 
 ## Ready Now — Medium
-
-### Manage planned meals
-**Free · schema change only for the end date**
-
-Plans can be created and skipped, but not reviewed. Add a screen that lists every plan (from Settings or the Catalog), lets the user edit one (days, slot, servings), and an optional end date for repeating plans.
 
 ### Serving presets
 **Free · schema change (new `food_servings` table)**

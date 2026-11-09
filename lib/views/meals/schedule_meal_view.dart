@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/date_key.dart';
 import '../../core/meal_slot.dart';
+import '../../core/metrics.dart';
 import '../../core/validation.dart';
 import '../../core/weekdays.dart';
 import '../../data/database/app_database.dart';
@@ -18,17 +19,22 @@ enum _Repeat { once, weekdays }
 /// Plans a [meal] or a [food] (give exactly one) for a day, or for repeating
 /// weekdays from that day on, in a meal section and with a number of servings.
 /// The plan only shows up as a suggestion on Home; nothing is logged until
-/// confirmed. Pops itself after saving.
+/// confirmed. Pops itself after saving. With [existing], it edits that plan
+/// instead of making a new one.
 class ScheduleMealView extends ConsumerStatefulWidget {
   const ScheduleMealView({
     super.key,
     this.meal,
     this.food,
     required this.initialDate,
+    this.existing,
   }) : assert((meal == null) != (food == null));
 
   final Meal? meal;
   final FoodItem? food;
+
+  /// The plan being edited, or null for a new one.
+  final ScheduledMeal? existing;
 
   /// 'yyyy-MM-dd' the date picker starts on.
   final String initialDate;
@@ -38,13 +44,26 @@ class ScheduleMealView extends ConsumerStatefulWidget {
 }
 
 class _ScheduleMealViewState extends ConsumerState<ScheduleMealView> {
-  late String _date = widget.initialDate;
-  _Repeat _repeat = _Repeat.once;
+  late String _date = widget.existing?.startDate ?? widget.initialDate;
+  late _Repeat _repeat = widget.existing?.weekdays == null
+      ? _Repeat.once
+      : _Repeat.weekdays;
   // DateTime.weekday values; Mon-Fri to start with.
-  final Set<int> _days = {1, 2, 3, 4, 5};
+  late final Set<int> _days = switch (widget.existing?.weekdays) {
+    null => {1, 2, 3, 4, 5},
+    final mask => {
+      for (var d = DateTime.monday; d <= DateTime.sunday; d++)
+        if (maskHasWeekday(mask, d)) d,
+    },
+  };
   // Null: picked from the time of day when the suggestion is logged.
-  MealSlot? _slot;
-  final _servings = TextEditingController(text: '1');
+  late MealSlot? _slot = MealSlot.fromName(widget.existing?.mealSlot);
+  late final _servings = TextEditingController(
+    text: plainNumber(widget.existing?.servings ?? 1),
+  );
+
+  /// The last day of a repeating plan, or null for no end.
+  late String? _endDate = widget.existing?.endDate;
   String? _error;
   bool _saving = false;
 
@@ -65,13 +84,27 @@ class _ScheduleMealViewState extends ConsumerState<ScheduleMealView> {
       return;
     }
     final servings = parseNumber(_servings.text)!;
+    final end = _repeat == _Repeat.weekdays ? _endDate : null;
+    if (end != null && end.compareTo(_date) < 0) {
+      setState(() => _error = 'The end date is before the start');
+      return;
+    }
     setState(() {
       _saving = true;
       _error = null;
     });
     try {
       final repo = ref.read(scheduleRepositoryProvider);
-      if (_repeat == _Repeat.once) {
+      if (widget.existing case final plan?) {
+        await repo.updatePlan(
+          plan.id,
+          startDate: _date,
+          weekdays: _repeat == _Repeat.once ? null : _days,
+          mealSlot: _slot,
+          servings: servings,
+          endDate: end,
+        );
+      } else if (_repeat == _Repeat.once) {
         await repo.scheduleOnce(
           mealId: widget.meal?.id,
           foodItemId: widget.food?.id,
@@ -87,6 +120,7 @@ class _ScheduleMealViewState extends ConsumerState<ScheduleMealView> {
           weekdays: _days,
           mealSlot: _slot,
           servings: servings,
+          endDate: end,
         );
       }
       if (mounted) Navigator.of(context).pop();
@@ -111,7 +145,7 @@ class _ScheduleMealViewState extends ConsumerState<ScheduleMealView> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancel'),
         ),
-        middle: const Text('Schedule'),
+        middle: Text(widget.existing == null ? 'Schedule' : 'Edit plan'),
         trailing: CupertinoButton(
           key: const Key('schedule-save'),
           padding: EdgeInsets.zero,
@@ -169,7 +203,7 @@ class _ScheduleMealViewState extends ConsumerState<ScheduleMealView> {
               height: 180,
               child: CupertinoDatePicker(
                 mode: CupertinoDatePickerMode.date,
-                initialDateTime: dateFromKey(widget.initialDate),
+                initialDateTime: dateFromKey(_date),
                 onDateTimeChanged: (d) => setState(() => _date = dateKey(d)),
               ),
             ),
@@ -195,6 +229,39 @@ class _ScheduleMealViewState extends ConsumerState<ScheduleMealView> {
                       ),
                   ],
                 ),
+              ),
+              CupertinoFormSection.insetGrouped(
+                footer: Text(
+                  _endDate == null
+                      ? 'Repeats until you remove it.'
+                      : 'Last day: ${dayLabel(_endDate!, today: ref.watch(todayProvider))}.',
+                ),
+                children: [
+                  CupertinoListTile(
+                    title: const Text('Ends'),
+                    trailing: CupertinoSwitch(
+                      key: const Key('schedule-ends'),
+                      value: _endDate != null,
+                      onChanged: (on) => setState(() {
+                        _endDate = on ? addDays(_date, 27) : null;
+                        _error = null;
+                      }),
+                    ),
+                  ),
+                  if (_endDate != null)
+                    SizedBox(
+                      height: 180,
+                      child: CupertinoDatePicker(
+                        key: const Key('schedule-end-picker'),
+                        mode: CupertinoDatePickerMode.date,
+                        initialDateTime: dateFromKey(_endDate!),
+                        onDateTimeChanged: (d) => setState(() {
+                          _endDate = dateKey(d);
+                          _error = null;
+                        }),
+                      ),
+                    ),
+                ],
               ),
             ],
             CupertinoFormSection.insetGrouped(

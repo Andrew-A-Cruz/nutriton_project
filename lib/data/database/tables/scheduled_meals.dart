@@ -25,6 +25,10 @@ class ScheduledMeals extends Table {
   /// 'yyyy-MM-dd'. The day of a one-off, or the first day of a repeating plan.
   TextColumn get startDate => text()();
 
+  /// 'yyyy-MM-dd'. The last day of a repeating plan (inclusive), or null for
+  /// no end. Unused on a one-off.
+  TextColumn get endDate => text().nullable()();
+
   /// Bitmask of weekdays, bit 0 = Monday ... bit 6 = Sunday (1..127), or null
   /// for a one-off.
   IntColumn get weekdays => integer().nullable().check(

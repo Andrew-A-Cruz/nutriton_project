@@ -163,6 +163,8 @@ void main() {
   });
 
   testWidgets('Schedule screen refuses an empty weekday set', (tester) async {
+    tester.view.physicalSize = const Size(2400, 4000);
+    addTearDown(tester.view.resetPhysicalSize);
     await openSchedule(tester);
     await tester.tap(find.text('Repeat weekly'));
     await settle(tester);
@@ -173,7 +175,9 @@ void main() {
     await tester.tap(find.byKey(const Key('schedule-save')));
     await settle(tester);
 
-    expect(find.text('Pick at least one day'), findsOneWidget);
+    // The error is at the foot of the form, on screen in the tall view.
+    final error = find.text('Pick at least one day');
+    expect(error, findsOneWidget);
     final plans = await tester.runAsync(
       () => db.scheduledMealDao.findSchedulesForMeal(mealId),
     );
