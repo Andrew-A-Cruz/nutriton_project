@@ -20,6 +20,7 @@ class CatalogBrowser extends StatefulWidget {
     this.archivable = false,
     this.showRecent = false,
     this.onScan,
+    this.onSearchOnline,
   });
 
   final ValueChanged<FoodItem> onFoodTap;
@@ -32,6 +33,10 @@ class CatalogBrowser extends StatefulWidget {
 
   /// Shows a scan button beside the search field when set.
   final VoidCallback? onScan;
+
+  /// Shows a "Search Open Food Facts" row while searching foods, when set.
+  /// Called with the search text.
+  final ValueChanged<String>? onSearchOnline;
 
   @override
   State<CatalogBrowser> createState() => _CatalogBrowserState();
@@ -96,6 +101,15 @@ class _CatalogBrowserState extends State<CatalogBrowser> {
             onMealTap: widget.onMealTap,
           ),
         ],
+        if (widget.onSearchOnline case final searchOnline?
+            when _section == CatalogSection.foods && _search.trim().isNotEmpty)
+          CupertinoListTile(
+            key: const Key('search-online'),
+            leading: const Icon(CupertinoIcons.globe),
+            title: Text('Search Open Food Facts for "${_search.trim()}"'),
+            trailing: const CupertinoListTileChevron(),
+            onTap: () => searchOnline(_search.trim()),
+          ),
         Expanded(
           child: switch (_section) {
             CatalogSection.foods => FoodList(

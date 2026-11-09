@@ -23,7 +23,11 @@ class FoodFormView extends ConsumerStatefulWidget {
     this.template,
     this.offerLogAfterSave = false,
     this.scannedBarcode,
+    this.searchQuery,
   });
+
+  /// A name to search Open Food Facts for as the form opens.
+  final String? searchQuery;
 
   /// A barcode scanned before the form opened. A new food looks it up at once
   /// and keeps it.
@@ -302,6 +306,7 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
                     ? _useCatalogFood
                     : null,
                 initialScannedBarcode: widget.scannedBarcode,
+                initialSearchQuery: widget.searchQuery,
               ),
             if (_lookupNotice != null)
               Padding(

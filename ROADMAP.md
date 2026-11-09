@@ -27,7 +27,6 @@ The privacy policy is live ([`docs/privacy.md`](./docs/privacy.md), contact logb
 | Item | Size | Tier | Blocked by |
 |---|---|---|---|
 | **Ready now** | | | |
-| [Search Open Food Facts from the catalog](#search-open-food-facts-from-the-catalog) | S | Free | — |
 | [Add the privacy manifest to Xcode](#add-the-privacy-manifest-to-xcode) | S | — | — |
 | [A1 — Android native config leftovers](#a1--android-native-config-leftovers) | S | — | — |
 | [Calendar of logged days](#calendar-of-logged-days) | M | Free | — |
@@ -57,16 +56,11 @@ The privacy policy is live ([`docs/privacy.md`](./docs/privacy.md), contact logb
 | [A6 — Play Store release](#a6--play-store-release) | M + 14 days | — | B2, A2 |
 | [M20 — iCloud sync](#m20--icloud-sync) | XL | Pro | B1, D7 |
 
-**Suggested next:** the small free items (Search Open Food Facts from the catalog and so on), or M23 for a fourth Pro feature.
+**Suggested next:** the small free items (the privacy manifest and the Android leftovers), or M23 for a fourth Pro feature.
 
 ---
 
 ## Ready Now — Small
-
-### Search Open Food Facts from the catalog
-**Free · no schema change**
-
-A "Search online" row under the Add Food catalog search, using the existing `OpenFoodFactsClient.searchByName`. The New Food form already has a name search; this brings it to where people look first.
 
 ### Add the privacy manifest to Xcode
 `ios/Runner/PrivacyInfo.xcprivacy` is written but not in the Runner target. Add it (in Xcode, or with the `xcodeproj` gem as the widget target was). It declares no tracking, no collected data and UserDefaults access (reason `CA92.1`). Then check the build's privacy report (Product > Archive > Generate Privacy Report) for any plugin API without its own manifest.
