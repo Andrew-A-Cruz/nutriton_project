@@ -151,8 +151,8 @@ enum ProFeature {
   ),
   reports(
     'Shareable Reports',
-    'A PDF or CSV of any date range, for a dietitian or doctor.',
-    available: false,
+    'A PDF of any date range, for a dietitian or doctor.',
+    available: true,
   ),
   themes(
     'Themes and App Icons',

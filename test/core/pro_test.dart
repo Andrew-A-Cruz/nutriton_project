@@ -105,7 +105,11 @@ void main() {
   });
 
   test('the paywall lists only built Pro features', () {
-    expect(ProFeature.shipped, [ProFeature.widget, ProFeature.appleHealth]);
+    expect(ProFeature.shipped, [
+      ProFeature.widget,
+      ProFeature.appleHealth,
+      ProFeature.reports,
+    ]);
   });
 
   group('shouldAskForReview', () {

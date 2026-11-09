@@ -5,13 +5,17 @@ import 'package:intl/intl.dart';
 import '../../core/body_weight.dart';
 import '../../core/date_key.dart';
 import '../../core/metrics.dart';
+import '../../core/report.dart';
 import '../../core/summary_math.dart';
 import '../../data/preferences/user_preferences.dart';
+import '../../data/report/report_pdf.dart';
 import '../../providers/body_weight_providers.dart';
 import '../../providers/preferences_providers.dart';
+import '../../providers/report_providers.dart';
 import '../../providers/summary_providers.dart';
 import '../../providers/today_providers.dart';
 import '../common/error_feedback.dart';
+import '../common/pro_gate.dart';
 import 'summary_chart.dart';
 import 'weight_chart.dart';
 
@@ -30,7 +34,12 @@ class SummaryView extends ConsumerWidget {
     );
 
     return CupertinoPageScaffold(
-      navigationBar: const CupertinoNavigationBar(middle: Text('Summary')),
+      navigationBar: CupertinoNavigationBar(
+        middle: const Text('Summary'),
+        trailing: ProGate(
+          child: _ShareReportButton(endDate: endDate, range: range),
+        ),
+      ),
       child: SafeArea(
         bottom: false,
         child: ListView(
@@ -214,6 +223,82 @@ class _WeightCard extends ConsumerWidget {
             unit: unit,
           ),
       ],
+    );
+  }
+}
+
+/// Shares the range shown as a PDF report (Pro). Disabled while the range
+/// is loading or has nothing logged.
+class _ShareReportButton extends ConsumerStatefulWidget {
+  const _ShareReportButton({required this.endDate, required this.range});
+
+  final String endDate;
+  final SummaryRange range;
+
+  @override
+  ConsumerState<_ShareReportButton> createState() => _ShareReportButtonState();
+}
+
+class _ShareReportButtonState extends ConsumerState<_ShareReportButton> {
+  bool _busy = false;
+
+  SummaryQuery get _query => (endDate: widget.endDate, range: widget.range);
+
+  Future<void> _share() async {
+    setState(() => _busy = true);
+    // Where the iPad share popover points.
+    final box = context.findRenderObject();
+    final origin = box is RenderBox
+        ? box.localToGlobal(Offset.zero) & box.size
+        : null;
+    try {
+      final summary = await ref.read(summaryReportProvider(_query).future);
+      final weights = await ref.read(bodyWeightRangeProvider(_query).future);
+      final settings = ref.read(preferencesProvider);
+      final report = buildReport(
+        startKey: summary.startKey,
+        endKey: summary.endKey,
+        days: summary.dailyTotals,
+        metrics: [settings.primaryMetric, ...settings.secondaryMetrics],
+        goals: settings.goals,
+        weights: weights,
+      );
+      final bytes = await renderReportPdf(
+        report,
+        unit: settings.bodyWeightUnit,
+        generatedOn: ref.read(clockProvider)(),
+      );
+      await ref
+          .read(reportSharerProvider)
+          .share(
+            fileName: reportFileName(report.startKey, report.endKey),
+            bytes: bytes,
+            origin: origin,
+          );
+    } on Exception catch (error, stack) {
+      if (mounted) {
+        await showErrorDialog(
+          context,
+          reportError(ref, error, stack, 'Could not make the report'),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final summary = ref.watch(summaryReportProvider(_query)).value;
+    final ready = !_busy && summary != null && summary.daysLogged > 0;
+    return CupertinoButton(
+      key: const Key('share-report'),
+      padding: EdgeInsets.zero,
+      minimumSize: const Size.square(44),
+      onPressed: ready ? _share : null,
+      child: _busy
+          ? const CupertinoActivityIndicator()
+          : const Icon(CupertinoIcons.share, semanticLabel: 'Share report'),
     );
   }
 }
