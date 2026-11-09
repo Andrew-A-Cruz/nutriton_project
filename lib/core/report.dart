@@ -96,7 +96,8 @@ class ShareableReport {
 /// Builds the report for [startKey]..[endKey] (inclusive). [days] holds the
 /// totals of logged days and [weights] the weigh-ins, oldest first; anything
 /// outside the range is ignored. [goals] may lack a metric, which then has no
-/// goal columns.
+/// goal columns. With weekday goals, [goals] holds the range's average and
+/// [goalOn] each day's goal, which days on target are counted against.
 ShareableReport buildReport({
   required String startKey,
   required String endKey,
@@ -104,6 +105,7 @@ ShareableReport buildReport({
   required List<Metric> metrics,
   required Map<Metric, double> goals,
   required List<WeightReading> weights,
+  double? Function(Metric metric, String day)? goalOn,
 }) {
   bool inRange(String key) =>
       key.compareTo(startKey) >= 0 && key.compareTo(endKey) <= 0;
@@ -123,9 +125,15 @@ ShareableReport buildReport({
           metric: m,
           average: averages == null ? null : m.recordedAmountIn(averages),
           goal: hasGoal ? goal : null,
-          daysOnTarget: hasGoal
+          daysOnTarget: !hasGoal
+              ? null
+              : goalOn == null
               ? daysOnTarget([for (final d in logged) d.totals], m, goal)
-              : null,
+              : daysOnTargetEach(
+                  {for (final d in logged) d.date: d.totals},
+                  m,
+                  (day) => goalOn(m, day),
+                ),
         );
       }(),
   ];

@@ -41,7 +41,7 @@ final widgetPlanProvider = Provider<void>((ref) {
   }
   final metric = ref.watch(preferencesProvider.select((s) => s.primaryMetric));
   final goal = ref.watch(
-    preferencesProvider.select((s) => s.goalFor(s.primaryMetric)),
+    preferencesProvider.select((s) => s.goalFor(s.primaryMetric, date: today)),
   );
   final entries = ref.watch(dayEntriesProvider(today));
   // Wait for the log to load: publishing early would show a full day left.

@@ -38,6 +38,7 @@ class MacroSummary extends StatelessWidget {
     required this.entries,
     required this.settings,
     this.mindful = false,
+    this.date,
   });
 
   final List<FoodLogEntry> entries;
@@ -46,10 +47,15 @@ class MacroSummary extends StatelessWidget {
   /// Mindful mode: goal progress as bars only, no numbers.
   final bool mindful;
 
+  /// The day shown ('yyyy-MM-dd'), so its weekday goals apply.
+  final String? date;
+
   @override
   Widget build(BuildContext context) {
     final totals = totalsOf(entries);
-    if (mindful) return _MindfulTotals(totals: totals, settings: settings);
+    if (mindful) {
+      return _MindfulTotals(totals: totals, settings: settings, date: date);
+    }
     final primary = settings.primaryMetric;
     final macros = entries.map(macrosOfEntry).toList();
     // Only the optional nutrients can be missing from an entry.
@@ -73,7 +79,7 @@ class MacroSummary extends StatelessWidget {
               _PrimaryTotal(
                 metric: primary,
                 amount: primary.amountIn(totals),
-                goal: settings.goalFor(primary),
+                goal: settings.goalFor(primary, date: date),
                 coverageHint: hintFor(primary),
               ),
               for (final m in settings.secondaryMetrics) ...[
@@ -81,7 +87,7 @@ class MacroSummary extends StatelessWidget {
                 _SecondaryTotal(
                   metric: m,
                   amount: m.amountIn(totals),
-                  goal: settings.goalFor(m),
+                  goal: settings.goalFor(m, date: date),
                   coverageHint: hintFor(m),
                 ),
               ],
@@ -102,16 +108,22 @@ class MacroSummary extends StatelessWidget {
 /// bar, in one calm colour that does not change when over. Nothing when no
 /// metric has a goal.
 class _MindfulTotals extends StatelessWidget {
-  const _MindfulTotals({required this.totals, required this.settings});
+  const _MindfulTotals({
+    required this.totals,
+    required this.settings,
+    this.date,
+  });
 
   final Macros totals;
   final UserSettings settings;
+  final String? date;
 
   @override
   Widget build(BuildContext context) {
     final withGoals = [
       for (final m in [settings.primaryMetric, ...settings.secondaryMetrics])
-        if (settings.goalFor(m) case final goal? when goal > 0) (m, goal),
+        if (settings.goalFor(m, date: date) case final goal? when goal > 0)
+          (m, goal),
     ];
     if (withGoals.isEmpty) return const SizedBox.shrink();
     final secondary = CupertinoColors.secondaryLabel.resolveFrom(context);

@@ -262,6 +262,13 @@ class BackupCodec {
     ],
     'healthWriteNutrition': s.healthWriteNutrition,
     'healthReadWeight': s.healthReadWeight,
+    if (s.hasWeekdayGoals)
+      'weekdayGoals': {
+        for (final e in s.weekdayGoals.entries)
+          weekdayKeys[e.key - 1]: {
+            for (final g in e.value.entries) g.key.name: g.value,
+          },
+      },
     if (s.macroGoalPercents case final p?)
       'macroGoalPercents': {
         'protein': p.protein,
@@ -269,6 +276,32 @@ class BackupCodec {
         'fat': p.fat,
       },
   };
+
+  /// Absent in backups made before weekday goals: none.
+  Map<int, Map<Metric, double>> _decodeWeekdayGoals(Object? raw) {
+    if (raw == null) return const {};
+    if (raw is! Map<String, dynamic>) {
+      throw BackupException('The backup has invalid weekday goals.');
+    }
+    final metrics = Metric.values.asNameMap();
+    final out = <int, Map<Metric, double>>{};
+    for (final e in raw.entries) {
+      final day = weekdayKeys.indexOf(e.key) + 1;
+      final goals = e.value;
+      if (day == 0 || goals is! Map<String, dynamic>) {
+        throw BackupException('The backup has invalid weekday goals.');
+      }
+      out[day] = {
+        for (final g in goals.entries)
+          if (metrics[g.key] case final Metric m)
+            m: switch (g.value) {
+              final num v when v.isFinite && v > 0 => v.toDouble(),
+              _ => throw BackupException('The backup has an invalid goal.'),
+            },
+      };
+    }
+    return out;
+  }
 
   /// Absent in backups made before percentage goals: grams.
   MacroSplit? _decodeMacroGoalPercents(Object? raw) => switch (raw) {
@@ -351,6 +384,7 @@ class BackupCodec {
       healthWriteNutrition: healthWrite,
       healthReadWeight: healthRead,
       macroGoalPercents: _decodeMacroGoalPercents(raw['macroGoalPercents']),
+      weekdayGoals: _decodeWeekdayGoals(raw['weekdayGoals']),
     );
   }
 }
