@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 
 import '../../core/body_weight.dart';
+import '../../core/macro_split.dart';
 import '../../core/metrics.dart';
 import '../../core/nutrition_math.dart';
 import '../../core/validation.dart';
@@ -47,9 +48,39 @@ class _PreferencesFormState extends State<PreferencesForm> {
   };
   final Map<Metric, String> _errors = {};
 
+  /// Protein, carbs and fat goals as % of the calorie goal instead of grams.
+  late bool _percentMode = widget.initial.macroGoalPercents != null;
+  late final Map<Metric, TextEditingController> _percents = {
+    for (final m in macroMetrics)
+      m: TextEditingController(text: '${percentOf(_startingPercents(), m)}'),
+  };
+
+  /// The saved percentages, else today's gram goals as percentages, else a
+  /// common 30 / 40 / 30.
+  MacroSplit _startingPercents() {
+    final initial = widget.initial;
+    if (initial.macroGoalPercents case final p?) return p;
+    final grams = [for (final m in macroMetrics) initial.goalFor(m)];
+    if (!grams.contains(null)) {
+      final split = macroSplit(
+        Macros(
+          calories: 0,
+          protein: grams[0]!,
+          carbs: grams[1]!,
+          fat: grams[2]!,
+        ),
+      );
+      if (split != null) return split;
+    }
+    return (protein: 30, carbs: 40, fat: 30);
+  }
+
+  /// Percentages apply only while calories are tracked.
+  bool get _usePercents => _percentMode && _tracked.contains(Metric.calories);
+
   @override
   void dispose() {
-    for (final controller in _goals.values) {
+    for (final controller in [..._goals.values, ..._percents.values]) {
       controller.dispose();
     }
     super.dispose();
@@ -58,7 +89,26 @@ class _PreferencesFormState extends State<PreferencesForm> {
   void _submit() {
     final errors = <Metric, String>{};
     final goals = <Metric, double>{};
+    MacroSplit? percents;
+    if (_usePercents) {
+      final parts = [
+        for (final m in macroMetrics) parseNumber(_percents[m]!.text.trim()),
+      ];
+      if (parts.any((p) => p == null || p < 0 || p != p.roundToDouble())) {
+        errors[Metric.fat] = 'Enter whole percentages';
+      } else {
+        final ints = [for (final p in parts) p!.round()];
+        percents = validMacroSplit(ints[0], ints[1], ints[2]);
+        if (percents == null) {
+          errors[Metric.fat] =
+              'The percentages add up to ${ints.fold<int>(0, (a, b) => a + b)}%, '
+              'not 100%';
+        }
+      }
+    }
     for (final m in Metric.values) {
+      // Derived from the calorie goal instead.
+      if (_usePercents && macroMetrics.contains(m)) continue;
       final text = _goals[m]!.text.trim();
       final tracked = _tracked.contains(m);
       if (text.isEmpty) {
@@ -71,6 +121,9 @@ class _PreferencesFormState extends State<PreferencesForm> {
         continue;
       }
       goals[m] = value;
+    }
+    if (_usePercents && goals[Metric.calories] == null) {
+      errors[Metric.calories] = 'Enter a calorie goal to set macros as %';
     }
 
     setState(() {
@@ -88,6 +141,67 @@ class _PreferencesFormState extends State<PreferencesForm> {
         goals: goals,
         displayUnit: _unit,
         bodyWeightUnit: _bodyUnit,
+        macroGoalPercents: percents,
+      ),
+    );
+  }
+
+  /// Grams the typed percentage for [m] works out to, e.g. '= 150 g', or null.
+  String? _gramsHint(Metric m) {
+    final calories = parseNumber(_goals[Metric.calories]!.text.trim());
+    final percent = parseNumber(_percents[m]!.text.trim());
+    if (calories == null || calories <= 0 || percent == null || percent < 0) {
+      return null;
+    }
+    final grams = calories * percent / 100 / kcalPerGram(m);
+    return '= ${m.formatWithUnit(grams)}';
+  }
+
+  Widget _goalField(Metric m) {
+    if (_usePercents && macroMetrics.contains(m)) {
+      final hint = _gramsHint(m);
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          CupertinoTextField(
+            key: Key('goal-percent-${m.name}'),
+            controller: _percents[m],
+            textAlign: TextAlign.end,
+            keyboardType: TextInputType.number,
+            onChanged: (_) => setState(() {}),
+            suffix: const Padding(
+              padding: EdgeInsets.only(right: 6),
+              child: Text('%'),
+            ),
+          ),
+          if (hint != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                hint,
+                key: Key('goal-grams-${m.name}'),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                ),
+              ),
+            ),
+        ],
+      );
+    }
+    return CupertinoTextField(
+      key: Key('goal-${m.name}'),
+      controller: _goals[m],
+      placeholder: 'No goal',
+      textAlign: TextAlign.end,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      // Percent hints follow the calorie goal as it is typed.
+      onChanged: m == Metric.calories && _usePercents
+          ? (_) => setState(() {})
+          : null,
+      suffix: Padding(
+        padding: const EdgeInsets.only(right: 6),
+        child: Text(m.unit),
       ),
     );
   }
@@ -158,9 +272,37 @@ class _PreferencesFormState extends State<PreferencesForm> {
         ),
         CupertinoFormSection.insetGrouped(
           header: const Text('DAILY GOALS'),
-          footer: const Text('Leave blank for no goal.'),
+          footer: Text(
+            _usePercents
+                ? 'Protein, carbs and fat are a share of the calorie goal and '
+                      'must add up to 100%. Leave other goals blank for none.'
+                : 'Leave blank for no goal.',
+          ),
           children: [
-            for (final m in Metric.values.where(_tracked.contains))
+            if (_tracked.contains(Metric.calories))
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: CupertinoSlidingSegmentedControl<bool>(
+                    key: const Key('macro-goal-mode'),
+                    groupValue: _percentMode,
+                    children: const {
+                      false: Text('Macros in grams'),
+                      true: Text('% of calories'),
+                    },
+                    onValueChanged: (v) {
+                      if (v != null) setState(() => _percentMode = v);
+                    },
+                  ),
+                ),
+              ),
+            // In % mode all three macros need a share, tracked or not.
+            for (final m in Metric.values.where(
+              (m) =>
+                  _tracked.contains(m) ||
+                  (_usePercents && macroMetrics.contains(m)),
+            ))
               CupertinoFormRow(
                 prefix: stackGoalLabels ? null : Text(m.label),
                 child: Column(
@@ -171,19 +313,7 @@ class _PreferencesFormState extends State<PreferencesForm> {
                         alignment: Alignment.centerLeft,
                         child: Text(m.label),
                       ),
-                    CupertinoTextField(
-                      key: Key('goal-${m.name}'),
-                      controller: _goals[m],
-                      placeholder: 'No goal',
-                      textAlign: TextAlign.end,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      suffix: Padding(
-                        padding: const EdgeInsets.only(right: 6),
-                        child: Text(m.unit),
-                      ),
-                    ),
+                    _goalField(m),
                     if (_errors[m] != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
