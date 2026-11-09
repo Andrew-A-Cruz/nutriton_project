@@ -8,6 +8,7 @@ import '../../core/macro_split.dart';
 import '../../core/metrics.dart';
 import '../../core/report.dart';
 import '../../core/summary_math.dart';
+import '../../core/top_foods.dart';
 import '../../data/preferences/user_preferences.dart';
 import '../../data/report/report_pdf.dart';
 import '../../providers/body_weight_providers.dart';
@@ -169,6 +170,13 @@ class _ReportBody extends ConsumerWidget {
             ],
           ),
         ],
+        if (report.daysLogged > 0) ...[
+          const SizedBox(height: 16),
+          _TopFoodsCard(
+            query: (endDate: report.endKey, range: report.range),
+            metric: primary,
+          ),
+        ],
       ],
     );
   }
@@ -180,6 +188,100 @@ class _ReportBody extends ConsumerWidget {
       BucketSize.month => 'monthly averages',
     };
     return '${metric.label.toUpperCase()} $per';
+  }
+}
+
+/// The foods, meals and one-offs that gave the most of the primary metric,
+/// and those logged most often.
+class _TopFoodsCard extends ConsumerWidget {
+  const _TopFoodsCard({required this.query, required this.metric});
+
+  final SummaryQuery query;
+  final Metric metric;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sources = ref.watch(sourceTotalsProvider(query)).value;
+    if (sources == null || sources.isEmpty) return const SizedBox.shrink();
+    final byAmount = topByAmount(sources, metric).take(topFoodsShown);
+    final byCount = topByCount(sources, metric).take(topFoodsShown);
+    return _Card(
+      key: const Key('top-foods'),
+      children: [
+        _SectionLabel('MOST ${metric.label.toUpperCase()}'),
+        const SizedBox(height: 4),
+        for (final (i, s) in byAmount.indexed)
+          _TopRow(
+            key: Key('top-amount-$i'),
+            name: s.name,
+            kind: s.kind,
+            value:
+                '${metric.formatWithUnit(metric.amountIn(s.totals))} · '
+                '${shareOf(s, sources, metric)}%',
+          ),
+        const SizedBox(height: 12),
+        const _SectionLabel('LOGGED MOST OFTEN'),
+        const SizedBox(height: 4),
+        for (final (i, s) in byCount.indexed)
+          _TopRow(
+            key: Key('top-count-$i'),
+            name: s.name,
+            kind: s.kind,
+            value: '${s.count}×',
+          ),
+      ],
+    );
+  }
+}
+
+class _TopRow extends StatelessWidget {
+  const _TopRow({
+    super.key,
+    required this.name,
+    required this.kind,
+    required this.value,
+  });
+
+  final String name;
+  final SourceKind kind;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final secondary = CupertinoColors.secondaryLabel.resolveFrom(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(text: name),
+                  if (kind == SourceKind.meal)
+                    TextSpan(
+                      text: '  Meal',
+                      style: TextStyle(fontSize: 12, color: secondary),
+                    ),
+                ],
+              ),
+              style: const TextStyle(fontSize: 15),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Flexible, so at large text sizes the amount wraps instead of
+          // pushing past the edge.
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: TextStyle(fontSize: 15, color: secondary),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -450,7 +552,7 @@ class _SectionLabel extends StatelessWidget {
 
 /// A rounded panel, matching the Home summary card.
 class _Card extends StatelessWidget {
-  const _Card({required this.children});
+  const _Card({super.key, required this.children});
 
   final List<Widget> children;
 
