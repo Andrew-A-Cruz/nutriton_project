@@ -81,12 +81,11 @@ void main() {
     await settle(tester);
     await tester.tap(find.byKey(const Key('settings-button')));
     await settle(tester);
-    await tester.scrollUntilVisible(
-      find.byKey(const Key('auto-backup-toggle')),
-      200,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.tap(find.byKey(const Key('auto-backup-toggle')));
+    final toggle = find.byKey(const Key('auto-backup-toggle'));
+    await scrollPreferencesTo(tester, toggle);
+    await tester.ensureVisible(toggle);
+    await tester.pump();
+    await tester.tap(toggle);
     await settle(tester);
     expect(prefs.getBool('auto_backup_enabled'), isFalse);
 

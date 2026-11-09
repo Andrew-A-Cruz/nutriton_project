@@ -1,6 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/body_weight.dart';
+import '../../core/macro_split.dart';
 import '../../core/metrics.dart';
 import '../../core/nutrition_math.dart';
 import '../../core/pro.dart';
@@ -19,8 +20,9 @@ class UserSettings {
     List<Reminder> reminders = Reminder.defaults,
     this.healthWriteNutrition = false,
     this.healthReadWeight = false,
+    this.macroGoalPercents,
   }) : trackedMetrics = {...trackedMetrics, primaryMetric},
-       goals = Map.unmodifiable(goals),
+       goals = Map.unmodifiable(_withMacroGoals(goals, macroGoalPercents)),
        reminders = List.unmodifiable([
          for (var i = 0; i < reminderSlots; i++)
            i < reminders.length ? reminders[i] : Reminder.defaults[i],
@@ -47,6 +49,20 @@ class UserSettings {
 
   /// Whether body weight is read from Apple Health.
   final bool healthReadWeight;
+
+  /// Protein, carbs and fat goals as percentages of the calorie goal, or null
+  /// when they are set in grams. While set (and there is a calorie goal),
+  /// [goals] holds the grams derived from it, so everything else reads grams.
+  final MacroSplit? macroGoalPercents;
+
+  static Map<Metric, double> _withMacroGoals(
+    Map<Metric, double> goals,
+    MacroSplit? percents,
+  ) {
+    final calories = goals[Metric.calories];
+    if (percents == null || calories == null || calories <= 0) return goals;
+    return {...goals, ...macroGoalsFromPercents(calories, percents)};
+  }
 
   /// Tracked metrics other than the primary one, in [Metric.values] order.
   List<Metric> get secondaryMetrics => [
@@ -76,6 +92,7 @@ class UserSettings {
     reminders: reminders ?? this.reminders,
     healthWriteNutrition: healthWriteNutrition ?? this.healthWriteNutrition,
     healthReadWeight: healthReadWeight ?? this.healthReadWeight,
+    macroGoalPercents: macroGoalPercents,
   );
 }
 
@@ -100,6 +117,7 @@ class UserPreferences {
   static const autoBackupEnabledKey = 'auto_backup_enabled';
   static const lastAutoBackupKey = 'last_auto_backup_at';
   static String goalKey(Metric metric) => 'goal_${metric.name}';
+  static String goalPercentKey(Metric metric) => 'goal_percent_${metric.name}';
   static String reminderEnabledKey(int slot) => 'reminder_${slot}_enabled';
   static String reminderMinutesKey(int slot) => 'reminder_${slot}_minutes';
 
@@ -142,7 +160,15 @@ class UserPreferences {
       ],
       healthWriteNutrition: _prefs.getBool(healthWriteNutritionKey) ?? false,
       healthReadWeight: _prefs.getBool(healthReadWeightKey) ?? false,
+      macroGoalPercents: _readMacroGoalPercents(),
     );
+  }
+
+  /// Null unless all three are stored and add up to 100.
+  MacroSplit? _readMacroGoalPercents() {
+    final p = [for (final m in macroMetrics) _prefs.getInt(goalPercentKey(m))];
+    if (p.contains(null)) return null;
+    return validMacroSplit(p[0]!, p[1]!, p[2]!);
   }
 
   static int? _validMinutes(int? m) =>
@@ -168,6 +194,14 @@ class UserPreferences {
       settings.healthWriteNutrition,
     );
     await _prefs.setBool(healthReadWeightKey, settings.healthReadWeight);
+    for (final m in macroMetrics) {
+      final percents = settings.macroGoalPercents;
+      if (percents == null) {
+        await _prefs.remove(goalPercentKey(m));
+      } else {
+        await _prefs.setInt(goalPercentKey(m), percentOf(percents, m));
+      }
+    }
     for (final m in Metric.values) {
       final goal = settings.goalFor(m);
       if (goal == null) {

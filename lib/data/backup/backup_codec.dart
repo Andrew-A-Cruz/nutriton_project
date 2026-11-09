@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 
 import '../../core/body_weight.dart';
+import '../../core/macro_split.dart';
 import '../../core/metrics.dart';
 import '../../core/nutrition_math.dart';
 import '../../core/reminder.dart';
@@ -261,6 +262,25 @@ class BackupCodec {
     ],
     'healthWriteNutrition': s.healthWriteNutrition,
     'healthReadWeight': s.healthReadWeight,
+    if (s.macroGoalPercents case final p?)
+      'macroGoalPercents': {
+        'protein': p.protein,
+        'carbs': p.carbs,
+        'fat': p.fat,
+      },
+  };
+
+  /// Absent in backups made before percentage goals: grams.
+  MacroSplit? _decodeMacroGoalPercents(Object? raw) => switch (raw) {
+    null => null,
+    {
+      'protein': final int protein,
+      'carbs': final int carbs,
+      'fat': final int fat,
+    } =>
+      validMacroSplit(protein, carbs, fat) ??
+          (throw BackupException('The backup has invalid macro percentages.')),
+    _ => throw BackupException('The backup has invalid macro percentages.'),
   };
 
   /// Absent in backups made before reminders existed: all off, default times.
@@ -330,6 +350,7 @@ class BackupCodec {
       reminders: _decodeReminders(raw['reminders']),
       healthWriteNutrition: healthWrite,
       healthReadWeight: healthRead,
+      macroGoalPercents: _decodeMacroGoalPercents(raw['macroGoalPercents']),
     );
   }
 }

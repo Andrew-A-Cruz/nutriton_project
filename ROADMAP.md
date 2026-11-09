@@ -27,7 +27,6 @@ The privacy policy is live ([`docs/privacy.md`](./docs/privacy.md), contact logb
 | Item | Size | Tier | Blocked by |
 |---|---|---|---|
 | **Ready now** | | | |
-| [Macro goals as percentages](#macro-goals-as-percentages) | S | Free | — |
 | [Copy an entry to another day](#copy-an-entry-to-another-day) | S | Free | — |
 | [Mindful mode](#mindful-mode) | S | Free | — |
 | [Locale number formatting](#locale-number-formatting) | S | Free | — |
@@ -61,16 +60,11 @@ The privacy policy is live ([`docs/privacy.md`](./docs/privacy.md), contact logb
 | [A6 — Play Store release](#a6--play-store-release) | M + 14 days | — | B2, A2 |
 | [M20 — iCloud sync](#m20--icloud-sync) | XL | Pro | B1, D7 |
 
-**Suggested next:** the small free items (Macro goals as percentages and so on), or M23 for a fourth Pro feature.
+**Suggested next:** the small free items (Copy an entry to another day and so on), or M23 for a fourth Pro feature.
 
 ---
 
 ## Ready Now — Small
-
-### Macro goals as percentages
-**Free · preferences only**
-
-Set protein, carbs and fat as a percentage of the calorie goal (e.g. 30 / 40 / 30). The gram goals are derived and update when the calorie goal changes.
 
 ### Copy an entry to another day
 **Free · no schema change**
