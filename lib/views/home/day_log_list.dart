@@ -215,6 +215,14 @@ class _EntryTile extends ConsumerWidget {
             },
             child: const Text('Move to another day'),
           ),
+          CupertinoActionSheetAction(
+            key: const Key('copy-entry'),
+            onPressed: () {
+              Navigator.of(sheetContext).pop();
+              showCopyEntryPicker(context, entry: entry);
+            },
+            child: const Text('Copy to another day'),
+          ),
         ],
         cancelButton: CupertinoActionSheetAction(
           onPressed: () => Navigator.of(sheetContext).pop(),

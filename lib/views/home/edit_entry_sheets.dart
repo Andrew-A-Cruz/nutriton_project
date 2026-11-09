@@ -9,9 +9,13 @@ import '../../core/validation.dart';
 import '../../data/database/app_database.dart';
 import '../../providers/infrastructure_providers.dart';
 import '../../providers/preferences_providers.dart';
+import '../../providers/today_providers.dart';
 import '../common/form_widgets.dart';
 import '../common/meal_slot_picker.dart';
 import '../common/error_feedback.dart';
+import '../common/haptics.dart';
+import 'date_header.dart' show dayLabel;
+import 'undo_banner.dart';
 
 /// Edits the name and macros of a one-off entry. Can also hand off to the
 /// "Move to another day" picker.
@@ -241,24 +245,45 @@ Future<bool> showMoveEntryPicker(
 }) async {
   final picked = await showCupertinoModalPopup<String>(
     context: context,
-    builder: (_) => _MoveEntryPicker(entry: entry),
+    builder: (_) => _EntryDayPicker(entry: entry, copy: false),
   );
   return picked != null;
 }
 
-class _MoveEntryPicker extends ConsumerStatefulWidget {
-  const _MoveEntryPicker({required this.entry});
+/// Asks for a day (tomorrow by default, for planning ahead) and logs a copy
+/// of [entry] there, with an undo banner. Resolves to the day copied to, or
+/// null if cancelled.
+Future<String?> showCopyEntryPicker(
+  BuildContext context, {
+  required FoodLogEntry entry,
+}) => showCupertinoModalPopup<String>(
+  context: context,
+  builder: (_) => _EntryDayPicker(entry: entry, copy: true),
+);
+
+/// The date picker behind "Move to another day" and "Copy to another day".
+class _EntryDayPicker extends ConsumerStatefulWidget {
+  const _EntryDayPicker({required this.entry, required this.copy});
 
   final FoodLogEntry entry;
 
+  /// Copy the entry (a new entry on the picked day) instead of moving it.
+  final bool copy;
+
   @override
-  ConsumerState<_MoveEntryPicker> createState() => _MoveEntryPickerState();
+  ConsumerState<_EntryDayPicker> createState() => _EntryDayPickerState();
 }
 
-class _MoveEntryPickerState extends ConsumerState<_MoveEntryPicker> {
-  late DateTime _picked = dateFromKey(widget.entry.logDate);
+class _EntryDayPickerState extends ConsumerState<_EntryDayPicker> {
+  late DateTime _picked = dateFromKey(
+    widget.copy ? _tomorrow : widget.entry.logDate,
+  );
   bool _saving = false;
   String? _error;
+
+  String get _tomorrow => addDays(ref.read(todayProvider), 1);
+
+  Future<void> _confirm() => widget.copy ? _copy(dateKey(_picked)) : _move();
 
   Future<void> _move() async {
     final key = dateKey(_picked);
@@ -283,6 +308,32 @@ class _MoveEntryPickerState extends ConsumerState<_MoveEntryPicker> {
     }
   }
 
+  Future<void> _copy(String key) async {
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    final repo = ref.read(logRepositoryProvider);
+    final overlay = Overlay.of(context, rootOverlay: true);
+    try {
+      final newId = await repo.duplicateEntry(widget.entry.id, key);
+      Haptics.logged();
+      showUndoBanner(
+        overlay,
+        message: 'Copied to ${dayLabel(key, today: ref.read(todayProvider))}',
+        onUndo: () => repo.deleteEntry(newId),
+      );
+      if (mounted) Navigator.of(context).pop(key);
+    } catch (e, stack) {
+      if (mounted) {
+        setState(() {
+          _saving = false;
+          _error = reportError(ref, e, stack, 'Could not copy');
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -301,20 +352,24 @@ class _MoveEntryPickerState extends ConsumerState<_MoveEntryPicker> {
                     onPressed: () => Navigator.of(context).pop(),
                     child: const Text('Cancel'),
                   ),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'Move to another day',
+                      widget.copy
+                          ? 'Copy to another day'
+                          : 'Move to another day',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
                   CupertinoButton(
-                    key: const Key('move-entry-confirm'),
-                    onPressed: _saving ? null : _move,
-                    child: const Text('Move'),
+                    key: Key(
+                      widget.copy ? 'copy-entry-confirm' : 'move-entry-confirm',
+                    ),
+                    onPressed: _saving ? null : _confirm,
+                    child: Text(widget.copy ? 'Copy' : 'Move'),
                   ),
                 ],
               ),
@@ -322,12 +377,20 @@ class _MoveEntryPickerState extends ConsumerState<_MoveEntryPicker> {
             SizedBox(
               height: 216,
               child: CupertinoDatePicker(
-                key: const Key('move-entry-picker'),
+                key: Key(
+                  widget.copy ? 'copy-entry-picker' : 'move-entry-picker',
+                ),
                 mode: CupertinoDatePickerMode.date,
                 initialDateTime: _picked,
                 onDateTimeChanged: (d) => _picked = d,
               ),
             ),
+            if (widget.copy)
+              CupertinoButton(
+                key: const Key('copy-entry-tomorrow'),
+                onPressed: _saving ? null : () => _copy(_tomorrow),
+                child: const Text('Copy to tomorrow'),
+              ),
             if (_error != null)
               Padding(
                 padding: const EdgeInsets.all(8),

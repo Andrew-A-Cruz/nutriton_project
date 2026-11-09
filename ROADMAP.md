@@ -27,7 +27,6 @@ The privacy policy is live ([`docs/privacy.md`](./docs/privacy.md), contact logb
 | Item | Size | Tier | Blocked by |
 |---|---|---|---|
 | **Ready now** | | | |
-| [Copy an entry to another day](#copy-an-entry-to-another-day) | S | Free | — |
 | [Mindful mode](#mindful-mode) | S | Free | — |
 | [Locale number formatting](#locale-number-formatting) | S | Free | — |
 | [Search Open Food Facts from the catalog](#search-open-food-facts-from-the-catalog) | S | Free | — |
@@ -60,16 +59,11 @@ The privacy policy is live ([`docs/privacy.md`](./docs/privacy.md), contact logb
 | [A6 — Play Store release](#a6--play-store-release) | M + 14 days | — | B2, A2 |
 | [M20 — iCloud sync](#m20--icloud-sync) | XL | Pro | B1, D7 |
 
-**Suggested next:** the small free items (Copy an entry to another day and so on), or M23 for a fourth Pro feature.
+**Suggested next:** the small free items (Mindful mode and so on), or M23 for a fourth Pro feature.
 
 ---
 
 ## Ready Now — Small
-
-### Copy an entry to another day
-**Free · no schema change**
-
-"Log again today" (M10) only copies to today, and "Move to another day" already exists. Add "Copy to…" with a date picker and a Tomorrow shortcut, for planning ahead.
 
 ### Mindful mode
 **Free · preferences only**
