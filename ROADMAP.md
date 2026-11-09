@@ -27,7 +27,6 @@ The privacy policy is live ([`docs/privacy.md`](./docs/privacy.md), contact logb
 | Item | Size | Tier | Blocked by |
 |---|---|---|---|
 | **Ready now** | | | |
-| [Macro split chart](#macro-split-chart) | S | Free | — |
 | [Macro goals as percentages](#macro-goals-as-percentages) | S | Free | — |
 | [Copy an entry to another day](#copy-an-entry-to-another-day) | S | Free | — |
 | [Mindful mode](#mindful-mode) | S | Free | — |
@@ -62,16 +61,11 @@ The privacy policy is live ([`docs/privacy.md`](./docs/privacy.md), contact logb
 | [A6 — Play Store release](#a6--play-store-release) | M + 14 days | — | B2, A2 |
 | [M20 — iCloud sync](#m20--icloud-sync) | XL | Pro | B1, D7 |
 
-**Suggested next:** the small free items (Macro split chart and so on), or M23 for a fourth Pro feature.
+**Suggested next:** the small free items (Macro goals as percentages and so on), or M23 for a fourth Pro feature.
 
 ---
 
 ## Ready Now — Small
-
-### Macro split chart
-**Free · no schema change**
-
-The share of calories from protein, carbs and fat (4 / 4 / 9 kcal per g) for the day on Home and for the range on Summary, as a ring or stacked bar. Add a text summary for VoiceOver, as the other charts have.
 
 ### Macro goals as percentages
 **Free · preferences only**
