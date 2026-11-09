@@ -1,3 +1,4 @@
+import 'number_locale.dart';
 import 'nutrition_math.dart';
 
 /// The tracked metrics. Used by onboarding, the Home summary and (later) the
@@ -43,7 +44,7 @@ extension MetricAmounts on Metric {
   /// Display text for [amount]: whole kcal and mg, one decimal for grams.
   String format(double amount) => this == Metric.calories || unit == 'mg'
       ? roundTo(amount, 0).toStringAsFixed(0)
-      : roundTo(amount, 1).toStringAsFixed(1);
+      : localizeDecimal(roundTo(amount, 1).toStringAsFixed(1));
 
   /// [format] plus the unit, e.g. '12.5 g' or '480 mg'.
   String formatWithUnit(double amount) => '${format(amount)} $unit';
@@ -58,10 +59,11 @@ String? coverageText(Metric metric, Coverage coverage) => coverage.isPartial
     : null;
 
 /// Plain text for a number without trailing zeros, e.g. 2000 -> '2000',
-/// 1.5 -> '1.5'. Used to prefill input fields.
+/// 1.5 -> '1.5' (or '1,5' where the locale uses a comma). Used to prefill
+/// input fields, which accept either separator.
 String plainNumber(double value) => value == value.roundToDouble()
     ? value.toStringAsFixed(0)
-    : value.toString();
+    : localizeDecimal(value.toString());
 
 /// One line of macros for a food, meal or total, e.g.
 /// '320 kcal · 12.5 g protein · 20.0 g carbs · 5.0 g fat'. Uses the same

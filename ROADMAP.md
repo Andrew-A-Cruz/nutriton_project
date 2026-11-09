@@ -27,7 +27,6 @@ The privacy policy is live ([`docs/privacy.md`](./docs/privacy.md), contact logb
 | Item | Size | Tier | Blocked by |
 |---|---|---|---|
 | **Ready now** | | | |
-| [Locale number formatting](#locale-number-formatting) | S | Free | — |
 | [Search Open Food Facts from the catalog](#search-open-food-facts-from-the-catalog) | S | Free | — |
 | [Add the privacy manifest to Xcode](#add-the-privacy-manifest-to-xcode) | S | — | — |
 | [A1 — Android native config leftovers](#a1--android-native-config-leftovers) | S | — | — |
@@ -58,16 +57,11 @@ The privacy policy is live ([`docs/privacy.md`](./docs/privacy.md), contact logb
 | [A6 — Play Store release](#a6--play-store-release) | M + 14 days | — | B2, A2 |
 | [M20 — iCloud sync](#m20--icloud-sync) | XL | Pro | B1, D7 |
 
-**Suggested next:** the small free items (Locale number formatting and so on), or M23 for a fourth Pro feature.
+**Suggested next:** the small free items (Search Open Food Facts from the catalog and so on), or M23 for a fourth Pro feature.
 
 ---
 
 ## Ready Now — Small
-
-### Locale number formatting
-**Free · no schema change**
-
-Comma input is done (`parseNumber` accepts "1,5"). What's left: display numbers with the device locale's decimal separator.
 
 ### Search Open Food Facts from the catalog
 **Free · no schema change**
@@ -275,6 +269,7 @@ Built but never tried on a real iPhone:
 - [ ] Turn on both Apple Health options and check the data in the Health app (M19)
 - [ ] Automatic backups: the Backups folder shows under On My iPhone > Logbite in Files
 - [ ] The Done bar sits flush on the number keyboard (onboarding goals, a food form, the servings dialog) and closes it
+- [ ] With the phone set to a comma-decimal region (e.g. Germany), decimals show with a comma and typed commas still work
 - [ ] Haptics: a light tap on logging, a firmer one on swipe-delete
 - [ ] Share a month's report from Summary (the share sheet, then open the PDF in Files or Mail) and read it as a dietitian would (M22)
 

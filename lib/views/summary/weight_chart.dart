@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 
 import '../../core/body_weight.dart';
 import '../../core/date_key.dart';
+import '../../core/metrics.dart';
+import '../../core/nutrition_math.dart';
 
 /// Line chart of body weight over a range: the readings as dots joined by a
 /// faint line, and the [movingAverageDays]-day moving average as a solid line.
@@ -174,8 +176,7 @@ class WeightChart extends StatelessWidget {
   }
 
   /// One decimal place without a trailing zero.
-  static String plainWeight(double value) =>
-      NumberFormat('#,##0.#').format(value);
+  static String plainWeight(double value) => plainNumber(roundTo(value, 1));
 
   /// [start] moved forward [days] calendar days (UTC, so no DST shifts).
   static DateTime addDaysTo(DateTime start, int days) =>

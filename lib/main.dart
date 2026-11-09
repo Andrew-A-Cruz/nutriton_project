@@ -7,6 +7,7 @@ import 'package:in_app_review/in_app_review.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app.dart';
+import 'core/number_locale.dart';
 import 'data/backup/auto_backup_store.dart';
 import 'data/diagnostics/error_log.dart';
 import 'data/notifications/local_notification_scheduler.dart';
@@ -27,6 +28,7 @@ import 'providers/review_providers.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  useDecimalSeparatorOf(PlatformDispatcher.instance.locale.toString());
   final prefs = await SharedPreferences.getInstance();
   final errorLog = ErrorLog(prefs);
   // Anything not caught where it happened lands in Settings > Error log.
