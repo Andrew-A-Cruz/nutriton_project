@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/calendar_math.dart';
+import '../core/nutrition_math.dart';
 import '../core/summary_math.dart';
 import 'infrastructure_providers.dart';
 import 'today_providers.dart';
@@ -68,3 +70,16 @@ final streakProvider = StreamProvider<int>(
       .watch(summaryRepositoryProvider)
       .watchStreak(ref.watch(todayProvider)),
 );
+
+/// Totals for each logged day of one month, by day key. Re-emits on every
+/// log change. Feeds the calendar.
+final monthTotalsProvider = StreamProvider.family<Map<String, Macros>, Month>((
+  ref,
+  month,
+) {
+  final (start, end) = monthSpan(month);
+  return ref
+      .watch(summaryRepositoryProvider)
+      .watchDailyTotals(start, end)
+      .map((days) => {for (final d in days) d.logDate: d.totals});
+});
