@@ -6,6 +6,7 @@ import '../../core/nutrition_math.dart';
 import '../../core/weekdays.dart';
 import '../../providers/schedule_providers.dart';
 import '../common/error_feedback.dart';
+import '../common/haptics.dart';
 
 /// One planned meal or food inside its meal section on Home, dimmed so it
 /// reads as a suggestion and not as something eaten. Tap to log it (nothing is
@@ -32,6 +33,7 @@ class PlannedTile extends ConsumerWidget {
       await ref
           .read(scheduleRepositoryProvider)
           .confirm(item.schedule.id, date: date);
+      Haptics.logged();
     } catch (e, stack) {
       final message = reportError(ref, e, stack, 'Could not log ${item.name}');
       if (!context.mounted) return;

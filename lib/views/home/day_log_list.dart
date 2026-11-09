@@ -16,6 +16,7 @@ import 'edit_entry_sheets.dart';
 import 'entry_sheets.dart';
 import 'scheduled_suggestions.dart';
 import 'undo_banner.dart';
+import '../common/haptics.dart';
 
 /// The day's entries as a sliver. Swipe left to delete (with a short Undo
 /// banner); tap a food entry to edit its servings, a meal entry to see its
@@ -58,6 +59,7 @@ class _DayLogListState extends ConsumerState<DayLogList> {
     try {
       final deleted = await repo.deleteEntryForUndo(id);
       if (deleted == null) return;
+      Haptics.deleted();
       showUndoBanner(
         overlay,
         message: 'Entry deleted',
@@ -171,6 +173,7 @@ class _EntryTile extends ConsumerWidget {
         entry.id,
         ref.read(todayProvider),
       );
+      Haptics.logged();
       showUndoBanner(
         overlay,
         message: 'Logged again today',
@@ -291,6 +294,7 @@ class _EmptyLogStateState extends ConsumerState<EmptyLogState> {
       await ref
           .read(logRepositoryProvider)
           .copyDay(fromDate: previous, toDate: widget.date);
+      Haptics.logged();
     } finally {
       if (mounted) setState(() => _copying = false);
     }

@@ -8,6 +8,7 @@ import '../../providers/infrastructure_providers.dart';
 import '../common/error_feedback.dart';
 import '../common/form_widgets.dart';
 import '../common/meal_slot_picker.dart';
+import '../common/haptics.dart';
 
 /// Name a quick add gets when none is typed.
 const quickAddName = 'Quick add';
@@ -92,6 +93,7 @@ class _QuickAddFormState extends ConsumerState<QuickAddForm> {
             ),
             mealSlot: _slot,
           );
+      Haptics.logged();
       if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
     } catch (e, stack) {
       if (mounted) {

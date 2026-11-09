@@ -16,6 +16,7 @@ import 'food_picker_page.dart';
 import 'meal_items_editor.dart';
 import 'schedule_meal_view.dart';
 import '../common/error_feedback.dart';
+import '../common/haptics.dart';
 
 /// Logs a meal for [logDate]. The foods start as the template's, and can be
 /// added, removed or re-weighed for this one entry. The template only changes
@@ -102,6 +103,7 @@ class _MealLogViewState extends ConsumerState<MealLogView> {
             mealSlot: _slot,
             portion: _portionShare ?? 1,
           );
+      Haptics.logged();
       if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
     } catch (e, stack) {
       if (mounted) {
