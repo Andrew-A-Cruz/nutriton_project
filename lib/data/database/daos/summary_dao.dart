@@ -3,6 +3,7 @@ import 'package:drift/drift.dart';
 import '../../../core/metrics.dart';
 import '../../../core/nutrition_math.dart';
 import '../../../core/summary_math.dart';
+import '../../../core/top_foods.dart';
 import '../app_database.dart';
 import '../tables/food_log_entries.dart';
 
@@ -73,6 +74,40 @@ class SummaryDao extends DatabaseAccessor<AppDatabase> with _$SummaryDaoMixin {
         _dailyTotalsSql,
         variables: [Variable.withString(start), Variable.withString(end)],
         readsFrom: {foodLogEntries},
+      );
+
+  /// Each food, meal and one-off name logged from [start] to [end]
+  /// (inclusive), with its entry count and totals. Re-emits whenever the log
+  /// changes. Entries are grouped by the catalog food or meal they came from;
+  /// one-offs by name, ignoring case.
+  Stream<List<SourceTotal>> watchSourceTotals(String start, String end) =>
+      customSelect(
+        _sourceTotalsSql,
+        variables: [Variable.withString(start), Variable.withString(end)],
+        readsFrom: {foodLogEntries},
+      ).watch().map(
+        (rows) => [
+          for (final r in rows)
+            SourceTotal(
+              key: r.read<String>('source_key'),
+              name: r.read<String>('name'),
+              kind: switch (r.read<String>('kind')) {
+                'food' => SourceKind.food,
+                'meal' => SourceKind.meal,
+                _ => SourceKind.oneOff,
+              },
+              count: r.read<int>('entries'),
+              totals: Macros(
+                calories: r.read<double>('cal'),
+                protein: r.read<double>('pro'),
+                carbs: r.read<double>('carb'),
+                fat: r.read<double>('fat'),
+                fiber: r.read<double?>('fiber'),
+                sugar: r.read<double?>('sugar'),
+                sodium: r.read<double?>('sodium'),
+              ),
+            ),
+        ],
       );
 
   static List<DayTotal> _toDayTotals(List<QueryRow> rows) => [
@@ -156,4 +191,29 @@ FROM food_log_entries
 WHERE log_date BETWEEN ? AND ?
 GROUP BY log_date
 ORDER BY log_date
+''';
+
+// SQLite returns the bare `name` column from the row that holds MAX(log_date),
+// so each group is named as it was last logged.
+const _sourceTotalsSql = '''
+SELECT
+  CASE WHEN food_item_id IS NOT NULL THEN 'f:' || food_item_id
+       WHEN meal_id IS NOT NULL THEN 'm:' || meal_id
+       ELSE 'a:' || LOWER(TRIM(name)) END AS source_key,
+  CASE WHEN food_item_id IS NOT NULL THEN 'food'
+       WHEN meal_id IS NOT NULL THEN 'meal'
+       ELSE 'oneOff' END AS kind,
+  MAX(log_date) AS last_date,
+  name,
+  COUNT(*)      AS entries,
+  SUM(calories) AS cal,
+  SUM(protein)  AS pro,
+  SUM(carbs)    AS carb,
+  SUM(fat)      AS fat,
+  SUM(fiber)    AS fiber,
+  SUM(sugar)    AS sugar,
+  SUM(sodium)   AS sodium
+FROM food_log_entries
+WHERE log_date BETWEEN ? AND ?
+GROUP BY source_key
 ''';

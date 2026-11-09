@@ -1,5 +1,6 @@
 import '../../core/streak.dart';
 import '../../core/summary_math.dart';
+import '../../core/top_foods.dart';
 import '../database/app_database.dart';
 
 /// Builds Summary View reports from the log. The grouping and averaging rules
@@ -24,6 +25,13 @@ class SummaryRepository {
   /// changes.
   Stream<List<DayTotal>> watchDailyTotals(String startDate, String endDate) =>
       _db.summaryDao.watchDailyTotalsForRange(startDate, endDate);
+
+  /// Each food, meal and one-off logged from [startDate] to [endDate]
+  /// (inclusive) with its count and totals. Re-emits on every log change.
+  Stream<List<SourceTotal>> watchSourceTotals(
+    String startDate,
+    String endDate,
+  ) => _db.summaryDao.watchSourceTotals(startDate, endDate);
 
   /// The report for [range] ending on [endDate] ('yyyy-MM-dd', inclusive).
   /// Re-emits whenever the log changes.

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/calendar_math.dart';
 import '../core/nutrition_math.dart';
 import '../core/summary_math.dart';
+import '../core/top_foods.dart';
 import 'infrastructure_providers.dart';
 import 'today_providers.dart';
 
@@ -83,3 +84,15 @@ final monthTotalsProvider = StreamProvider.family<Map<String, Macros>, Month>((
       .watchDailyTotals(start, end)
       .map((days) => {for (final d in days) d.logDate: d.totals});
 });
+
+/// Each food, meal and one-off logged in a Summary range, with its count and
+/// totals. Feeds Top foods.
+final sourceTotalsProvider =
+    StreamProvider.family<List<SourceTotal>, SummaryQuery>(
+      (ref, query) => ref
+          .watch(summaryRepositoryProvider)
+          .watchSourceTotals(
+            windowStart(query.endDate, query.range.days),
+            query.endDate,
+          ),
+    );
