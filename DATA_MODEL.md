@@ -128,7 +128,7 @@ The breakdown of a logged meal, as it was actually eaten. This can differ from t
 
 ### `scheduled_meals`
 
-Planned meals and foods (schema v2; v7 added foods, a slot and servings). A plan is only a suggestion on Home; it never logs by itself. With `weekdays` null it is a one-off on `start_date`; otherwise it repeats on those weekdays from `start_date` on. A plan names exactly one source: a meal or a catalog food (a table CHECK enforces it). A plan has no `active` flag: "Stop repeating" deletes it. M17's planned `scheduled_items` table was folded into this one rather than created beside it.
+Planned meals and foods (schema v2; v7 added foods, a slot and servings). A plan is only a suggestion on Home; it never logs by itself. With `weekdays` null it is a one-off on `start_date`; otherwise it repeats on those weekdays from `start_date` on, until `end_date` if set. A plan names exactly one source: a meal or a catalog food (a table CHECK enforces it). A plan has no `active` flag: "Stop repeating" deletes it. M17's planned `scheduled_items` table was folded into this one rather than created beside it.
 
 | Column | Type | Nullable | Constraints / Notes |
 |---|---|---|---|
@@ -139,6 +139,7 @@ Planned meals and foods (schema v2; v7 added foods, a slot and servings). A plan
 | `weekdays` | INT | Yes | Bitmask, bit 0 = Monday ... bit 6 = Sunday, `1..127`. Null = one-off. Mon–Fri = `31` |
 | `meal_slot` | TEXT | Yes | Schema v7. `'breakfast'`, `'lunch'`, `'dinner'` or `'snack'` (CHECK). Null (every plan from before v7) = filed by the time of day, using the same cutoffs as logging, both when shown on Home and when logged |
 | `servings` | REAL | No | Schema v7. `> 0`, default `1`. A food's servings, or the multiplier on a meal's item weights |
+| `end_date` | TEXT | Yes | Schema v10. `yyyy-MM-dd`, the last day of a repeating plan (inclusive). Null = no end; unused on a one-off |
 | `created_at` | DATETIME | No | Set on insert; orders suggestions |
 
 ---
@@ -155,9 +156,25 @@ What happened to a plan on one day. A plan with no row for a day is still a pend
 | `status` | TEXT | No | `'logged'` or `'dismissed'` |
 | `entry_id` | TEXT | Yes | FK → `food_log_entries.id`, `ON DELETE SET NULL` (provenance, set when `logged`) |
 
-**Pending on date D:** the plan is due (one-off: `start_date = D`; repeating: `start_date <= D` and the weekday bit of D is set in `weekdays`), has no outcome row for D, and its meal or food is not archived. Pending plans are not log entries, so they count toward no total, streak or reminder until confirmed. "Stop repeating" deletes the plan, which cascades its outcomes.
+**Pending on date D:** the plan is due (one-off: `start_date = D`; repeating: `start_date <= D`, `end_date` null or `>= D`, and the weekday bit of D is set in `weekdays`), has no outcome row for D, and its meal or food is not archived. Pending plans are not log entries, so they count toward no total, streak or reminder until confirmed. "Stop repeating" deletes the plan, which cascades its outcomes.
 
 **Migration:** `schemaVersion` 1 → 2 creates both tables and the index (`onUpgrade` in `app_database.dart`; covered by `test/data/migrations/schema_migration_test.dart`). 6 → 7 rebuilds `scheduled_meals` with drift's `TableMigration` (SQLite cannot drop NOT NULL in place), keeping ids so outcomes still point at their plans; old rows get a null `food_item_id` and `meal_slot` and `servings` 1 (`test/drift/app_database/migration_test.dart`).
+
+---
+
+### `food_servings`
+
+Named portions of a catalog food (schema v11), such as "cup" = 240 g. The log screen offers them beside servings and weight; a count of portions is converted to servings, so entries stay servings entries. A food saved from an Open Food Facts lookup gets the portion its `serving_size` text names.
+
+| Column | Type | Null | Notes |
+|---|---|---|---|
+| `id` | TEXT | No | Primary key (UUID) |
+| `food_item_id` | TEXT | No | FK → `food_items.id`, `ON DELETE CASCADE`. Indexed (`food_servings_food_item_id`) |
+| `name` | TEXT | No | 1 to 40 characters, e.g. `cup` |
+| `weight_g` | REAL | No | `> 0` (CHECK). Grams in one portion |
+| `created_at` | DATETIME | No | Set on insert |
+
+In the backup as `food_servings`, which older backups lack (read as none).
 
 ---
 
@@ -185,6 +202,9 @@ Stored via `shared_preferences`, not in SQLite. Read on app launch to configure 
 | `primary_metric` | String | e.g. `"calories"` |
 | `tracked_metrics` | String list | Metric names, e.g. `["calories", "protein", "fat"]`. Always includes the primary metric; the rest are the secondaries |
 | `goal_<metric>` | Float | Daily goal per metric, e.g. `goal_calories`, `goal_protein`. Required for the primary metric, optional otherwise (key absent = no goal) |
+| `goal_<metric>_<mon..sun>` | Float | A weekday's own goal, overriding `goal_<metric>` on that day. In the backup `preferences` as `weekdayGoals` (`{"mon": {"calories": 2600}}`), optional on read |
+| `goal_percent_<protein/carbs/fat>` | Int | Macro goals as % of the calorie goal (all three, adding to 100). While set, the gram goals are derived from the calorie goal. In the backup `preferences` as `macroGoalPercents`, optional on read |
+| `mindful_mode` | Bool | Hides numbers on Today. Absent = off. Device-local |
 | `display_unit` | String | `"g"` or `"oz"`. Logging weights (weight entry, meal items) are typed and shown in this unit and stored in grams. Also the default unit for a new catalog food, which then keeps its own `food_items.display_unit` |
 | `body_weight_unit` | String | `"kg"` or `"lb"`, default `"kg"`. Separate from `display_unit`: body weight is typed and shown in this unit and stored in kilograms. In the backup `preferences` as `bodyWeightUnit`, which older backups lack (read as kg) |
 | `health_write_nutrition` | Bool | Write each day's nutrition to Apple Health (iOS). Absent = off. In the backup `preferences` as `healthWriteNutrition`, which older backups lack (read as off) |
