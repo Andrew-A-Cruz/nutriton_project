@@ -361,7 +361,8 @@ lib/
 | 8 | M19 | `body_weights.source` (nullable text, default `'manual'`; `'health'` for a weight read from Apple Health) |
 | 9 | November 2026 improvements | `food_items.brand` (nullable) and `favorite`; `meals.favorite` and `cooked_weight_g` (nullable, recipes); indexes on `food_log_entries` (`created_at`, `food_item_id`, `meal_id`), `food_log_entry_items.entry_id` and `meal_food_items.meal_id` |
 | 10 | Manage planned meals | `scheduled_meals.end_date` (nullable): the last day of a repeating plan |
-| 11 (planned) | M24 | `food_items.menu_item_id` (nullable, indexed): links a catalog food to its bundled menu item |
+| 11 | Serving presets | New `food_servings` table: `id`, `food_item_id` (cascade, indexed), `name` (1–40), `weight_g` (> 0), `created_at` |
+| 12 (planned) | M24 | `food_items.menu_item_id` (nullable, indexed): links a catalog food to its bundled menu item |
 
 Each step has a drift migration test (`make-migrations`), a row here, and a backup that still reads older files.
 

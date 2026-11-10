@@ -86,6 +86,7 @@ class BackupData {
     this.scheduledMeals = const [],
     this.scheduledMealOutcomes = const [],
     this.bodyWeights = const [],
+    this.foodServings = const [],
     required this.settings,
     this.exportedAt,
   });
@@ -98,6 +99,7 @@ class BackupData {
   final List<ScheduledMeal> scheduledMeals;
   final List<ScheduledMealOutcome> scheduledMealOutcomes;
   final List<BodyWeight> bodyWeights;
+  final List<FoodServing> foodServings;
   final UserSettings settings;
 
   /// When the file was written. Null for data not read from a file, or when the
@@ -114,6 +116,7 @@ class BackupData {
 ///   "food_log_entries": [...], "food_log_entry_items": [...],
 ///   "scheduled_meals": [...], "scheduled_meal_outcomes": [...],
 ///   "body_weights": [...],
+///   "food_servings": [...],
 ///   "preferences": {...} }
 /// ```
 ///
@@ -148,6 +151,7 @@ class BackupCodec {
         for (final r in data.scheduledMealOutcomes) r.toJson(),
       ],
       'body_weights': [for (final r in data.bodyWeights) r.toJson()],
+      'food_servings': [for (final r in data.foodServings) r.toJson()],
       'preferences': _encodeSettings(data.settings),
     };
     return const JsonEncoder.withIndent('  ').convert(map);
@@ -217,6 +221,10 @@ class BackupCodec {
         // Apple Health sync have no "source", which reads as manual.
         bodyWeights: current.containsKey('body_weights')
             ? _rows(current, 'body_weights', BodyWeight.fromJson)
+            : const [],
+        // Absent in backups made before named portions.
+        foodServings: current.containsKey('food_servings')
+            ? _rows(current, 'food_servings', FoodServing.fromJson)
             : const [],
         settings: _decodeSettings(current['preferences']),
         exportedAt: _decodeExportedAt(current['exportedAt']),

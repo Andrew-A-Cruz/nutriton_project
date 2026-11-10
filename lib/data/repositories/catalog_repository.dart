@@ -32,6 +32,38 @@ class CatalogRepository {
 
   Future<FoodItem?> findFood(String id) => _db.foodDao.findById(id);
 
+  /// [foodId]'s named portions, smallest first.
+  Stream<List<FoodServing>> watchServings(String foodId) =>
+      _db.foodDao.watchServings(foodId);
+
+  /// Adds a portion called [name] of [weightG] grams to [foodId].
+  Future<String> addServing(
+    String foodId, {
+    required String name,
+    required double weightG,
+  }) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty || trimmed.length > 40) {
+      throw ArgumentError.value(name, 'name', 'must be 1 to 40 characters');
+    }
+    if (!weightG.isFinite || weightG <= 0) {
+      throw ArgumentError.value(weightG, 'weightG', 'must be > 0');
+    }
+    final id = _uuid.v4();
+    await _db.foodDao.insertServing(
+      FoodServingsCompanion.insert(
+        id: id,
+        foodItemId: foodId,
+        name: trimmed,
+        weightG: weightG,
+        createdAt: DateTime.now(),
+      ),
+    );
+    return id;
+  }
+
+  Future<void> removeServing(String id) => _db.foodDao.deleteServing(id);
+
   Future<String> createFood({
     required String name,
     required Macros perServing,

@@ -32,3 +32,8 @@ final favoriteSourcesProvider = Provider<List<RecentSource>>((ref) {
       if (m.favorite) RecentSource.meal(m),
   ];
 });
+
+/// A food's named portions, smallest first.
+final foodServingsProvider = StreamProvider.family<List<FoodServing>, String>(
+  (ref, foodId) => ref.watch(catalogRepositoryProvider).watchServings(foodId),
+);

@@ -5,6 +5,7 @@ part of 'food_dao.dart';
 // ignore_for_file: type=lint
 mixin _$FoodDaoMixin on DatabaseAccessor<AppDatabase> {
   $FoodItemsTable get foodItems => attachedDatabase.foodItems;
+  $FoodServingsTable get foodServings => attachedDatabase.foodServings;
   FoodDaoManager get managers => FoodDaoManager(this);
 }
 
@@ -13,4 +14,6 @@ class FoodDaoManager {
   FoodDaoManager(this._db);
   $$FoodItemsTableTableManager get foodItems =>
       $$FoodItemsTableTableManager(_db.attachedDatabase, _db.foodItems);
+  $$FoodServingsTableTableManager get foodServings =>
+      $$FoodServingsTableTableManager(_db.attachedDatabase, _db.foodServings);
 }

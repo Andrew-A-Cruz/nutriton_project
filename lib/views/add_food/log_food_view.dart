@@ -4,8 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/metrics.dart';
 import '../../core/meal_slot.dart';
 import '../../core/nutrition_math.dart';
+import '../../core/portions.dart';
 import '../../core/validation.dart';
 import '../../data/database/app_database.dart';
+import '../../providers/catalog_providers.dart';
 import '../../providers/infrastructure_providers.dart';
 import '../../providers/preferences_providers.dart';
 import '../../providers/today_providers.dart';
@@ -15,7 +17,9 @@ import '../home/date_header.dart';
 import '../common/error_feedback.dart';
 import '../common/haptics.dart';
 
-enum AmountMode { servings, weight }
+/// What the typed amount counts: servings, weight in the display unit, or a
+/// food's named portion.
+enum AmountMode { servings, weight, portion }
 
 /// Logs one catalog food for [logDate], by servings or by weight (in the
 /// user's display unit). A weight is converted to grams and then to servings
@@ -43,6 +47,9 @@ class LogFoodView extends ConsumerStatefulWidget {
 class _LogFoodViewState extends ConsumerState<LogFoodView> {
   late final TextEditingController _amount;
   AmountMode _mode = AmountMode.servings;
+
+  /// The portion the amount counts, while [_mode] is [AmountMode.portion].
+  FoodServing? _portion;
   MealSlot _slot = MealSlot.forTime(DateTime.now());
   String? _error;
   String? _saveError;
@@ -77,21 +84,22 @@ class _LogFoodViewState extends ConsumerState<LogFoodView> {
 
   String get _weightLabel => _unit == WeightUnit.g ? 'Grams' : 'Ounces';
 
-  /// Switching modes converts the typed amount, so 1.5 servings becomes 150 g.
-  void _setMode(AmountMode mode) {
-    final typed = parseNumber(_amount.text);
+  /// Switching modes converts the typed amount, so 1.5 servings becomes 150 g
+  /// or 0.6 cups.
+  void _setMode(AmountMode mode, [FoodServing? portion]) {
+    final servings = _servings;
     setState(() {
-      if (typed != null && typed >= 0 && mode != _mode) {
-        // Called with the old mode still in _mode, so this converts from it.
-        final converted = mode == AmountMode.weight
-            ? _unit.fromGrams(typed * widget.food.servingWeightG)
-            : servingsForWeight(
-                weightG: _unit.toGrams(typed),
-                servingWeightG: widget.food.servingWeightG,
-              );
+      if (servings != null) {
+        final grams = servings * widget.food.servingWeightG;
+        final converted = switch (mode) {
+          AmountMode.servings => servings,
+          AmountMode.weight => _unit.fromGrams(grams),
+          AmountMode.portion => grams / portion!.weightG,
+        };
         _amount.text = plainNumber(roundTo(converted, 2));
       }
       _mode = mode;
+      _portion = portion;
       _error = null;
     });
   }
@@ -100,12 +108,18 @@ class _LogFoodViewState extends ConsumerState<LogFoodView> {
   double? get _servings {
     final typed = parseNumber(_amount.text);
     if (typed == null || typed <= 0) return null;
-    return _mode == AmountMode.servings
-        ? typed
-        : servingsForWeight(
-            weightG: _unit.toGrams(typed),
-            servingWeightG: widget.food.servingWeightG,
-          );
+    return switch (_mode) {
+      AmountMode.servings => typed,
+      AmountMode.weight => servingsForWeight(
+        weightG: _unit.toGrams(typed),
+        servingWeightG: widget.food.servingWeightG,
+      ),
+      AmountMode.portion => servingsForPortions(
+        count: typed,
+        portionWeightG: _portion!.weightG,
+        servingWeightG: widget.food.servingWeightG,
+      ),
+    };
   }
 
   Future<void> _log() async {
@@ -142,6 +156,9 @@ class _LogFoodViewState extends ConsumerState<LogFoodView> {
   Widget build(BuildContext context) {
     final servings = _servings;
     final secondary = CupertinoColors.secondaryLabel.resolveFrom(context);
+    final portions =
+        ref.watch(foodServingsProvider(widget.food.id)).value ??
+        const <FoodServing>[];
 
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
@@ -188,7 +205,10 @@ class _LogFoodViewState extends ConsumerState<LogFoodView> {
                         width: double.infinity,
                         child: CupertinoSlidingSegmentedControl<AmountMode>(
                           key: const Key('log-mode'),
-                          groupValue: _mode,
+                          // Nothing selected while a portion is chosen below.
+                          groupValue: _mode == AmountMode.portion
+                              ? null
+                              : _mode,
                           children: {
                             AmountMode.servings: const Text('Servings'),
                             AmountMode.weight: Text(_weightLabel),
@@ -198,17 +218,40 @@ class _LogFoodViewState extends ConsumerState<LogFoodView> {
                           },
                         ),
                       ),
+                      if (portions.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: [
+                            for (final p in portions)
+                              _PortionChip(
+                                key: Key('log-portion-${p.id}'),
+                                label:
+                                    '${p.name} (${formatWeight(p.weightG, _unit)})',
+                                selected: _portion?.id == p.id,
+                                onTap: () => _setMode(AmountMode.portion, p),
+                              ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
                 ),
                 formRow(
                   fieldKey: const Key('log-amount'),
-                  label: _mode == AmountMode.servings
-                      ? 'Servings'
-                      : _weightLabel,
+                  label: switch (_mode) {
+                    AmountMode.servings => 'Servings',
+                    AmountMode.weight => _weightLabel,
+                    AmountMode.portion => 'Amount',
+                  },
                   controller: _amount,
                   error: _error,
-                  suffix: _mode == AmountMode.servings ? 'serving' : _unit.name,
+                  suffix: switch (_mode) {
+                    AmountMode.servings => 'serving',
+                    AmountMode.weight => _unit.name,
+                    AmountMode.portion => _portion!.name,
+                  },
                   onChanged: (_) => setState(() => _error = null),
                 ),
               ],
@@ -255,4 +298,42 @@ class _LogFoodViewState extends ConsumerState<LogFoodView> {
     m,
     tracked: ref.watch(preferencesProvider).trackedMetrics,
   );
+}
+
+class _PortionChip extends StatelessWidget {
+  const _PortionChip({
+    super.key,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      selected: selected,
+      button: true,
+      child: CupertinoButton(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        minimumSize: const Size(44, 32),
+        color: selected
+            ? CupertinoTheme.of(context).primaryColor
+            : CupertinoColors.tertiarySystemFill.resolveFrom(context),
+        onPressed: onTap,
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            color: selected
+                ? CupertinoColors.white
+                : CupertinoColors.label.resolveFrom(context),
+          ),
+        ),
+      ),
+    );
+  }
 }

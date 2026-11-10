@@ -111,7 +111,7 @@ Family Sharing is on for Pro. Development builds can't buy anything; `--dart-def
 
 ## What's Built
 
-As of November 2026, schema v10. Known gaps that are worth doing are in the roadmap.
+As of November 2026, schema v11. Known gaps that are worth doing are in the roadmap.
 
 | Milestone | What | Notes and known limits |
 |---|---|---|
@@ -144,6 +144,7 @@ As of November 2026, schema v10. Known gaps that are worth doing are in the road
 | Top foods | A Summary card for the range: the five foods, meals and one-offs with the most of the primary metric (with their share), and the five logged most often. One grouped query (`SummaryDao.watchSourceTotals`) | Grouped per entry: a food eaten inside a meal counts toward the meal, not the food |
 | Goals by weekday | Settings > Goals by weekday: any day can override goals (`goal_<metric>_<mon..sun>`), falling back to the daily goals; in % mode a day's macro grams follow its calorie goal. Today, the calendar and the widget use the day's goal; Summary's goal line is the range's average and days on target use each day's goal | In backups. Adaptive goals would need to respect it |
 | Undo | The Undo banner now follows edits (servings, one-off changes, meal slot), moves, copy entry / day / yesterday and backup imports, as well as delete and log again. Edits snapshot the entry (`snapshotEntry` / `revertEntry`); an import keeps the replaced data in memory | Only the last change, for 4 seconds |
+| Portions | Named portions per food ("cup = 80 g") in a Portions section of a saved food's form; the log screen offers them as chips beside servings and weight, and converts the count to servings. A looked-up food saves the portion its label names ("2/3 cup (60 g)" → cup = 90 g). New `food_servings` table (v11), in backups | Duplicating a food does not copy its portions. Meals log by weight only |
 | Haptics | A light tap when something is logged (food, meal, quick add, plan, log again, copy day) and a firmer one on delete (`views/common/haptics.dart`) | The phone's haptics setting applies. Untested on a phone |
 | Privacy policy | Hosted on GitHub Pages from `docs/privacy.md`, linked from the paywall, contact logbite.app@gmail.com | Update it with any new network call or Health type |
 | Done key | A Done bar above the iOS number keyboard, app-wide (`KeyboardDoneBar` in `CupertinoApp.builder`) | iOS only; Done, no Next. Untested on a phone |

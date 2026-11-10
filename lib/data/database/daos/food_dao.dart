@@ -3,12 +3,26 @@ import 'package:drift/drift.dart';
 import '../../../core/search.dart';
 import '../app_database.dart';
 import '../tables/food_items.dart';
+import '../tables/food_servings.dart';
 
 part 'food_dao.g.dart';
 
-@DriftAccessor(tables: [FoodItems])
+@DriftAccessor(tables: [FoodItems, FoodServings])
 class FoodDao extends DatabaseAccessor<AppDatabase> with _$FoodDaoMixin {
   FoodDao(super.attachedDatabase);
+
+  /// [foodId]'s portions, smallest first. Re-emits on change.
+  Stream<List<FoodServing>> watchServings(String foodId) =>
+      (select(foodServings)
+            ..where((s) => s.foodItemId.equals(foodId))
+            ..orderBy([(s) => OrderingTerm.asc(s.weightG)]))
+          .watch();
+
+  Future<void> insertServing(FoodServingsCompanion serving) =>
+      into(foodServings).insert(serving);
+
+  Future<int> deleteServing(String id) =>
+      (delete(foodServings)..where((s) => s.id.equals(id))).go();
 
   Future<void> insertFood(FoodItemsCompanion food) =>
       into(foodItems).insert(food);

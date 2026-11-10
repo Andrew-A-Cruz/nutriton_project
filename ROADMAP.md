@@ -4,7 +4,7 @@ Every open item in one place. Items are grouped first by whether they can start 
 
 **Sizes:** **S** = about a day or less · **M** = 2–5 days · **L** = 1–2 weeks · **XL** = needs its own detailed plan first.
 
-When an item is finished, delete it here and add a line to [What's Built](./PRODUCT.md#whats-built). When a new idea comes up, give it a size and a blocker and put it in the right section. A schema change takes the next version number when work starts (v11 is next).
+When an item is finished, delete it here and add a line to [What's Built](./PRODUCT.md#whats-built). When a new idea comes up, give it a size and a blocker and put it in the right section. A schema change takes the next version number when work starts (v12 is next).
 
 ---
 
@@ -28,7 +28,6 @@ The privacy policy is live ([`docs/privacy.md`](./docs/privacy.md), contact logb
 |---|---|---|---|
 | **Ready now** | | | |
 | [A1 — Android native config leftovers](#a1--android-native-config-leftovers) | S | — | D: bundled or unbundled scanner model |
-| [Serving presets](#serving-presets) | M | Free | — |
 | [Water tracking](#water-tracking) | M | Free | — |
 | [Fasting timer](#fasting-timer) | M | Free | — |
 | [Nutrition label scan](#nutrition-label-scan) | M | Free | — |
@@ -50,7 +49,7 @@ The privacy policy is live ([`docs/privacy.md`](./docs/privacy.md), contact logb
 | [A6 — Play Store release](#a6--play-store-release) | M + 14 days | — | B2, A2 |
 | [M20 — iCloud sync](#m20--icloud-sync) | XL | Pro | B1, D7 |
 
-**Suggested next:** the small free items (the medium items: Serving presets and so on), or M23 for a fourth Pro feature.
+**Suggested next:** the small free items (the medium items: Water tracking and so on), or M23 for a fourth Pro feature.
 
 ---
 
@@ -64,11 +63,6 @@ The application ID is `com.andrewcruz.logbite` (permanent after the first Play u
 ---
 
 ## Ready Now — Medium
-
-### Serving presets
-**Free · schema change (new `food_servings` table)**
-
-Named portions per food, such as "1 cup = 240 g" or "1 slice = 28 g". The log-by-weight input offers them alongside g/oz. Open Food Facts' `serving_size` text can seed one preset. Include the table in the backup.
 
 ### Water tracking
 **Free · schema change (new `water_log` table)**
@@ -153,7 +147,7 @@ Helps the user pick a reasonable target weight and pace from height, weight, age
 **Done when:** a user can see their healthy band, pick a target and pace, and save a target weight and calorie goal that show on Home and Summary.
 
 ### M24 — Fast food menus
-**L · Free · schema v11 (`food_items.menu_item_id`) · blocked by D3**
+**L · Free · schema v12 (`food_items.menu_item_id`) · blocked by D3**
 
 Log a menu item from a common chain in a few taps. Most of the work is gathering and checking the data, not the code.
 
@@ -164,7 +158,7 @@ Log a menu item from a common chain in a few taps. Most of the work is gathering
 - [ ] **Logging:** the normal servings flow. The first log saves the item as a catalog food (so it shows in Recent and can go in meals and plans); `menu_item_id` stops a second copy
 - [ ] **Edits stay the user's:** an edited menu food is no longer updated. An unedited one takes newer values from a new release; past entries keep their snapshot
 - [ ] "Values from <chain>, checked <month year>. Recipes change." with a link to report a wrong value (`url_launcher`)
-- [ ] Backup: `menu_item_id` optional on read. Migration test v10 → v11
+- [ ] Backup: `menu_item_id` optional on read. Migration test v11 → v12
 - [ ] Tests: the parser (valid, bad rows skipped, newer version), search across chains, first log makes one catalog food and the second reuses it, an edited food isn't updated, the Add sheet flow
 
 **Done when:** a medium fries from a listed chain can be logged in under five taps, with no typing except the search.
@@ -228,6 +222,7 @@ Built but never tried on a real iPhone:
 - [ ] Automatic backups: the Backups folder shows under On My iPhone > Logbite in Files
 - [ ] The Done bar sits flush on the number keyboard (onboarding goals, a food form, the servings dialog) and closes it
 - [ ] With the phone set to a comma-decimal region (e.g. Germany), decimals show with a comma and typed commas still work
+- [ ] Log a food by a portion (e.g. 1.5 cups) and check the servings
 - [ ] Haptics: a light tap on logging, a firmer one on swipe-delete
 - [ ] Share a month's report from Summary (the share sheet, then open the PDF in Files or Mail) and read it as a dietitian would (M22)
 

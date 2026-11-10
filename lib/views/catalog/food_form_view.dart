@@ -13,6 +13,8 @@ import '../common/form_widgets.dart';
 import '../meals/schedule_meal_view.dart';
 import 'food_lookup_section.dart';
 import '../common/error_feedback.dart';
+import '../../core/portions.dart';
+import '../../providers/catalog_providers.dart';
 
 /// Creates or edits a catalog food. Pops with the saved [FoodItem], or with
 /// null when cancelled, so the caller can act on it (Add Food logs it).
@@ -148,8 +150,16 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
     });
   }
 
+  /// A portion named by the last lookup's serving text, saved with a new
+  /// food.
+  ({String name, double weightG})? _lookupPortion;
+
   /// Prefills the fields from a lookup result. The user can still edit them.
   void _applyLookup(FoodLookupResult result) {
+    final portion = parsePortion(result.servingText);
+    _lookupPortion = portion == null
+        ? null
+        : (name: portion.name, weightG: result.servingWeightG / portion.count);
     setState(() {
       _name.text = result.name;
       _brand.text = result.brand ?? '';
@@ -259,6 +269,16 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
           barcode: barcode,
           brand: _brand.text,
         );
+      }
+      if (existing == null) {
+        if (_lookupPortion case final p?) {
+          try {
+            await catalog.addServing(id, name: p.name, weightG: p.weightG);
+          } catch (e, stack) {
+            // The food is saved; a missing portion is only a convenience.
+            reportError(ref, e, stack, 'Could not save the portion');
+          }
+        }
       }
       final food = await catalog.findFood(id);
       if (mounted) Navigator.of(context).pop(food);
@@ -402,6 +422,20 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
                 ),
               ],
             ),
+            if (existing != null)
+              _PortionsSection(foodId: existing.id, unit: _unit)
+            else
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                child: Text(
+                  'After saving, you can add portions such as "1 cup = 240 g" '
+                  'to log by.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                  ),
+                ),
+              ),
             CupertinoFormSection.insetGrouped(
               header: const Text('BARCODE'),
               footer: const Text(
@@ -459,6 +493,167 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// A saved food's named portions, to add or remove. Saved at once, apart from
+/// the form's Save.
+class _PortionsSection extends ConsumerWidget {
+  const _PortionsSection({required this.foodId, required this.unit});
+
+  final String foodId;
+  final WeightUnit unit;
+
+  Future<void> _add(BuildContext context, WidgetRef ref) async {
+    final added = await showCupertinoDialog<({String name, double grams})>(
+      context: context,
+      builder: (_) => _AddPortionDialog(unit: unit),
+    );
+    if (added == null) return;
+    try {
+      await ref
+          .read(catalogRepositoryProvider)
+          .addServing(foodId, name: added.name, weightG: added.grams);
+    } catch (e, stack) {
+      if (context.mounted) {
+        await showErrorDialog(
+          context,
+          reportError(ref, e, stack, 'Could not add the portion'),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final portions =
+        ref.watch(foodServingsProvider(foodId)).value ?? const <FoodServing>[];
+    return CupertinoFormSection.insetGrouped(
+      header: const Text('PORTIONS'),
+      footer: const Text(
+        'Named amounts to log by, such as "1 cup = 240 g". Saved right away.',
+      ),
+      children: [
+        for (final p in portions)
+          CupertinoListTile(
+            key: Key('portion-${p.id}'),
+            title: Text(p.name),
+            additionalInfo: Text(formatWeight(p.weightG, unit)),
+            trailing: CupertinoButton(
+              key: Key('portion-remove-${p.id}'),
+              padding: EdgeInsets.zero,
+              minimumSize: const Size.square(44),
+              onPressed: () =>
+                  ref.read(catalogRepositoryProvider).removeServing(p.id),
+              child: Icon(
+                CupertinoIcons.minus_circle_fill,
+                semanticLabel: 'Remove ${p.name}',
+                color: CupertinoColors.systemRed.resolveFrom(context),
+              ),
+            ),
+          ),
+        CupertinoListTile(
+          key: const Key('portion-add'),
+          leading: const Icon(CupertinoIcons.add_circled),
+          title: const Text('Add portion'),
+          onTap: () => _add(context, ref),
+        ),
+      ],
+    );
+  }
+}
+
+/// Asks for a portion's name and weight. Pops with them, or null.
+class _AddPortionDialog extends StatefulWidget {
+  const _AddPortionDialog({required this.unit});
+
+  final WeightUnit unit;
+
+  @override
+  State<_AddPortionDialog> createState() => _AddPortionDialogState();
+}
+
+class _AddPortionDialogState extends State<_AddPortionDialog> {
+  final _name = TextEditingController();
+  final _weight = TextEditingController();
+  String? _error;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _weight.dispose();
+    super.dispose();
+  }
+
+  void _done() {
+    final name = _name.text.trim();
+    final amount = parseNumber(_weight.text);
+    if (name.isEmpty || name.length > 40) {
+      setState(() => _error = 'Enter a name of up to 40 characters');
+      return;
+    }
+    if (amount == null || amount <= 0) {
+      setState(() => _error = 'Enter a weight greater than 0');
+      return;
+    }
+    Navigator.of(context).pop((name: name, grams: widget.unit.toGrams(amount)));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CupertinoAlertDialog(
+      title: const Text('Add portion'),
+      content: Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CupertinoTextField(
+              key: const Key('portion-name'),
+              controller: _name,
+              placeholder: 'Name, e.g. cup',
+              autofocus: true,
+            ),
+            const SizedBox(height: 8),
+            CupertinoTextField(
+              key: const Key('portion-weight'),
+              controller: _weight,
+              placeholder: 'Weight',
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              suffix: Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: Text(widget.unit.name),
+              ),
+            ),
+            if (_error != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(
+                  _error!,
+                  style: const TextStyle(
+                    color: CupertinoColors.systemRed,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+      actions: [
+        CupertinoDialogAction(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        CupertinoDialogAction(
+          key: const Key('portion-add-confirm'),
+          isDefaultAction: true,
+          onPressed: _done,
+          child: const Text('Add'),
+        ),
+      ],
     );
   }
 }
