@@ -11,6 +11,7 @@ import 'daos/scheduled_meal_dao.dart';
 import 'daos/summary_dao.dart';
 import 'tables/body_weights.dart';
 import 'tables/food_items.dart';
+import 'tables/food_servings.dart';
 import 'tables/food_log_entries.dart';
 import 'tables/food_log_entry_items.dart';
 import 'tables/meal_food_items.dart';
@@ -29,6 +30,7 @@ part 'app_database.g.dart';
     ScheduledMeals,
     ScheduledMealOutcomes,
     BodyWeights,
+    FoodServings,
   ],
   daos: [FoodDao, MealDao, LogDao, SummaryDao, ScheduledMealDao, BodyWeightDao],
 )
@@ -38,7 +40,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -122,6 +124,11 @@ class AppDatabase extends _$AppDatabase {
       // v9 -> v10: an optional end date on repeating plans.
       from9To10: (m, schema) async {
         await m.addColumn(schema.scheduledMeals, schema.scheduledMeals.endDate);
+      },
+      // v10 -> v11: named portions per food.
+      from10To11: (m, schema) async {
+        await m.createTable(schema.foodServings);
+        await m.create(schema.foodServingsFoodItemId);
       },
     ),
     beforeOpen: (details) async {

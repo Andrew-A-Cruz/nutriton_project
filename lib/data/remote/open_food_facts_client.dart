@@ -16,6 +16,7 @@ class FoodLookupResult {
     required this.servingWeightG,
     required this.hasServingSize,
     required this.hasNutrition,
+    this.servingText,
   });
 
   final String name;
@@ -29,6 +30,10 @@ class FoodLookupResult {
 
   /// False when the product listed no nutriments at all (macros are zero).
   final bool hasNutrition;
+
+  /// The label's serving text, e.g. '1 cup (240 g)', or null. It can name a
+  /// portion to save with the food.
+  final String? servingText;
 }
 
 /// The lookup failed for a reason other than "not found" (network, server,
@@ -200,6 +205,7 @@ FoodLookupResult? parseOffProduct(
     ),
     servingWeightG: grams,
     hasServingSize: hasServing,
+    servingText: hasServing ? _text(product['serving_size']) : null,
     hasNutrition: hasNutrition,
   );
 }
