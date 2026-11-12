@@ -55,7 +55,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 14;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -152,6 +152,15 @@ class AppDatabase extends _$AppDatabase {
       // v12 -> v13: the fasting timer's fasts.
       from12To13: (m, schema) async {
         await m.createTable(schema.fasts);
+      },
+      // v13 -> v14: restaurant menu foods remember the bundled item they
+      // were copied from and the menus version their values match, and may
+      // have no known weight.
+      from13To14: (m, schema) async {
+        await m.addColumn(schema.foodItems, schema.foodItems.menuItemId);
+        await m.addColumn(schema.foodItems, schema.foodItems.menuVersion);
+        await m.addColumn(schema.foodItems, schema.foodItems.weightUnknown);
+        await m.create(schema.foodItemsMenuItemId);
       },
     ),
     beforeOpen: (details) async {

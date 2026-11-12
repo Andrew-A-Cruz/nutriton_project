@@ -15,6 +15,7 @@ import 'package:nutriton_project/views/common/meal_slot_picker.dart';
 import 'package:nutriton_project/views/tour/app_tour.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../support/menu_fixture.dart';
 import '../support/test_app.dart';
 
 /// Layout checks at a phone size with 2x text and dark mode. A RenderFlex
@@ -411,5 +412,52 @@ void main() {
       }
       await unmount(tester);
     }
+  });
+
+  testWidgets('restaurant menus fit at 2x text in dark mode', (tester) async {
+    stressScreen(tester);
+    await tester.pumpWidget(
+      testApp(db: db, prefs: prefs, menus: menuFixture()),
+    );
+    await settle(tester);
+    await tester.tap(find.byKey(const Key('add-food-button')));
+    await settle(tester);
+    expect(tester.takeException(), isNull);
+
+    // The RESTAURANTS section of a catalog search.
+    await tester.enterText(find.byKey(const Key('catalog-search')), 'fries');
+    await settle(tester);
+    expect(find.byKey(const Key('menu-foods-header')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.enterText(find.byKey(const Key('catalog-search')), '');
+    await settle(tester);
+
+    await tester.ensureVisible(find.byKey(const Key('restaurants-entry')));
+    await tester.tap(find.byKey(const Key('restaurants-entry')));
+    await settle(tester);
+    expect(tester.takeException(), isNull);
+    await tester.enterText(
+      find.byKey(const Key('restaurants-search')),
+      'fries',
+    );
+    await settle(tester);
+    expect(tester.takeException(), isNull);
+    await tester.enterText(find.byKey(const Key('restaurants-search')), '');
+    await settle(tester);
+
+    await tester.tap(find.byKey(const Key('chain-example-burger')));
+    await settle(tester);
+    expect(tester.takeException(), isNull);
+    // Scroll to the end so the attribution is built and laid out.
+    for (var i = 0; i < 6; i++) {
+      await tester.drag(
+        find.byKey(const Key('chain-menu-list')),
+        const Offset(0, -300),
+      );
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+    }
+    expect(find.byKey(const Key('report-menu-value')), findsOneWidget);
+    await unmount(tester);
   });
 }

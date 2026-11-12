@@ -27,6 +27,7 @@ void main() {
     displayUnit: 'g',
     archived: false,
     favorite: false,
+    weightUnknown: false,
   );
 
   Map<String, dynamic> valid() =>

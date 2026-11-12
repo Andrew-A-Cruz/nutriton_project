@@ -2,13 +2,16 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/bundled_foods.dart';
+import '../../core/menus.dart';
 import '../../data/database/app_database.dart';
 import '../../data/repositories/food_lookup_repository.dart';
 import '../catalog/barcode_scanner_page.dart';
 import '../../providers/infrastructure_providers.dart';
+import '../../providers/menu_providers.dart';
 import '../catalog/catalog_browser.dart';
 import '../catalog/food_form_view.dart';
 import '../meals/meal_log_view.dart';
+import '../restaurants/restaurants_view.dart';
 import '../common/error_feedback.dart';
 import 'adhoc_food_form.dart';
 import 'log_food_view.dart';
@@ -73,6 +76,35 @@ class _AddFoodViewState extends ConsumerState<AddFoodView> {
       return;
     }
     if (mounted) await _logFood(food);
+  }
+
+  /// Copies a restaurant menu item into the catalog (once), then opens the
+  /// servings screen for it like any other catalog food.
+  Future<void> _logMenuItem(MenuItem item) async {
+    final FoodItem food;
+    try {
+      final menus = await ref.read(menusProvider.future);
+      food = await ref
+          .read(catalogRepositoryProvider)
+          .adoptMenuItem(item, version: menus.version);
+    } catch (e, stack) {
+      if (mounted) {
+        await showErrorDialog(
+          context,
+          reportError(ref, e, stack, 'Could not add the food'),
+        );
+      }
+      return;
+    }
+    if (mounted) await _logFood(food);
+  }
+
+  void _openRestaurants() {
+    Navigator.of(context).push(
+      CupertinoPageRoute<void>(
+        builder: (_) => RestaurantsView(onItemTap: _logMenuItem),
+      ),
+    );
   }
 
   void _logMeal(Meal meal) {
@@ -175,6 +207,8 @@ class _AddFoodViewState extends ConsumerState<AddFoodView> {
                   onMealTap: _logMeal,
                   onSearchOnline: (query) => _newFood(searchQuery: query),
                   onBundledFoodTap: _logBundledFood,
+                  onRestaurants: _openRestaurants,
+                  onMenuItemTap: _logMenuItem,
                 ),
                 _AddMode.quick => QuickAddForm(logDate: widget.logDate),
                 _AddMode.adhoc => AdhocFoodForm(logDate: widget.logDate),

@@ -26,7 +26,7 @@ The app also keeps a short list of recent errors on the device, which you can vi
 
 1. **Food lookups (Open Food Facts).** When you scan a barcode or search for a food online, the barcode number or the search text is sent to [Open Food Facts](https://world.openfoodfacts.org), a free, public food database, to fetch nutrition facts. Nothing else about you or your log is sent. Open Food Facts' handling of requests is described in [its privacy policy](https://world.openfoodfacts.org/privacy).
 2. **Purchases (Apple, Google and RevenueCat).** If you buy Logbite Pro, start the trial or leave a tip, the purchase is processed by the App Store or Google Play. The app uses [RevenueCat](https://www.revenuecat.com/privacy) to check which purchases you own. RevenueCat receives an anonymous ID created by the app and your purchase history for Logbite, not your name, email or log. The developer can see that an anonymous user bought Pro, but not who.
-3. **Opening links.** Links you tap, such as this policy, open in your browser.
+3. **Opening links.** Links you tap, such as this policy, open in your browser. The link to report a wrong restaurant value opens your email app with a new message; nothing is sent unless you send it.
 
 ## Apple Health and Health Connect
 

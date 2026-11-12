@@ -296,7 +296,7 @@ There are no High security findings. The app has no server, no account and no se
 
 **Problem:** Picking a starter food reuses a catalog food with the same name and no brand. If the user renames their copy, the starter food appears in search again and picking it makes a second food. If the user had their own food with that exact name, theirs is silently used.
 
-**Fix:** Fold this into M24, which adds `food_items.menu_item_id` for the same purpose (see [`M24_FAST_FOOD_MENUS_PLAN.md`](./M24_FAST_FOOD_MENUS_PLAN.md) section 1.2). When that column exists, give each starter food a stable id (for example `usda/<fdc_id>`; `tool/make_generic_foods.py` already reads `fdc_id` and would need to write it as a first column), store it on adoption, and match on it. Do not add a separate column for this before M24.
+**Fix:** Use `food_items.menu_item_id`, which schema v14 added for restaurant menus and which does the same job there (`CatalogRepository.adoptMenuItem`). Give each starter food a stable id (for example `usda/<fdc_id>`; `tool/make_generic_foods.py` already reads `fdc_id` and would need to write it as a first column), store it on adoption, and match on it.
 
 **Check:** Covered by M24's repository tests, extended with a "renamed copy is still reused" case.
 

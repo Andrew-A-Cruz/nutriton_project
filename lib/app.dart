@@ -5,6 +5,7 @@ import 'core/appearance.dart';
 import 'providers/appearance_providers.dart';
 import 'providers/backup_providers.dart';
 import 'providers/health_providers.dart';
+import 'providers/menu_providers.dart';
 import 'providers/preferences_providers.dart';
 import 'providers/reminder_providers.dart';
 import 'providers/review_providers.dart';
@@ -58,6 +59,8 @@ class _RootGate extends ConsumerWidget {
     ref.watch(reviewPromptPlanProvider);
     // Writes the week's automatic backup after today's first entry.
     ref.watch(autoBackupPlanProvider);
+    // Brings unedited restaurant foods up to this release's menus.
+    ref.watch(menuRefreshPlanProvider);
     final onboarded = ref.watch(
       preferencesProvider.select((s) => s.onboardingComplete),
     );

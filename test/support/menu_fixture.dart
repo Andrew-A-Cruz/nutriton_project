@@ -1,0 +1,91 @@
+import 'dart:convert';
+
+/// A made-up restaurant menus file for tests: two chains that do not exist.
+String menuFixture({int version = 1, num friesCalories = 320}) => jsonEncode({
+  'version': version,
+  'chains': [
+    {
+      'id': 'example-burger',
+      'name': 'Example Burger',
+      'source': 'https://example.com/nutrition.pdf',
+      'checkedAt': '2026-11-20',
+      'items': [
+        {
+          'id': 'cheeseburger',
+          'name': 'Cheeseburger',
+          'category': 'Burgers',
+          'servingWeightG': 120,
+          'calories': 300,
+          'protein': 15,
+          'carbs': 32,
+          'fat': 13,
+          'fiber': 2,
+          'sugar': 7,
+          'sodium': 720,
+        },
+        {
+          'id': 'fries-medium',
+          'name': 'French Fries, Medium',
+          'category': 'Sides',
+          'servingWeightG': 114,
+          'calories': friesCalories,
+          'protein': 5,
+          'carbs': 43,
+          'fat': 15,
+          'fiber': 4,
+          'sugar': 0,
+          'sodium': 260,
+        },
+        {
+          'id': 'cola-medium',
+          'name': 'Cola, Medium',
+          'category': 'Drinks',
+          'servingWeightG': 621,
+          'calories': 200,
+          'protein': 0,
+          'carbs': 55,
+          'fat': 0,
+        },
+      ],
+    },
+    {
+      'id': 'sample-chicken',
+      'name': "Sample's Chicken",
+      'source': 'https://example.org/menu',
+      'checkedAt': '2026-10-02',
+      'items': [
+        {
+          'id': 'fries-large',
+          'name': 'Seasoned Fries, Large',
+          'category': 'Sides',
+          'servingWeightG': 160,
+          'calories': 480,
+          'protein': 6,
+          'carbs': 60,
+          'fat': 24,
+        },
+        // The chain publishes no weight for this one.
+        {
+          'id': 'lemonade-large',
+          'name': 'Lemonade, Large',
+          'category': 'Drinks',
+          'calories': 250,
+          'protein': 0,
+          'carbs': 64,
+          'fat': 0,
+          'sugar': 62,
+        },
+        {
+          'id': 'tenders-3',
+          'name': 'Chicken Tenders (3)',
+          'category': 'Chicken',
+          'servingWeightG': 130,
+          'calories': 370,
+          'protein': 23,
+          'carbs': 28,
+          'fat': 18,
+        },
+      ],
+    },
+  ],
+});

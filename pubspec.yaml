@@ -91,6 +91,8 @@ flutter:
     - assets/icon/alt/
     # Starter foods from USDA FoodData Central (tool/make_generic_foods.py).
     - assets/foods/generic_foods.tsv
+    # Restaurant menus from the chains' published values (tool/make_menus.py).
+    - assets/menus/menus.json
 
   # To add assets to your application, add an assets section, like this:
   # assets:

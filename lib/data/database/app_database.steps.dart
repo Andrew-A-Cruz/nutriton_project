@@ -2986,6 +2986,323 @@ i1.GeneratedColumn<int> _column_43(String aliasedName) =>
       $customConstraints:
           'NULL CHECK (ended_at IS NULL OR ended_at >= started_at)',
     );
+
+final class Schema14 extends i0.VersionedSchema {
+  Schema14({required super.database}) : super(version: 14);
+  @override
+  late final List<i1.DatabaseSchemaEntity> entities = [
+    foodItems,
+    meals,
+    mealFoodItems,
+    foodLogEntries,
+    foodLogEntryItems,
+    scheduledMeals,
+    scheduledMealOutcomes,
+    bodyWeights,
+    foodServings,
+    waterLog,
+    fasts,
+    foodItemsBarcode,
+    foodItemsMenuItemId,
+    mealFoodItemsMealId,
+    foodLogEntriesLogDate,
+    foodLogEntriesCreatedAt,
+    foodLogEntriesFoodItemId,
+    foodLogEntriesMealId,
+    foodLogEntryItemsEntryId,
+    scheduledMealsStartDate,
+    foodServingsFoodItemId,
+  ];
+  late final Shape21 foodItems = Shape21(
+    source: i0.VersionedTable(
+      entityName: 'food_items',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(id)'],
+      columns: [
+        _column_0,
+        _column_1,
+        _column_2,
+        _column_3,
+        _column_4,
+        _column_5,
+        _column_6,
+        _column_7,
+        _column_8,
+        _column_27,
+        _column_28,
+        _column_29,
+        _column_31,
+        _column_36,
+        _column_37,
+        _column_44,
+        _column_45,
+        _column_46,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape16 meals = Shape16(
+    source: i0.VersionedTable(
+      entityName: 'meals',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(id)'],
+      columns: [_column_0, _column_1, _column_8, _column_37, _column_38],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape2 mealFoodItems = Shape2(
+    source: i0.VersionedTable(
+      entityName: 'meal_food_items',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(id)'],
+      columns: [_column_0, _column_9, _column_10, _column_11, _column_12],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape9 foodLogEntries = Shape9(
+    source: i0.VersionedTable(
+      entityName: 'food_log_entries',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(id)'],
+      columns: [
+        _column_0,
+        _column_13,
+        _column_14,
+        _column_15,
+        _column_1,
+        _column_2,
+        _column_3,
+        _column_4,
+        _column_5,
+        _column_16,
+        _column_17,
+        _column_18,
+        _column_26,
+        _column_27,
+        _column_28,
+        _column_29,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape10 foodLogEntryItems = Shape10(
+    source: i0.VersionedTable(
+      entityName: 'food_log_entry_items',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(id)'],
+      columns: [
+        _column_0,
+        _column_19,
+        _column_16,
+        _column_1,
+        _column_11,
+        _column_2,
+        _column_3,
+        _column_4,
+        _column_5,
+        _column_27,
+        _column_28,
+        _column_29,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape17 scheduledMeals = Shape17(
+    source: i0.VersionedTable(
+      entityName: 'scheduled_meals',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'PRIMARY KEY(id)',
+        'CHECK((meal_id IS NULL)<>(food_item_id IS NULL))',
+      ],
+      columns: [
+        _column_0,
+        _column_32,
+        _column_33,
+        _column_20,
+        _column_39,
+        _column_21,
+        _column_26,
+        _column_34,
+        _column_14,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape6 scheduledMealOutcomes = Shape6(
+    source: i0.VersionedTable(
+      entityName: 'scheduled_meal_outcomes',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(id)', 'UNIQUE(scheduled_meal_id, date)'],
+      columns: [_column_0, _column_22, _column_23, _column_24, _column_25],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape14 bodyWeights = Shape14(
+    source: i0.VersionedTable(
+      entityName: 'body_weights',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(log_date)'],
+      columns: [_column_13, _column_30, _column_14, _column_35],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape18 foodServings = Shape18(
+    source: i0.VersionedTable(
+      entityName: 'food_servings',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(id)'],
+      columns: [_column_0, _column_40, _column_1, _column_11, _column_14],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape19 waterLog = Shape19(
+    source: i0.VersionedTable(
+      entityName: 'water_log',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(log_date)'],
+      columns: [_column_13, _column_41],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape20 fasts = Shape20(
+    source: i0.VersionedTable(
+      entityName: 'fasts',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(id)'],
+      columns: [_column_0, _column_42, _column_43],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  final i1.Index foodItemsBarcode = i1.Index(
+    'food_items_barcode',
+    'CREATE INDEX food_items_barcode ON food_items (barcode)',
+  );
+  final i1.Index foodItemsMenuItemId = i1.Index(
+    'food_items_menu_item_id',
+    'CREATE INDEX food_items_menu_item_id ON food_items (menu_item_id)',
+  );
+  final i1.Index mealFoodItemsMealId = i1.Index(
+    'meal_food_items_meal_id',
+    'CREATE INDEX meal_food_items_meal_id ON meal_food_items (meal_id)',
+  );
+  final i1.Index foodLogEntriesLogDate = i1.Index(
+    'food_log_entries_log_date',
+    'CREATE INDEX food_log_entries_log_date ON food_log_entries (log_date)',
+  );
+  final i1.Index foodLogEntriesCreatedAt = i1.Index(
+    'food_log_entries_created_at',
+    'CREATE INDEX food_log_entries_created_at ON food_log_entries (created_at)',
+  );
+  final i1.Index foodLogEntriesFoodItemId = i1.Index(
+    'food_log_entries_food_item_id',
+    'CREATE INDEX food_log_entries_food_item_id ON food_log_entries (food_item_id)',
+  );
+  final i1.Index foodLogEntriesMealId = i1.Index(
+    'food_log_entries_meal_id',
+    'CREATE INDEX food_log_entries_meal_id ON food_log_entries (meal_id)',
+  );
+  final i1.Index foodLogEntryItemsEntryId = i1.Index(
+    'food_log_entry_items_entry_id',
+    'CREATE INDEX food_log_entry_items_entry_id ON food_log_entry_items (entry_id)',
+  );
+  final i1.Index scheduledMealsStartDate = i1.Index(
+    'scheduled_meals_start_date',
+    'CREATE INDEX scheduled_meals_start_date ON scheduled_meals (start_date)',
+  );
+  final i1.Index foodServingsFoodItemId = i1.Index(
+    'food_servings_food_item_id',
+    'CREATE INDEX food_servings_food_item_id ON food_servings (food_item_id)',
+  );
+}
+
+class Shape21 extends i0.VersionedTable {
+  Shape21({required super.source, required super.alias}) : super.aliased();
+  i1.GeneratedColumn<String> get id =>
+      columnsByName['id']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get name =>
+      columnsByName['name']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<double> get calories =>
+      columnsByName['calories']! as i1.GeneratedColumn<double>;
+  i1.GeneratedColumn<double> get protein =>
+      columnsByName['protein']! as i1.GeneratedColumn<double>;
+  i1.GeneratedColumn<double> get carbs =>
+      columnsByName['carbs']! as i1.GeneratedColumn<double>;
+  i1.GeneratedColumn<double> get fat =>
+      columnsByName['fat']! as i1.GeneratedColumn<double>;
+  i1.GeneratedColumn<double> get servingWeightG =>
+      columnsByName['serving_weight_g']! as i1.GeneratedColumn<double>;
+  i1.GeneratedColumn<String> get displayUnit =>
+      columnsByName['display_unit']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<int> get archived =>
+      columnsByName['archived']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<double> get fiber =>
+      columnsByName['fiber']! as i1.GeneratedColumn<double>;
+  i1.GeneratedColumn<double> get sugar =>
+      columnsByName['sugar']! as i1.GeneratedColumn<double>;
+  i1.GeneratedColumn<double> get sodium =>
+      columnsByName['sodium']! as i1.GeneratedColumn<double>;
+  i1.GeneratedColumn<String> get barcode =>
+      columnsByName['barcode']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get brand =>
+      columnsByName['brand']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<int> get favorite =>
+      columnsByName['favorite']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<String> get menuItemId =>
+      columnsByName['menu_item_id']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<int> get menuVersion =>
+      columnsByName['menu_version']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<int> get weightUnknown =>
+      columnsByName['weight_unknown']! as i1.GeneratedColumn<int>;
+}
+
+i1.GeneratedColumn<String> _column_44(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'menu_item_id',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.string,
+      $customConstraints: 'NULL',
+    );
+i1.GeneratedColumn<int> _column_45(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'menu_version',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.int,
+      $customConstraints: 'NULL',
+    );
+i1.GeneratedColumn<int> _column_46(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'weight_unknown',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.int,
+      $customConstraints: 'NOT NULL DEFAULT 0 CHECK (weight_unknown IN (0, 1))',
+      defaultValue: const i1.CustomExpression('0'),
+    );
 i0.MigrationStepWithVersion migrationSteps({
   required Future<void> Function(i1.Migrator m, Schema2 schema) from1To2,
   required Future<void> Function(i1.Migrator m, Schema3 schema) from2To3,
@@ -2999,6 +3316,7 @@ i0.MigrationStepWithVersion migrationSteps({
   required Future<void> Function(i1.Migrator m, Schema11 schema) from10To11,
   required Future<void> Function(i1.Migrator m, Schema12 schema) from11To12,
   required Future<void> Function(i1.Migrator m, Schema13 schema) from12To13,
+  required Future<void> Function(i1.Migrator m, Schema14 schema) from13To14,
 }) {
   return (currentVersion, database) async {
     switch (currentVersion) {
@@ -3062,6 +3380,11 @@ i0.MigrationStepWithVersion migrationSteps({
         final migrator = i1.Migrator(database, schema);
         await from12To13(migrator, schema);
         return 13;
+      case 13:
+        final schema = Schema14(database: database);
+        final migrator = i1.Migrator(database, schema);
+        await from13To14(migrator, schema);
+        return 14;
       default:
         throw ArgumentError.value('Unknown migration from $currentVersion');
     }
@@ -3081,6 +3404,7 @@ i1.OnUpgrade stepByStep({
   required Future<void> Function(i1.Migrator m, Schema11 schema) from10To11,
   required Future<void> Function(i1.Migrator m, Schema12 schema) from11To12,
   required Future<void> Function(i1.Migrator m, Schema13 schema) from12To13,
+  required Future<void> Function(i1.Migrator m, Schema14 schema) from13To14,
 }) => i0.VersionedSchema.stepByStepHelper(
   step: migrationSteps(
     from1To2: from1To2,
@@ -3095,5 +3419,6 @@ i1.OnUpgrade stepByStep({
     from10To11: from10To11,
     from11To12: from11To12,
     from12To13: from12To13,
+    from13To14: from13To14,
   ),
 );

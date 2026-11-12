@@ -45,7 +45,7 @@ void main() {
   /// from v9 on, so it defaults to false here.
   Future<List<FoodItem>> foodsOf(AppDatabase db) async => [
     for (final r in await db.customSelect('SELECT * FROM food_items').get())
-      db.foodItems.map({'favorite': 0, ...r.data}),
+      db.foodItems.map({'favorite': 0, 'weight_unknown': 0, ...r.data}),
   ];
 
   Future<List<Meal>> mealsOf(AppDatabase db) async => [
@@ -364,7 +364,7 @@ void main() {
       );
     });
 
-    test('a real v1 file on disk reopens as v13 with its data', () async {
+    test('a real v1 file on disk reopens as v14 with its data', () async {
       final dir = Directory.systemTemp.createTempSync('food_log_migration');
       addTearDown(() => dir.deleteSync(recursive: true));
       final file = File('${dir.path}/food_log.sqlite');
@@ -388,7 +388,7 @@ void main() {
       addTearDown(db.close);
 
       await expectV1DataSurvived(db);
-      expect(await userVersion(db), 13);
+      expect(await userVersion(db), 14);
       expect(await hasStartDateIndex(db), isTrue);
       expect(await db.scheduledMealDao.findSchedulesForMeal('m1'), isEmpty);
     });
@@ -521,7 +521,7 @@ void main() {
       expect(await userVersion(db), 3);
     });
 
-    test('a real v2 file on disk reopens as v13 with its data', () async {
+    test('a real v2 file on disk reopens as v14 with its data', () async {
       final dir = Directory.systemTemp.createTempSync('food_log_v2');
       addTearDown(() => dir.deleteSync(recursive: true));
       final file = File('${dir.path}/food_log.sqlite');
@@ -539,7 +539,7 @@ void main() {
       final db = AppDatabase(NativeDatabase(file));
       addTearDown(db.close);
       await expectSurvived(db);
-      expect(await userVersion(db), 13);
+      expect(await userVersion(db), 14);
     });
   });
 
@@ -667,7 +667,7 @@ void main() {
       }
     });
 
-    test('a real v3 file on disk reopens as v13 with its data', () async {
+    test('a real v3 file on disk reopens as v14 with its data', () async {
       final dir = Directory.systemTemp.createTempSync('food_log_v3');
       addTearDown(() => dir.deleteSync(recursive: true));
       final file = File('${dir.path}/food_log.sqlite');
@@ -685,7 +685,7 @@ void main() {
       final db = AppDatabase(NativeDatabase(file));
       addTearDown(db.close);
       await expectSurvived(db);
-      expect(await userVersion(db), 13);
+      expect(await userVersion(db), 14);
     });
   });
 
@@ -773,7 +773,7 @@ void main() {
       }
     });
 
-    test('a real v4 file on disk reopens as v13 with its data', () async {
+    test('a real v4 file on disk reopens as v14 with its data', () async {
       final dir = Directory.systemTemp.createTempSync('food_log_v4');
       addTearDown(() => dir.deleteSync(recursive: true));
       final file = File('${dir.path}/food_log.sqlite');
@@ -791,7 +791,7 @@ void main() {
       final db = AppDatabase(NativeDatabase(file));
       addTearDown(db.close);
       await expectSurvived(db);
-      expect(await userVersion(db), 13);
+      expect(await userVersion(db), 14);
       expect(await db.select(db.bodyWeights).get(), isEmpty);
     });
   });
@@ -859,7 +859,8 @@ void main() {
       final schema = await verifier.schemaAt(5);
       final db = AppDatabase(schema.newConnection());
       addTearDown(db.close);
-      await verifier.migrateAndValidate(db, 9);
+      // To the current schema: the DAO reads every column of today's table.
+      await verifier.migrateAndValidate(db, 14);
 
       await db.foodDao.insertFood(
         FoodItemsCompanion.insert(
@@ -888,7 +889,7 @@ void main() {
       }
     });
 
-    test('a real v5 file on disk reopens as v13 with its data', () async {
+    test('a real v5 file on disk reopens as v14 with its data', () async {
       final dir = Directory.systemTemp.createTempSync('food_log_v5');
       addTearDown(() => dir.deleteSync(recursive: true));
       final file = File('${dir.path}/food_log.sqlite');
@@ -906,7 +907,7 @@ void main() {
       final db = AppDatabase(NativeDatabase(file));
       addTearDown(db.close);
       await expectSurvived(db);
-      expect(await userVersion(db), 13);
+      expect(await userVersion(db), 14);
     });
   });
 
@@ -1069,7 +1070,7 @@ void main() {
       }
     });
 
-    test('a real v6 file on disk reopens as v13 with its data', () async {
+    test('a real v6 file on disk reopens as v14 with its data', () async {
       final dir = Directory.systemTemp.createTempSync('food_log_v6');
       addTearDown(() => dir.deleteSync(recursive: true));
       final file = File('${dir.path}/food_log.sqlite');
@@ -1087,7 +1088,7 @@ void main() {
       final db = AppDatabase(NativeDatabase(file));
       addTearDown(db.close);
       await expectSurvived(db);
-      expect(await userVersion(db), 13);
+      expect(await userVersion(db), 14);
     });
   });
 
@@ -1143,7 +1144,7 @@ void main() {
       },
     );
 
-    test('a real v7 file on disk reopens as v13 with its data', () async {
+    test('a real v7 file on disk reopens as v14 with its data', () async {
       final dir = Directory.systemTemp.createTempSync('food_log_v7');
       addTearDown(() => dir.deleteSync(recursive: true));
       final file = File('${dir.path}/food_log.sqlite');
@@ -1161,7 +1162,7 @@ void main() {
       final db = AppDatabase(NativeDatabase(file));
       addTearDown(db.close);
       await expectSurvived(db);
-      expect(await userVersion(db), 13);
+      expect(await userVersion(db), 14);
     });
   });
 
@@ -1206,7 +1207,8 @@ void main() {
     };
 
     Future<void> expectSurvived(AppDatabase db) async {
-      final food = (await db.select(db.foodItems).get()).single;
+      // Read by raw SQL: the table has columns newer than v9.
+      final food = (await foodsOf(db)).single;
       expect(food.name, 'Rice');
       expect(food.brand, isNull);
       expect(food.favorite, isFalse);
@@ -1284,7 +1286,7 @@ void main() {
       }
     });
 
-    test('a real v8 file on disk reopens as v13 with its data', () async {
+    test('a real v8 file on disk reopens as v14 with its data', () async {
       final dir = Directory.systemTemp.createTempSync('food_log_v8');
       addTearDown(() => dir.deleteSync(recursive: true));
       final file = File('${dir.path}/food_log.sqlite');
@@ -1302,7 +1304,7 @@ void main() {
       final db = AppDatabase(NativeDatabase(file));
       addTearDown(db.close);
       await expectSurvived(db);
-      expect(await userVersion(db), 13);
+      expect(await userVersion(db), 14);
     });
   });
 
@@ -1323,7 +1325,7 @@ void main() {
       expect(plan.weekdays, 31);
       expect(plan.servings, 1.5);
       expect(plan.endDate, isNull);
-      expect(await userVersion(db), 13);
+      expect(await userVersion(db), 14);
       await db.validateDatabaseSchema();
     });
   });
@@ -1375,7 +1377,7 @@ void main() {
         db.waterDao.upsertForDate('2026-11-12', 0),
         throwsA(anything),
       );
-      expect(await userVersion(db), 13);
+      expect(await userVersion(db), 14);
       await db.validateDatabaseSchema();
     });
   });
@@ -1403,17 +1405,66 @@ void main() {
       );
       await db.fastDao.endFast('f1', start.add(const Duration(hours: 16)));
       expect(await db.fastDao.active(), isNull);
-      expect(await userVersion(db), 13);
+      expect(await userVersion(db), 14);
+      await db.validateDatabaseSchema();
+    });
+  });
+
+  group('v13 to v14', () {
+    test('adds the menu columns, null on existing foods', () async {
+      final schema = await verifier.schemaAt(13);
+      schema.rawDatabase.execute(
+        'INSERT INTO food_items '
+        '(id, name, calories, protein, carbs, fat, serving_weight_g) '
+        "VALUES ('f1', 'Oats', 380, 13, 67, 7, 100)",
+      );
+      final db = AppDatabase(schema.newConnection());
+      addTearDown(db.close);
+
+      final food = (await db.select(db.foodItems).get()).single;
+      expect(food.name, 'Oats');
+      expect(food.menuItemId, isNull);
+      expect(food.menuVersion, isNull);
+      expect(food.weightUnknown, isFalse);
+
+      await db.foodDao.insertFood(
+        FoodItemsCompanion.insert(
+          id: 'f2',
+          name: 'French Fries, Medium',
+          calories: 320,
+          protein: 5,
+          carbs: 43,
+          fat: 15,
+          servingWeightG: 114,
+          menuItemId: const Value('example-burger/fries-medium'),
+          menuVersion: const Value(1),
+          weightUnknown: const Value(true),
+        ),
+      );
+      final found = await db.foodDao.findByMenuItemId(
+        'example-burger/fries-medium',
+      );
+      expect(found!.id, 'f2');
+      expect(found.menuVersion, 1);
+      expect(found.weightUnknown, isTrue);
+      final indexes = await db
+          .customSelect(
+            "SELECT name FROM sqlite_master WHERE type = 'index' "
+            "AND name = 'food_items_menu_item_id'",
+          )
+          .get();
+      expect(indexes, hasLength(1));
+      expect(await userVersion(db), 14);
       await db.validateDatabaseSchema();
     });
   });
 
   group('fresh database', () {
-    test('starts at v13 with empty scheduling tables', () async {
+    test('starts at v14 with empty scheduling tables', () async {
       final db = AppDatabase(NativeDatabase.memory());
       addTearDown(db.close);
 
-      expect(await userVersion(db), 13);
+      expect(await userVersion(db), 14);
       expect(await db.scheduledMealDao.findSchedulesForMeal('x'), isEmpty);
       expect(await hasStartDateIndex(db), isTrue);
       await db.validateDatabaseSchema();

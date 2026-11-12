@@ -10,6 +10,7 @@ import 'package:nutriton_project/data/repositories/log_repository.dart';
 import 'package:nutriton_project/views/common/wide_layout.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../support/menu_fixture.dart';
 import '../support/test_app.dart';
 
 /// The two-pane layouts on an iPad or a phone on its side.
@@ -112,6 +113,38 @@ void main() {
       expect(find.byKey(const Key('catalog-search')), findsOneWidget);
       final entry = (await db.select(db.foodLogEntries).get()).single;
       expect(entry.name, 'Rice');
+      expect(entry.logDate, today);
+      await unmount(tester);
+    });
+
+    testWidgets('restaurant menus open inside the pane', (tester) async {
+      screen(tester, ipad);
+      await tester.pumpWidget(
+        testApp(db: db, prefs: prefs, menus: menuFixture()),
+      );
+      await settle(tester);
+
+      await tester.tap(find.byKey(const Key('restaurants-entry')));
+      await settle(tester);
+      expect(find.byKey(const Key('restaurants-search')), findsOneWidget);
+      expect(find.byKey(const Key('weigh-in-row')), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('chain-example-burger')));
+      await settle(tester);
+      expect(find.byKey(const Key('chain-search')), findsOneWidget);
+      expect(find.byKey(const Key('weigh-in-row')), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('menu-item-fries-medium')));
+      await settle(tester);
+      expect(find.byKey(const Key('weigh-in-row')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('log-food-confirm')));
+      await settle(tester);
+
+      // Back at the pane's catalog, with the entry in the day beside it.
+      expect(find.byKey(const Key('restaurants-search')), findsNothing);
+      expect(find.byKey(const Key('catalog-search')), findsOneWidget);
+      final entry = (await db.select(db.foodLogEntries).get()).single;
+      expect(entry.name, 'French Fries, Medium');
       expect(entry.logDate, today);
       await unmount(tester);
     });

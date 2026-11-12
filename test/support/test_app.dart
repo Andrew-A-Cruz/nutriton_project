@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:nutriton_project/app.dart';
 import 'package:nutriton_project/data/database/app_database.dart';
 import 'package:nutriton_project/providers/infrastructure_providers.dart';
+import 'package:nutriton_project/providers/menu_providers.dart';
 import 'package:nutriton_project/views/home/undo_banner.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -15,17 +16,23 @@ Future<SharedPreferences> mockPreferences(Map<String, Object> values) async {
   return SharedPreferences.getInstance();
 }
 
+/// A menus file with no restaurants, which hides the feature.
+const noMenus = '{"version": 1, "chains": []}';
+
 /// The app with an in-memory database and the given preferences. [overrides]
-/// are added after the database and preferences overrides.
+/// are added after the database and preferences overrides. [menus] is the
+/// bundled restaurant menus file; none by default.
 Widget testApp({
   required AppDatabase db,
   required SharedPreferences prefs,
   List<Override> overrides = const [],
+  String menus = noMenus,
 }) {
   return ProviderScope(
     overrides: [
       databaseProvider.overrideWithValue(db),
       sharedPreferencesProvider.overrideWithValue(prefs),
+      menusSourceProvider.overrideWithValue(() async => menus),
       ...overrides,
     ],
     child: const MyApp(),
@@ -39,11 +46,13 @@ Widget testScreen({
   required SharedPreferences prefs,
   required Widget home,
   List<Override> overrides = const [],
+  String menus = noMenus,
 }) {
   return ProviderScope(
     overrides: [
       databaseProvider.overrideWithValue(db),
       sharedPreferencesProvider.overrideWithValue(prefs),
+      menusSourceProvider.overrideWithValue(() async => menus),
       ...overrides,
     ],
     child: CupertinoApp(home: home),

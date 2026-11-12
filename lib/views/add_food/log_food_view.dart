@@ -193,51 +193,54 @@ class _LogFoodViewState extends ConsumerState<LogFoodView> {
             ),
             CupertinoFormSection.insetGrouped(
               children: [
-                CupertinoFormRow(
-                  // Stacked rather than side by side: with 2x text a prefix and the
-                  // control do not fit in one row.
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Amount in'),
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        width: double.infinity,
-                        child: CupertinoSlidingSegmentedControl<AmountMode>(
-                          key: const Key('log-mode'),
-                          // Nothing selected while a portion is chosen below.
-                          groupValue: _mode == AmountMode.portion
-                              ? null
-                              : _mode,
-                          children: {
-                            AmountMode.servings: const Text('Servings'),
-                            AmountMode.weight: Text(_weightLabel),
-                          },
-                          onValueChanged: (mode) {
-                            if (mode != null) _setMode(mode);
-                          },
-                        ),
-                      ),
-                      if (portions.isNotEmpty) ...[
+                // A restaurant item with no published weight is counted in
+                // items only.
+                if (!widget.food.weightUnknown)
+                  CupertinoFormRow(
+                    // Stacked rather than side by side: with 2x text a prefix and the
+                    // control do not fit in one row.
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Amount in'),
                         const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 6,
-                          runSpacing: 6,
-                          children: [
-                            for (final p in portions)
-                              _PortionChip(
-                                key: Key('log-portion-${p.id}'),
-                                label:
-                                    '${p.name} (${formatWeight(p.weightG, _unit)})',
-                                selected: _portion?.id == p.id,
-                                onTap: () => _setMode(AmountMode.portion, p),
-                              ),
-                          ],
+                        SizedBox(
+                          width: double.infinity,
+                          child: CupertinoSlidingSegmentedControl<AmountMode>(
+                            key: const Key('log-mode'),
+                            // Nothing selected while a portion is chosen below.
+                            groupValue: _mode == AmountMode.portion
+                                ? null
+                                : _mode,
+                            children: {
+                              AmountMode.servings: const Text('Servings'),
+                              AmountMode.weight: Text(_weightLabel),
+                            },
+                            onValueChanged: (mode) {
+                              if (mode != null) _setMode(mode);
+                            },
+                          ),
                         ),
+                        if (portions.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: [
+                              for (final p in portions)
+                                _PortionChip(
+                                  key: Key('log-portion-${p.id}'),
+                                  label:
+                                      '${p.name} (${formatWeight(p.weightG, _unit)})',
+                                  selected: _portion?.id == p.id,
+                                  onTap: () => _setMode(AmountMode.portion, p),
+                                ),
+                            ],
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
-                ),
                 formRow(
                   fieldKey: const Key('log-amount'),
                   label: switch (_mode) {
