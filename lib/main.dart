@@ -8,15 +8,19 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app.dart';
 import 'core/number_locale.dart';
+import 'data/app_icon/app_icon_service.dart';
 import 'data/backup/auto_backup_store.dart';
 import 'data/diagnostics/error_log.dart';
+import 'data/label/label_scanner.dart';
 import 'data/notifications/local_notification_scheduler.dart';
 import 'data/notifications/notification_scheduler.dart';
 import 'data/health/health_service.dart';
 import 'data/health/plugin_health_service.dart';
+import 'providers/appearance_providers.dart';
 import 'providers/backup_providers.dart';
 import 'providers/health_providers.dart';
 import 'providers/infrastructure_providers.dart';
+import 'providers/label_scan_providers.dart';
 import 'data/widget/home_widget_publisher.dart';
 import 'data/widget/widget_publisher.dart';
 import 'providers/reminder_providers.dart';
@@ -76,10 +80,21 @@ Future<void> main() async {
               ? PluginHealthService()
               : const NoopHealthService(),
         ),
+        if (MethodChannelAppIconService.isPlatformSupported)
+          appIconServiceProvider.overrideWithValue(
+            const MethodChannelAppIconService(),
+          ),
+        if (PlatformLabelScanner.isPlatformSupported)
+          labelScannerProvider.overrideWithValue(PlatformLabelScanner()),
         storeServiceProvider.overrideWithValue(
           RevenueCatStoreService.isSupported
               ? RevenueCatStoreService()
               : const NoopStoreService(),
+        ),
+        // Pro is not sold on Android until Google Play purchases are built
+        // (roadmap A3), so nothing there offers it.
+        proOfferedProvider.overrideWithValue(
+          kIsWeb || defaultTargetPlatform != TargetPlatform.android,
         ),
         // Development builds installed outside the App Store can unlock Pro
         // with --dart-define=PRO_UNLOCKED=true.

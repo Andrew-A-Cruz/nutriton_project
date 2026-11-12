@@ -7,6 +7,7 @@ import '../../core/macro_split.dart';
 import '../../core/metrics.dart';
 import '../../core/nutrition_math.dart';
 import '../../core/reminder.dart';
+import '../../core/water.dart';
 import '../database/app_database.dart';
 import '../preferences/user_preferences.dart';
 
@@ -87,6 +88,8 @@ class BackupData {
     this.scheduledMealOutcomes = const [],
     this.bodyWeights = const [],
     this.foodServings = const [],
+    this.waterDays = const [],
+    this.fasts = const [],
     required this.settings,
     this.exportedAt,
   });
@@ -100,6 +103,8 @@ class BackupData {
   final List<ScheduledMealOutcome> scheduledMealOutcomes;
   final List<BodyWeight> bodyWeights;
   final List<FoodServing> foodServings;
+  final List<WaterDay> waterDays;
+  final List<Fast> fasts;
   final UserSettings settings;
 
   /// When the file was written. Null for data not read from a file, or when the
@@ -116,7 +121,8 @@ class BackupData {
 ///   "food_log_entries": [...], "food_log_entry_items": [...],
 ///   "scheduled_meals": [...], "scheduled_meal_outcomes": [...],
 ///   "body_weights": [...],
-///   "food_servings": [...],
+///   "food_servings": [...], "water_log": [...],
+///   "fasts": [...],
 ///   "preferences": {...} }
 /// ```
 ///
@@ -152,6 +158,8 @@ class BackupCodec {
       ],
       'body_weights': [for (final r in data.bodyWeights) r.toJson()],
       'food_servings': [for (final r in data.foodServings) r.toJson()],
+      'water_log': [for (final r in data.waterDays) r.toJson()],
+      'fasts': [for (final r in data.fasts) r.toJson()],
       'preferences': _encodeSettings(data.settings),
     };
     return const JsonEncoder.withIndent('  ').convert(map);
@@ -226,6 +234,14 @@ class BackupCodec {
         foodServings: current.containsKey('food_servings')
             ? _rows(current, 'food_servings', FoodServing.fromJson)
             : const [],
+        // Absent in backups made before water tracking.
+        waterDays: current.containsKey('water_log')
+            ? _rows(current, 'water_log', WaterDay.fromJson)
+            : const [],
+        // Absent in backups made before the fasting timer.
+        fasts: current.containsKey('fasts')
+            ? _rows(current, 'fasts', Fast.fromJson)
+            : const [],
         settings: _decodeSettings(current['preferences']),
         exportedAt: _decodeExportedAt(current['exportedAt']),
       );
@@ -277,6 +293,12 @@ class BackupCodec {
             for (final g in e.value.entries) g.key.name: g.value,
           },
       },
+    'fastingEnabled': s.fastingEnabled,
+    'water': {
+      'enabled': s.water.enabled,
+      'unit': s.water.unit.name,
+      'goalMl': ?s.water.goalMl,
+    },
     if (s.macroGoalPercents case final p?)
       'macroGoalPercents': {
         'protein': p.protein,
@@ -324,6 +346,27 @@ class BackupCodec {
     _ => throw BackupException('The backup has invalid macro percentages.'),
   };
 
+  /// Absent in backups made before water tracking: on, in glasses, no goal.
+  WaterSettings _decodeWater(Object? raw) {
+    if (raw == null) return const WaterSettings();
+    if (raw is! Map<String, dynamic>) {
+      throw BackupException('The backup has invalid water settings.');
+    }
+    final enabled = raw['enabled'];
+    final unit = WaterUnit.values.asNameMap()[raw['unit']];
+    final goal = raw['goalMl'];
+    if (enabled is! bool ||
+        unit == null ||
+        (goal != null && (goal is! num || !goal.isFinite || goal <= 0))) {
+      throw BackupException('The backup has invalid water settings.');
+    }
+    return WaterSettings(
+      enabled: enabled,
+      unit: unit,
+      goalMl: (goal as num?)?.toDouble(),
+    );
+  }
+
   /// Absent in backups made before reminders existed: all off, default times.
   List<Reminder> _decodeReminders(Object? raw) {
     if (raw == null) return Reminder.defaults;
@@ -355,6 +398,8 @@ class BackupCodec {
     // Absent in backups made before Apple Health sync: off.
     final healthWrite = raw['healthWriteNutrition'] ?? false;
     final healthRead = raw['healthReadWeight'] ?? false;
+    // Absent in backups made before the fasting timer: off.
+    final fasting = raw['fastingEnabled'] ?? false;
     final onboarding = raw['onboardingComplete'];
     final tracked = raw['trackedMetrics'];
     final goals = raw['goals'];
@@ -364,6 +409,7 @@ class BackupCodec {
         onboarding is! bool ||
         healthWrite is! bool ||
         healthRead is! bool ||
+        fasting is! bool ||
         tracked is! List ||
         goals is! Map) {
       throw BackupException('The backup has invalid preferences.');
@@ -393,6 +439,8 @@ class BackupCodec {
       healthReadWeight: healthRead,
       macroGoalPercents: _decodeMacroGoalPercents(raw['macroGoalPercents']),
       weekdayGoals: _decodeWeekdayGoals(raw['weekdayGoals']),
+      water: _decodeWater(raw['water']),
+      fastingEnabled: fasting,
     );
   }
 }

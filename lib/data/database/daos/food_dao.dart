@@ -39,6 +39,19 @@ class FoodDao extends DatabaseAccessor<AppDatabase> with _$FoodDaoMixin {
             ..limit(1))
           .getSingleOrNull();
 
+  /// The non-archived food with no brand called [name] (ignoring ASCII
+  /// case), or null.
+  Future<FoodItem?> findActiveUnbrandedByName(String name) =>
+      (select(foodItems)
+            ..where(
+              (t) =>
+                  t.name.lower().equals(name.toLowerCase()) &
+                  t.brand.isNull() &
+                  t.archived.equals(false),
+            )
+            ..limit(1))
+          .getSingleOrNull();
+
   Future<int> updateFood(String id, FoodItemsCompanion changes) =>
       (update(foodItems)..where((t) => t.id.equals(id))).write(changes);
 

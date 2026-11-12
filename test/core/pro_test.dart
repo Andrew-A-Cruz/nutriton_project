@@ -109,6 +109,7 @@ void main() {
       ProFeature.widget,
       ProFeature.appleHealth,
       ProFeature.reports,
+      ProFeature.themes,
     ]);
   });
 

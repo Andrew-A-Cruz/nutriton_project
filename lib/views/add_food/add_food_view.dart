@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/bundled_foods.dart';
 import '../../data/database/app_database.dart';
 import '../../data/repositories/food_lookup_repository.dart';
 import '../catalog/barcode_scanner_page.dart';
@@ -18,9 +19,13 @@ enum _AddMode { catalog, quick, adhoc }
 /// The Add Food sheet. Everything it logs goes to [logDate], the day Home is
 /// showing, which need not be today.
 class AddFoodView extends ConsumerStatefulWidget {
-  const AddFoodView({super.key, required this.logDate});
+  const AddFoodView({super.key, required this.logDate, this.embedded = false});
 
   final String logDate;
+
+  /// Shown as a pane beside Home on a wide screen, not as a sheet, so there
+  /// is nothing to close.
+  final bool embedded;
 
   @override
   ConsumerState<AddFoodView> createState() => _AddFoodViewState();
@@ -48,6 +53,26 @@ class _AddFoodViewState extends ConsumerState<AddFoodView> {
         ),
       ),
     );
+  }
+
+  /// Copies a starter food into the catalog (once), then opens the servings
+  /// screen for it like any other catalog food.
+  Future<void> _logBundledFood(BundledFood bundled) async {
+    final FoodItem food;
+    try {
+      food = await ref
+          .read(catalogRepositoryProvider)
+          .adoptBundledFood(bundled);
+    } catch (e, stack) {
+      if (mounted) {
+        await showErrorDialog(
+          context,
+          reportError(ref, e, stack, 'Could not add the food'),
+        );
+      }
+      return;
+    }
+    if (mounted) await _logFood(food);
   }
 
   void _logMeal(Meal meal) {
@@ -100,12 +125,15 @@ class _AddFoodViewState extends ConsumerState<AddFoodView> {
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
-        leading: CupertinoButton(
-          key: const Key('add-food-close'),
-          padding: EdgeInsets.zero,
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Close'),
-        ),
+        automaticallyImplyLeading: false,
+        leading: widget.embedded
+            ? null
+            : CupertinoButton(
+                key: const Key('add-food-close'),
+                padding: EdgeInsets.zero,
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Close'),
+              ),
         middle: const Text('Add Food'),
         trailing: _mode == _AddMode.catalog
             ? CupertinoButton(
@@ -146,6 +174,7 @@ class _AddFoodViewState extends ConsumerState<AddFoodView> {
                   onFoodTap: _logFood,
                   onMealTap: _logMeal,
                   onSearchOnline: (query) => _newFood(searchQuery: query),
+                  onBundledFoodTap: _logBundledFood,
                 ),
                 _AddMode.quick => QuickAddForm(logDate: widget.logDate),
                 _AddMode.adhoc => AdhocFoodForm(logDate: widget.logDate),

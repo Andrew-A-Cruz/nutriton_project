@@ -1,6 +1,7 @@
 import 'package:drift/native.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nutriton_project/core/appearance.dart';
 import 'package:nutriton_project/core/date_key.dart';
 import 'package:nutriton_project/core/meal_slot.dart';
 import 'package:nutriton_project/core/metrics.dart';
@@ -184,6 +185,34 @@ void main() {
     expect(tester.takeException(), isNull);
     await unmount(tester);
   });
+
+  for (final theme in AppTheme.values) {
+    testWidgets('the ${theme.name} theme fits at 2x text in dark mode', (
+      tester,
+    ) async {
+      stressScreen(tester);
+      await prefs.setBool('pro_purchased', true);
+      await prefs.setString('theme', theme.name);
+      await prefs.setBool('fasting_enabled', true);
+      await tester.runAsync(seed);
+      await tester.pumpWidget(testApp(db: db, prefs: prefs));
+      await settle(tester);
+      expect(
+        CupertinoTheme.of(
+          tester.element(find.byType(CupertinoPageScaffold).first),
+        ).primaryColor,
+        isSameColorAs(Color(theme.dark)),
+      );
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(find.byKey(const Key('settings-button')));
+      await settle(tester);
+      await scrollPreferencesTo(tester, find.byKey(Key('theme-${theme.name}')));
+      await settle(tester);
+      expect(tester.takeException(), isNull);
+      await unmount(tester);
+    });
+  }
 
   testWidgets('onboarding fits at 2x text in dark mode', (tester) async {
     stressScreen(tester);

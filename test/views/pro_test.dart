@@ -105,9 +105,9 @@ void main() {
       expect(find.text('Home Screen Widget'), findsOneWidget);
       expect(find.text('Apple Health'), findsOneWidget);
       expect(find.text('Shareable Reports'), findsOneWidget);
+      expect(find.text('Themes and App Icons'), findsOneWidget);
       // Unbuilt Pro features are never sold.
       expect(find.text('iCloud Sync'), findsNothing);
-      expect(find.text('Themes and App Icons'), findsNothing);
       expect(find.text(r'Unlock Pro for $9.99'), findsOneWidget);
       await unmount(tester);
     });

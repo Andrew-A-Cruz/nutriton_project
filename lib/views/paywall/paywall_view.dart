@@ -100,6 +100,17 @@ class _PaywallViewState extends ConsumerState<PaywallView> {
               style: TextStyle(color: secondary),
             ),
             const SizedBox(height: 24),
+            // Above the buttons, so it is on screen on a small phone.
+            if (_error case final error?)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Text(
+                  error,
+                  key: const Key('paywall-error'),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: CupertinoColors.systemRed),
+                ),
+              ),
             switch (access) {
               ProAccess.owned => const Text(
                 'Pro is unlocked. Thank you for supporting Logbite.',
@@ -156,16 +167,6 @@ class _PaywallViewState extends ConsumerState<PaywallView> {
                 ],
               ),
             },
-            if (_error case final error?)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  error,
-                  key: const Key('paywall-error'),
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: CupertinoColors.systemRed),
-                ),
-              ),
             const SizedBox(height: 16),
             const Row(
               mainAxisAlignment: MainAxisAlignment.center,

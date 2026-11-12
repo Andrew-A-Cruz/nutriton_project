@@ -12,6 +12,8 @@ import '../../providers/preferences_providers.dart';
 import '../common/form_widgets.dart';
 import '../meals/schedule_meal_view.dart';
 import 'food_lookup_section.dart';
+import 'label_scan_section.dart';
+import '../../core/label_scan.dart';
 import '../common/error_feedback.dart';
 import '../../core/portions.dart';
 import '../../providers/catalog_providers.dart';
@@ -176,6 +178,35 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
     });
   }
 
+  /// Prefills the nutrition fields from a scanned label. Only what the label
+  /// gave is written, so a value it lacks is left for the user, and the name,
+  /// brand and barcode are untouched.
+  void _applyLabel(LabelFill fill) {
+    final n = fill.nutrients;
+    _lookupPortion = null;
+    setState(() {
+      if (n.calories case final v?) _calories.text = _macroText(v);
+      if (n.protein case final v?) _protein.text = _macroText(v);
+      if (n.carbs case final v?) _carbs.text = _macroText(v);
+      if (n.fat case final v?) _fat.text = _macroText(v);
+      _extras.setFrom(
+        Macros(fiber: n.fiber, sugar: n.sugar, sodium: n.sodiumMg),
+      );
+      if (fill.servingWeightG case final grams?) {
+        _weight.text = _weightText(grams, _unit);
+      }
+      final missing = fill.missing;
+      _lookupNotice = [
+        fill.per100
+            ? 'Filled from the label, per 100 g.'
+            : 'Filled from the label, per serving.',
+        if (missing.isNotEmpty) 'Not found: ${missing.join(', ')}.',
+        'Check every value against the label.',
+      ].join(' ');
+      _errors = const {};
+    });
+  }
+
   /// Tells the user what a prefill left out, so nothing looks complete when it
   /// is not.
   static String? _noticeFor(FoodLookupResult result) {
@@ -328,6 +359,7 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
                 initialScannedBarcode: widget.scannedBarcode,
                 initialSearchQuery: widget.searchQuery,
               ),
+            if (existing == null) LabelScanSection(onFill: _applyLabel),
             if (_lookupNotice != null)
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),

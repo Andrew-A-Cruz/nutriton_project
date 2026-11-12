@@ -17,6 +17,12 @@ final storeServiceProvider = Provider<StoreService>(
 /// App Store (`--dart-define=PRO_UNLOCKED=true`). `main` sets it.
 final proUnlockedForDevelopmentProvider = Provider<bool>((ref) => false);
 
+/// Whether Pro is sold on this platform. False on Android until Google Play
+/// purchases are built: nothing there may offer a purchase that cannot go
+/// through, so the Pro row, the lock badges, the paywall and the trial
+/// notice are hidden. `main` sets it; Pro already held still works.
+final proOfferedProvider = Provider<bool>((ref) => true);
+
 /// What the user owns. Starts from the copy cached on the device, so Pro
 /// works offline and needs no network call at launch, then follows the store.
 class ProStatusNotifier extends Notifier<ProStatus> {
@@ -90,7 +96,7 @@ class TrialEndedNoticeNotifier extends Notifier<bool> {
     if (ref.read(userPreferencesProvider).readTrialEndedNoticeShown()) {
       return false;
     }
-    if (ref.watch(proProvider)) return false;
+    if (ref.watch(proProvider) || !ref.watch(proOfferedProvider)) return false;
     ref.watch(todayProvider);
     return trialHasEnded(
       ref.watch(proStatusProvider),

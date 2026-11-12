@@ -9,6 +9,7 @@ import '../../core/metrics.dart';
 import '../../core/report.dart';
 import '../../core/summary_math.dart';
 import '../../core/top_foods.dart';
+import '../../core/water.dart';
 import '../../data/preferences/user_preferences.dart';
 import '../../data/report/report_pdf.dart';
 import '../../providers/body_weight_providers.dart';
@@ -16,10 +17,12 @@ import '../../providers/preferences_providers.dart';
 import '../../providers/report_providers.dart';
 import '../../providers/summary_providers.dart';
 import '../../providers/today_providers.dart';
+import '../../providers/water_providers.dart';
 import '../common/error_feedback.dart';
 import '../common/macro_split_bar.dart';
 import '../home/macro_summary.dart' show showMacroSplit;
 import '../common/pro_gate.dart';
+import '../common/wide_layout.dart';
 import 'summary_chart.dart';
 import 'weight_chart.dart';
 
@@ -100,64 +103,68 @@ class _ReportBody extends ConsumerWidget {
     // Dynamic colors must be resolved, or dark mode gets the light variant.
     final secondary = CupertinoColors.secondaryLabel.resolveFrom(context);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    // On a wide screen the charts get a taller column of their own.
+    final wide = isWideLayout(context);
+    final averagesCard = _Card(
       children: [
-        _Card(
-          children: [
-            const _SectionLabel('AVERAGE PER LOGGED DAY'),
-            const SizedBox(height: 8),
-            if (averages == null)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Text(
-                  'Nothing logged in this period.',
-                  key: const Key('summary-empty'),
-                  style: TextStyle(color: secondary),
-                ),
-              )
-            else
-              for (final m in metrics)
-                _AverageRow(
-                  metric: m,
-                  amount: m.amountIn(averages),
-                  coverageHint: report.coverage[m] == null
-                      ? null
-                      : coverageText(m, report.coverage[m]!),
-                ),
-            if (averages != null && showMacroSplit(settings))
-              if (macroSplit(averages) case final split?) ...[
-                const SizedBox(height: 8),
-                MacroSplitBar(split: split),
-              ],
-            const SizedBox(height: 8),
-            Text(
-              'Days logged: ${report.daysLogged} of ${report.totalDays}',
-              key: const Key('days-logged'),
-              style: TextStyle(fontSize: 13, color: secondary),
+        const _SectionLabel('AVERAGE PER LOGGED DAY'),
+        const SizedBox(height: 8),
+        if (averages == null)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text(
+              'Nothing logged in this period.',
+              key: const Key('summary-empty'),
+              style: TextStyle(color: secondary),
             ),
-            if (goal != null && goal > 0 && report.daysLogged > 0)
-              Text(
-                'On target (within ${(goalTolerance * 100).round()}% of the '
-                'goal): ${daysOnTargetEach(report.dailyTotals, primary, (d) => settings.goalFor(primary, date: d))} '
-                'of ${report.daysLogged} logged days',
-                key: const Key('days-on-target'),
-                style: TextStyle(fontSize: 13, color: secondary),
-              ),
+          )
+        else
+          for (final m in metrics)
+            _AverageRow(
+              metric: m,
+              amount: m.amountIn(averages),
+              coverageHint: report.coverage[m] == null
+                  ? null
+                  : coverageText(m, report.coverage[m]!),
+            ),
+        if (averages != null && showMacroSplit(settings))
+          if (macroSplit(averages) case final split?) ...[
+            const SizedBox(height: 8),
+            MacroSplitBar(split: split),
           ],
+        const SizedBox(height: 8),
+        Text(
+          'Days logged: ${report.daysLogged} of ${report.totalDays}',
+          key: const Key('days-logged'),
+          style: TextStyle(fontSize: 13, color: secondary),
         ),
-        if (report.range != SummaryRange.day) ...[
-          const SizedBox(height: 16),
-          _WeightCard(
+        if (goal != null && goal > 0 && report.daysLogged > 0)
+          Text(
+            'On target (within ${(goalTolerance * 100).round()}% of the '
+            'goal): ${daysOnTargetEach(report.dailyTotals, primary, (d) => settings.goalFor(primary, date: d))} '
+            'of ${report.daysLogged} logged days',
+            key: const Key('days-on-target'),
+            style: TextStyle(fontSize: 13, color: secondary),
+          ),
+        if (settings.water.enabled)
+          _WaterLine(
+            query: (endDate: report.endKey, range: report.range),
+            water: settings.water,
+          ),
+      ],
+    );
+    final weightCard = report.range == SummaryRange.day
+        ? null
+        : _WeightCard(
             range: report.range,
             startKey: report.startKey,
             endKey: report.endKey,
             unit: settings.bodyWeightUnit,
-          ),
-        ],
-        if (report.buckets.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          _Card(
+            chartHeight: wide ? 260 : 200,
+          );
+    final barsCard = report.buckets.isEmpty
+        ? null
+        : _Card(
             children: [
               _SectionLabel(_chartHeading(report.range, primary)),
               const SizedBox(height: 12),
@@ -167,17 +174,38 @@ class _ReportBody extends ConsumerWidget {
                 goal: goal,
                 bucketSize: report.range.bucketSize,
                 neutral: ref.watch(mindfulModeProvider),
+                height: wide ? 300 : 220,
               ),
             ],
-          ),
-        ],
-        if (report.daysLogged > 0) ...[
-          const SizedBox(height: 16),
-          _TopFoodsCard(
+          );
+    final topFoodsCard = report.daysLogged == 0
+        ? null
+        : _TopFoodsCard(
             query: (endDate: report.endKey, range: report.range),
             metric: primary,
-          ),
+          );
+
+    /// The cards one under another, 16 apart.
+    Widget stack(List<Widget?> cards) => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final (i, card) in cards.nonNulls.indexed) ...[
+          if (i > 0) const SizedBox(height: 16),
+          card,
         ],
+      ],
+    );
+
+    if (!wide) {
+      return stack([averagesCard, weightCard, barsCard, topFoodsCard]);
+    }
+    return Row(
+      key: const Key('summary-wide'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(flex: 2, child: stack([averagesCard, topFoodsCard])),
+        const SizedBox(width: 16),
+        Expanded(flex: 3, child: stack([barsCard, weightCard])),
       ],
     );
   }
@@ -189,6 +217,34 @@ class _ReportBody extends ConsumerWidget {
       BucketSize.month => 'monthly averages',
     };
     return '${metric.label.toUpperCase()} $per';
+  }
+}
+
+/// Water over the range: the average of the days that have any, or the total
+/// of a single day. Nothing when no water was logged in the range.
+class _WaterLine extends ConsumerWidget {
+  const _WaterLine({required this.query, required this.water});
+
+  final SummaryQuery query;
+  final WaterSettings water;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final days = ref.watch(waterRangeProvider(query)).value ?? const [];
+    final average = averageWaterMl(days);
+    if (average == null) return const SizedBox.shrink();
+    final amount = formatWater(average, water.unit);
+    return Text(
+      query.range == SummaryRange.day
+          ? 'Water: $amount'
+          : 'Water: $amount a day, over ${days.length} '
+                '${days.length == 1 ? 'day' : 'days'}',
+      key: const Key('summary-water'),
+      style: TextStyle(
+        fontSize: 13,
+        color: CupertinoColors.secondaryLabel.resolveFrom(context),
+      ),
+    );
   }
 }
 
@@ -294,12 +350,14 @@ class _WeightCard extends ConsumerWidget {
     required this.startKey,
     required this.endKey,
     required this.unit,
+    this.chartHeight = 200,
   });
 
   final SummaryRange range;
   final String startKey;
   final String endKey;
   final BodyWeightUnit unit;
+  final double chartHeight;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -333,6 +391,7 @@ class _WeightCard extends ConsumerWidget {
             startKey: startKey,
             endKey: endKey,
             unit: unit,
+            height: chartHeight,
           ),
       ],
     );

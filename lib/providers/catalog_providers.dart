@@ -1,4 +1,7 @@
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../core/bundled_foods.dart';
 
 import '../data/database/app_database.dart';
 import '../data/database/daos/log_dao.dart';
@@ -37,3 +40,20 @@ final favoriteSourcesProvider = Provider<List<RecentSource>>((ref) {
 final foodServingsProvider = StreamProvider.family<List<FoodServing>, String>(
   (ref, foodId) => ref.watch(catalogRepositoryProvider).watchServings(foodId),
 );
+
+/// Where the starter foods are bundled (made by `tool/make_generic_foods.py`).
+const genericFoodsAsset = 'assets/foods/generic_foods.tsv';
+
+/// The text of the bundled starter foods. Tests override it with a few
+/// lines.
+final genericFoodsSourceProvider = Provider<Future<String> Function()>(
+  (ref) =>
+      () => rootBundle.loadString(genericFoodsAsset),
+);
+
+/// The bundled starter foods, read once, the first time a search needs
+/// them, and kept for the session.
+final genericFoodsProvider = FutureProvider<List<BundledFood>>((ref) async {
+  ref.keepAlive();
+  return parseBundledFoods(await ref.watch(genericFoodsSourceProvider)());
+});

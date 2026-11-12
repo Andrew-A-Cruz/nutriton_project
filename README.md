@@ -69,4 +69,10 @@ The icon source is `assets/icon/app_icon.png` (1024x1024, full-bleed) plus `asse
 dart run flutter_launcher_icons
 ```
 
+The alternate icons (Pro) and their in-app previews are made from the same source by `python3 tool/make_alt_icons.py` (needs Pillow). Their names are listed in `AppIconChoice` (`lib/core/appearance.dart`) and in `ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES` in the Xcode project.
+
 If the iOS Xcode project is modified by the tool (it can rewrite `ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS`), revert that one line to `YES`.
+
+## Starter foods
+
+`assets/foods/generic_foods.tsv` holds about 6,000 generic foods from USDA FoodData Central (SR Legacy, public domain), searchable from Add Food. To rebuild it, download and unzip the SR Legacy CSV release and run `python3 tool/make_generic_foods.py <folder>`; the script's header has the link and the file format.

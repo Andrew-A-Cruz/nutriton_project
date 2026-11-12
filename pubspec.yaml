@@ -59,6 +59,7 @@ dependencies:
   # 3.12 allows (archive <4.1), and later versions need archive >=4.4. Lift
   # this cap when Flutter's Dart reaches 3.12 and pdf can move to 3.13.
   image: ">=4.0.0 <4.11.0"
+  image_picker: ^1.2.4
 
 dev_dependencies:
   flutter_test:
@@ -84,6 +85,12 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  # Previews for the app icon picker (tool/make_alt_icons.py).
+  assets:
+    - assets/icon/alt/
+    # Starter foods from USDA FoodData Central (tool/make_generic_foods.py).
+    - assets/foods/generic_foods.tsv
 
   # To add assets to your application, add an assets section, like this:
   # assets:

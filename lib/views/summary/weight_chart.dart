@@ -18,7 +18,11 @@ class WeightChart extends StatelessWidget {
     required this.startKey,
     required this.endKey,
     required this.unit,
+    this.height = 200,
   });
+
+  /// Taller on a wide screen, where the chart has a column to itself.
+  final double height;
 
   final List<WeightReading> readings;
   final String startKey;
@@ -82,7 +86,7 @@ class WeightChart extends StatelessWidget {
       label: '$label.',
       child: ExcludeSemantics(
         child: SizedBox(
-          height: 200,
+          height: height,
           child: LineChart(
             LineChartData(
               minX: 0,

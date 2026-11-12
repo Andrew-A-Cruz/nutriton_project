@@ -63,6 +63,8 @@ class _ProSectionState extends ConsumerState<ProSection> {
 
   @override
   Widget build(BuildContext context) {
+    // Nothing is sold here (Android, for now), tips included.
+    if (!ref.watch(proOfferedProvider)) return const SizedBox.shrink();
     final access = ref.watch(proAccessProvider);
     final status = ref.watch(proStatusProvider);
     final storeAvailable = ref.watch(storeServiceProvider).isAvailable;
@@ -74,7 +76,7 @@ class _ProSectionState extends ConsumerState<ProSection> {
     final daysLeft = trialDaysLeft(status, ref.read(clockProvider)());
 
     return CupertinoFormSection.insetGrouped(
-      header: const Text('NUTRITON PRO'),
+      header: const Text('LOGBITE PRO'),
       footer: _status == null
           ? const Text(
               'Pro adds a few extras. Everything else is free, for good.',

@@ -54,6 +54,22 @@ void main() {
     await unmount(tester);
   });
 
+  testWidgets("Android's back button ends the tour, not the app", (
+    tester,
+  ) async {
+    await finishOnboarding(tester);
+    expect(card, findsOneWidget);
+
+    // What the system sends for a back press.
+    final handled = await tester.binding.handlePopRoute();
+    await settle(tester);
+
+    expect(handled, isTrue);
+    expect(card, findsNothing);
+    expect(find.byKey(const Key('add-food-button')), findsOneWidget);
+    await unmount(tester);
+  });
+
   testWidgets('setup can go back to the welcome pages', (tester) async {
     final prefs = await tester.runAsync(() => mockPreferences({}));
     await tester.pumpWidget(testApp(db: db, prefs: prefs!));

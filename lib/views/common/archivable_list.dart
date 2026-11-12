@@ -14,11 +14,15 @@ class ArchivableList<T> extends ConsumerStatefulWidget {
     required this.idOf,
     required this.rowBuilder,
     this.onArchive,
+    this.footer = const [],
   });
 
   final List<T> items;
   final String Function(T item) idOf;
   final Widget Function(BuildContext context, T item) rowBuilder;
+
+  /// Rows shown after the items, in the same scrolling list.
+  final List<Widget> footer;
 
   /// Null disables swiping.
   final Future<void> Function(T item)? onArchive;
@@ -50,8 +54,9 @@ class _ArchivableListState<T> extends ConsumerState<ArchivableList<T>> {
         if (!_hidden.contains(widget.idOf(item))) item,
     ];
     return ListView.builder(
-      itemCount: visible.length,
+      itemCount: visible.length + widget.footer.length,
       itemBuilder: (context, i) {
+        if (i >= visible.length) return widget.footer[i - visible.length];
         final item = visible[i];
         final row = widget.rowBuilder(context, item);
         if (widget.onArchive == null) return row;

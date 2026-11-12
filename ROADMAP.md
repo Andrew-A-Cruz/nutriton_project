@@ -4,7 +4,7 @@ Every open item in one place. Items are grouped first by whether they can start 
 
 **Sizes:** **S** = about a day or less · **M** = 2–5 days · **L** = 1–2 weeks · **XL** = needs its own detailed plan first.
 
-When an item is finished, delete it here and add a line to [What's Built](./PRODUCT.md#whats-built). When a new idea comes up, give it a size and a blocker and put it in the right section. A schema change takes the next version number when work starts (v12 is next).
+When an item is finished, delete it here and add a line to [What's Built](./PRODUCT.md#whats-built). When a new idea comes up, give it a size and a blocker and put it in the right section. A schema change takes the next version number when work starts (v14 is next).
 
 ---
 
@@ -15,7 +15,7 @@ When an item is finished, delete it here and add a line to [What's Built](./PROD
 | **B1** | Paid Apple Developer account ($99/yr) | Buy it; then App Store Connect agreements, tax and banking | [Sell Pro on iOS](#sell-pro-on-ios-m21-launch), [M20 iCloud sync](#m20--icloud-sync) |
 | **B2** | Google Play developer account ($25, once) and a 14-day closed test with 12+ testers | Create the account; recruit testers as soon as [A2](#a2--check-the-free-app-on-android) is done | [A3](#a3--pro-purchase-on-google-play), [A6](#a6--play-store-release) |
 | **B3** | A phone in hand for manual testing | Install a build (`install-iphone` skill) and work through the checklist | [Phone checks](#needs-a-phone-in-hand-b3) |
-| **D1–D7** | A decision that is yours to make | Accept the proposed answer, or choose another | [Waiting on a decision](#waiting-on-a-decision) |
+| **D1–D8** | A decision that is yours to make | Accept the proposed answer, or choose another | [Waiting on a decision](#waiting-on-a-decision) |
 | **Dep** | Another roadmap item has to come first | Finish that item | [Waiting on another item](#waiting-on-another-item) |
 
 The privacy policy is live ([`docs/privacy.md`](./docs/privacy.md), contact logbite.app@gmail.com), so it no longer blocks selling Pro, Health Connect or the Play listing. A new network call or Health type means a policy update.
@@ -27,15 +27,9 @@ The privacy policy is live ([`docs/privacy.md`](./docs/privacy.md), contact logb
 | Item | Size | Tier | Blocked by |
 |---|---|---|---|
 | **Ready now** | | | |
-| [A1 — Android native config leftovers](#a1--android-native-config-leftovers) | S | — | D: bundled or unbundled scanner model |
-| [Water tracking](#water-tracking) | M | Free | — |
-| [Fasting timer](#fasting-timer) | M | Free | — |
-| [Nutrition label scan](#nutrition-label-scan) | M | Free | — |
-| [Starter generic foods](#starter-generic-foods) | M | Free | — |
-| [iPad and landscape layout](#ipad-and-landscape-layout) | M | Free | — |
-| [M23 — Themes and app icons](#m23--themes-and-app-icons) | M | Pro | — |
-| [A2 — Check the free app on Android](#a2--check-the-free-app-on-android) | M | — | — (emulator now; a physical phone for the last checks) |
+| [A2 — Check the free app on Android](#a2--check-the-free-app-on-android) | S | — | — (an API 35+ emulator image for two checks; a physical phone for the last ones) |
 | **Blocked** | | | |
+| [A1 — Android native config leftovers](#a1--android-native-config-leftovers) | S | — | D8 |
 | [CSV export of the log](#csv-export-of-the-log) | S | Free (proposed) | D1 |
 | [M25 — Target weight guide](#m25--target-weight-guide) | M | Free | D4 |
 | [M24 — Fast food menus](#m24--fast-food-menus) | L | Free | D3 |
@@ -49,64 +43,20 @@ The privacy policy is live ([`docs/privacy.md`](./docs/privacy.md), contact logb
 | [A6 — Play Store release](#a6--play-store-release) | M + 14 days | — | B2, A2 |
 | [M20 — iCloud sync](#m20--icloud-sync) | XL | Pro | B1, D7 |
 
-**Suggested next:** the small free items (the medium items: Water tracking and so on), or M23 for a fourth Pro feature.
+**Suggested next:** accept D1, D4 and D3 (each has a proposed answer) to open CSV export, M25 and M24; and the iPhone checks, which now cover several features built without a phone.
 
 ---
 
-## Ready Now — Small
-
-### A1 — Android native config leftovers
-The application ID is `com.andrewcruz.logbite` (permanent after the first Play upload) and `minSdk` is 26. Builds use Homebrew's `openjdk@17` (`flutter config --jdk-dir`); Android Studio's bundled Java 11 is too old. What's left:
-
-- [ ] Barcode scanner size: `mobile_scanner` bundles ML Kit (a few MB per ABI). Keep it, or switch to the unbundled model through its Gradle property
-
----
-
-## Ready Now — Medium
-
-### Water tracking
-**Free · schema change (new `water_log` table)**
-
-A Home row with +/- buttons in glasses or ml, an optional daily goal, and a line on Summary. Table: `log_date`, `amount_ml`. Include it in the backup.
-
-### Fasting timer
-**Free · schema change (new `fasts` table)**
-
-Start and stop a fast, show elapsed time on Home, and keep a history (`started_at`, `ended_at`; include in the backup). Hidden until switched on in Settings.
-
-### Nutrition label scan
-**Free · no schema change**
-
-For products Open Food Facts doesn't know: photograph the nutrition table and fill the New Food form with on-device text recognition (Apple Vision on iOS, ML Kit on Android, e.g. `google_mlkit_text_recognition`). Nothing leaves the phone, and the user reviews every field. Parse per serving and per 100 g, kJ and kcal. Test the parser against saved OCR text fixtures, as for the Open Food Facts mapper.
-
-### Starter generic foods
-**Free · no schema change (bundled data)**
-
-A new user has to create every food that has no barcode. Bundle a few thousand generic foods ("banana", "chicken breast, cooked") from USDA FoodData Central (public domain; Foundation and SR Legacy), searchable offline from Add Food and copied into the catalog on first use. Decide between a read-only bundled SQLite file and seeding on first launch when starting. Its loader and "copy into the catalog on first log" logic can be shared with [M24](#m24--fast-food-menus); whichever is built first builds them.
-
-### iPad and landscape layout
-**Free · no schema change**
-
-On wide screens, show the catalog or the day's log beside Home instead of a full-screen push, and give the Summary chart the extra width.
-
-### M23 — Themes and app icons
-**Pro · no schema change**
-
-- [ ] Accent colour themes: a few preset `primaryColor`s, keeping the system light and dark appearance. Saved as a `theme` preference. Without Pro the default is used, but the saved choice stays
-- [ ] Alternate app icons: two or three under `CFBundleAlternateIcons`, switched with `UIApplication.setAlternateIconName` through a small platform channel. Losing Pro does not reset an icon already chosen
-- [ ] Settings: an "Appearance" section with both pickers behind `ProGate`. Check each theme in `large_text_dark_mode_test.dart`. Set `ProFeature.themes.available` to true
-
-**Done when:** a Pro user can change the accent colour and app icon, and a free user sees the lock on both pickers.
+## Ready Now
 
 ### A2 — Check the free app on Android
-The emulator already passed onboarding, saving, reminders across a reboot, the camera opening, a lookup and the backup share sheet. Still to check:
+Checked on an API 33 emulator (the separate "Logbite Test API 33" AVD, which has room to install the app): onboarding, saving, the keyboard resizing forms and dialogs, dark mode, system back on pushed pages, sheets, dialogs and the app tour, a backup import from Downloads, starter foods and the nutrition label scan from a chosen photo. Pro is hidden on Android until A3. Still to check:
 
-- [ ] **System back** in each tab: pushed pages, modal popups, dialogs, the paywall, onboarding and the tour. Check the predictive back gesture (on by default at SDK 36); wrap a nested navigator in `NavigatorPopHandler` if it doesn't get back presses
-- [ ] **Edge-to-edge:** status bar icons readable in light and dark; the tab bar and bottom buttons clear the gesture bar and the 3-button bar
-- [ ] **Backup import** from Downloads and Drive through `file_picker`
-- [ ] Keyboard resizing on the Add Food sheet and forms; the largest font size and a small screen (Roboto widths differ from SF Pro)
-- [ ] **Pro with the no-op store:** hide the Pro row, paywall and trial notice on Android until A3, so nothing offers a purchase that can't go through
-- [ ] On a physical phone: decode a real barcode; reminders after an app update
+- [ ] **Predictive back** (on by default at SDK 36) and **edge-to-edge** (enforced from SDK 35): status bar icons readable in light and dark; the tab bar and bottom buttons clear the gesture bar and the 3-button bar. Needs an API 35 or 36 system image; only API 33 is installed
+- [ ] Back at the root of the Catalog or Summary tab leaves the app. Decide whether it should go to Today first
+- [ ] The largest font size and a small screen (Roboto widths differ from SF Pro)
+- [ ] Backup import from Drive
+- [ ] On a physical phone: decode a real barcode; reminders after an app update; the label scan from the camera
 
 **Done when:** every free feature works on an Android phone and nothing on screen offers Pro. Recruit closed testers for [A6](#a6--play-store-release) at this point.
 
@@ -123,8 +73,16 @@ Each decision has a proposed answer. Accepting it unblocks the item.
 | **D3** | Where fast food menu values come from, and whether the license lets them ship in the app | Hand-entered from each chain's published nutrition info for a short list of US chains, USDA FoodData Central where it covers an item, and the source and date stored on each item. Open Food Facts (ODbL share-alike) and paid APIs are out | M24 |
 | **D4** | Target weight guide defaults and wording | Steady pace by default, the calorie floor rule, the screen's text reviewed by someone outside the project before release. Decide too whether to offer the WHO's lower BMI cutoffs for Asian populations | M25, and then adaptive goals |
 | **D5** | Trial on Android (Play has no $0 one-time products) | No trial on Android for the first release, just Buy; a trial kept on the device if purchase rates are low. (A Play subscription trial would change the model) | A3 |
-| **D6** | Pro price | $9.99 launch then $14.99 is a guess (MacroFactor ~$72/yr, Cronometer Gold ~$55/yr). Pro now has three features (widget, Apple Health, reports); M23 would make four | Selling Pro |
+| **D6** | Pro price | $9.99 launch then $14.99 is a guess (MacroFactor ~$72/yr, Cronometer Gold ~$55/yr). Pro now has four features (widget, Apple Health, reports, themes and icons) | Selling Pro |
 | **D7** | Is a second device actually planned? If not, M20 can be cut | No proposal yet | M20 |
+| **D8** | Bundle ML Kit's models in the Android app, or let Google Play services download them? Bundled: works offline at once, but the label scan's text model adds about 11 MB per ABI and the barcode model a few more. Unbundled: a much smaller download, but the first scan waits for the model and needs Play services | Bundled, as built, until the Play listing's size matters | A1 |
+
+### A1 — Android native config leftovers
+**S · blocked by D8**
+
+The application ID is `com.andrewcruz.logbite` (permanent after the first Play upload) and `minSdk` is 26. Builds use Homebrew's `openjdk@17` (`flutter config --jdk-dir`); Android Studio's bundled Java 11 is too old. What's left:
+
+- [ ] Model size: `mobile_scanner` bundles ML Kit's barcode model and the label scan bundles its text model (`com.google.mlkit:text-recognition` in `android/app/build.gradle.kts`). Keep them, or switch each to the unbundled model (`mobile_scanner`'s Gradle property; `play-services-mlkit-text-recognition`)
 
 ### CSV export of the log
 **S · Free (if D1 is accepted) · no schema change**
@@ -147,9 +105,9 @@ Helps the user pick a reasonable target weight and pace from height, weight, age
 **Done when:** a user can see their healthy band, pick a target and pace, and save a target weight and calorie goal that show on Home and Summary.
 
 ### M24 — Fast food menus
-**L · Free · schema v12 (`food_items.menu_item_id`) · blocked by D3**
+**L · Free · schema v14 (`food_items.menu_item_id`) · blocked by D3**
 
-Log a menu item from a common chain in a few taps. Most of the work is gathering and checking the data, not the code.
+Log a menu item from a common chain in a few taps. Most of the work is gathering and checking the data, not the code. The starter foods already built the bundled-file reader and search (`core/bundled_foods.dart`) and the copy into the catalog (`CatalogRepository.adoptBundledFood`, which matches by name; `menu_item_id` replaces that here).
 
 - [ ] **Data:** the 15–20 largest US chains, each item with its source and the date checked, re-checked a few times a year
 - [ ] **Bundled, offline:** `assets/menus/menus.json` (`version`, `checkedAt`, `chains[]` → `items[]` with category, the seven nutrients and `servingWeightG`). Values per item as served; each size is its own item. Updated with app releases
@@ -158,7 +116,7 @@ Log a menu item from a common chain in a few taps. Most of the work is gathering
 - [ ] **Logging:** the normal servings flow. The first log saves the item as a catalog food (so it shows in Recent and can go in meals and plans); `menu_item_id` stops a second copy
 - [ ] **Edits stay the user's:** an edited menu food is no longer updated. An unedited one takes newer values from a new release; past entries keep their snapshot
 - [ ] "Values from <chain>, checked <month year>. Recipes change." with a link to report a wrong value (`url_launcher`)
-- [ ] Backup: `menu_item_id` optional on read. Migration test v11 → v12
+- [ ] Backup: `menu_item_id` optional on read. Migration test v13 → v14
 - [ ] Tests: the parser (valid, bad rows skipped, newer version), search across chains, first log makes one catalog food and the second reuses it, an edited food isn't updated, the Add sheet flow
 
 **Done when:** a medium fries from a listed chain can be logged in under five taps, with no typing except the search.
@@ -224,6 +182,11 @@ Built but never tried on a real iPhone:
 - [ ] With the phone set to a comma-decimal region (e.g. Germany), decimals show with a comma and typed commas still work
 - [ ] Log a food by a portion (e.g. 1.5 cups) and check the servings
 - [ ] Haptics: a light tap on logging, a firmer one on swipe-delete
+- [ ] Water: + and − on Today; Fasting: start a fast, lock the phone, and check the time on return
+- [ ] Appearance: change the accent colour, and change the app icon (iOS shows its own "You have changed the icon" alert) and back
+- [ ] Scan a real nutrition label with the camera and from a photo: a US label, an EU table, a curved or glossy package. Check each value read
+- [ ] Search Add Food for a starter food ("banana"), log it, and find it in the Catalog with its portions
+- [ ] On an iPad or with the phone on its side: Add Food sits beside the day and logs to it; Summary's charts get their own column
 - [ ] Share a month's report from Summary (the share sheet, then open the PDF in Files or Mail) and read it as a dietitian would (M22)
 
 Pro features are unlocked in `install-iphone` builds. The Android phone checks are part of [A2](#a2--check-the-free-app-on-android).

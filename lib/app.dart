@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/appearance.dart';
+import 'providers/appearance_providers.dart';
 import 'providers/backup_providers.dart';
 import 'providers/health_providers.dart';
 import 'providers/preferences_providers.dart';
@@ -15,13 +17,24 @@ import 'views/summary/summary_view.dart';
 import 'views/tour/app_tour.dart';
 
 /// Root widget.
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = ref.watch(appThemeProvider);
     return CupertinoApp(
       title: 'Logbite',
+      // The standard theme is Cupertino's own, so nothing changes without
+      // Pro; another accent colour keeps the system light and dark modes.
+      theme: theme == AppTheme.standard
+          ? null
+          : CupertinoThemeData(
+              primaryColor: CupertinoDynamicColor.withBrightness(
+                color: Color(theme.light),
+                darkColor: Color(theme.dark),
+              ),
+            ),
       home: const _RootGate(),
       builder: (context, child) => KeyboardDoneBar(child: child!),
     );
