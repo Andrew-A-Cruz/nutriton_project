@@ -16,7 +16,7 @@ When an item is finished, delete it here and add a line to [What's Built](./PROD
 | **B2** | Google Play developer account ($25, once) and a 14-day closed test with 12+ testers | Create the account; recruit testers as soon as [A2](#a2--check-the-free-app-on-android) is done | [A3](#a3--pro-purchase-on-google-play), [A6](#a6--play-store-release) |
 | **B3** | A phone in hand for manual testing | Install a build (`install-iphone` skill) and work through the checklist | [iPhone checks](#iphone-checks), part of [A2](#a2--check-the-free-app-on-android) |
 | **B4** | Chains whose sites refuse automated downloads | Download each chain's nutrition PDF in a browser into `tool/menus/sources/` | [M24](#m24--more-restaurant-menus) |
-| **D1–D8** (D3 is settled) | A decision that is yours to make | Accept the proposed answer, or choose another | See [Decisions](#decisions) |
+| **D1–D9** (D3 is settled) | A decision that is yours to make | Accept the proposed answer, or choose another | See [Decisions](#decisions) |
 | **Dep** | Another roadmap item has to come first | Finish that item | [Adaptive goals](#adaptive-goals), [A4](#a4--health-connect), [A5](#a5--android-home-screen-widget) |
 
 The privacy policy is live ([`docs/privacy.md`](./docs/privacy.md), contact logbite.app@gmail.com), so it no longer blocks selling Pro, Health Connect or the Play listing. A new network call or Health type means a policy update.
@@ -37,12 +37,13 @@ In order of impact.
 | 6 | [M24 — More restaurant menus](#m24--more-restaurant-menus) | M | Free | B4 | The feature is built with five chains; the largest chains are still missing |
 | 7 | [Adaptive goals](#adaptive-goals) | L | Free | Dep: M25 | The main thing competitors charge for, offered free |
 | 8 | [CSV export of the log](#csv-export-of-the-log) | S | Free (proposed) | D1 | Small, and part of the promise that data is portable |
-| 9 | [A3 — Pro purchase on Google Play](#a3--pro-purchase-on-google-play) | M | Pro | B2, D5 | Android revenue; only matters once A6 is out |
-| 10 | [A4 — Health Connect](#a4--health-connect) | M | Pro | Dep: A3 | A Pro extra on Android |
-| 11 | [A5 — Android home screen widget](#a5--android-home-screen-widget) | M | Pro | Dep: A3 | A Pro extra on Android |
-| 12 | [Siri Shortcuts / App Intents](#siri-shortcuts--app-intents) | L | ? | D2 | A faster way to log for some users |
-| 13 | [A1 — Android native config leftovers](#a1--android-native-config-leftovers) | S | — | D8 | Only affects the Play download size |
-| 14 | [M20 — iCloud sync](#m20--icloud-sync) | XL | Pro | B1, D7 | The largest job, for a second device that may never exist; D7 may cut it |
+| 9 | [M26 — Step counter](#m26--step-counter) | M | Pro (proposed) | D9, B3 | Asked for; the Apple Health connection it needs is built, so it is mostly a new row and a chart |
+| 10 | [A3 — Pro purchase on Google Play](#a3--pro-purchase-on-google-play) | M | Pro | B2, D5 | Android revenue; only matters once A6 is out |
+| 11 | [A4 — Health Connect](#a4--health-connect) | M | Pro | Dep: A3 | A Pro extra on Android |
+| 12 | [A5 — Android home screen widget](#a5--android-home-screen-widget) | M | Pro | Dep: A3 | A Pro extra on Android |
+| 13 | [Siri Shortcuts / App Intents](#siri-shortcuts--app-intents) | L | ? | D2 | A faster way to log for some users |
+| 14 | [A1 — Android native config leftovers](#a1--android-native-config-leftovers) | S | — | D8 | Only affects the Play download size |
+| 15 | [M20 — iCloud sync](#m20--icloud-sync) | XL | Pro | B1, D7 | The largest job, for a second device that may never exist; D7 may cut it |
 
 **Can start now:** A2 (rank 3). **Cheapest to unblock:** accepting the proposed answers to D1 and D4 opens CSV export and M25 at no cost, and installing a build on the iPhone opens rank 1.
 
@@ -61,6 +62,7 @@ Each decision is yours to make. Most have a proposed answer; accepting it unbloc
 | **D6** | Pro price | $9.99 launch then $14.99 is a guess (MacroFactor ~$72/yr, Cronometer Gold ~$55/yr). Pro now has four features (widget, Apple Health, reports, themes and icons) | Selling Pro |
 | **D7** | Is a second device actually planned? If not, M20 can be cut | No proposal yet | M20 |
 | **D8** | Bundle ML Kit's models in the Android app, or let Google Play services download them? Bundled: works offline at once, but the label scan's text model adds about 11 MB per ABI and the barcode model a few more. Unbundled: a much smaller download, but the first scan waits for the model and needs Play services | Bundled, as built, until the Play listing's size matters | A1 |
+| **D9** | Step counter: free or Pro, and where the steps come from | Pro, with the rest of Apple Health (it connects the app to something else). Steps are read from Apple Health only, which already merges iPhone and Apple Watch steps; no counting from the phone's motion sensor. Read live, not stored, so no schema change and nothing new in backups | M26 |
 
 ---
 
@@ -163,6 +165,22 @@ MacroFactor's main paid feature, and the app already stores intake and body weig
 **S · Free (if D1 is accepted) · no schema change**
 
 One row per entry (date, name, type, macros), readable in a spreadsheet, from the Backup section in Settings.
+
+### M26 — Step counter
+**M · Pro (if D9 is accepted) · no schema change · blocked by D9; B3 to verify**
+
+Show the day's steps, read from Apple Health. The app counts nothing itself. The Health connection is built (`lib/data/health/`, the `health` plugin): it writes nutrition and reads body weight, and does not yet ask for steps.
+
+- [ ] **Read:** add step count (`HealthDataType.STEPS`) to the types `HealthService` requests, and a method that returns a day's total. Use the plugin's de-duplicated total, so iPhone and Watch steps are not counted twice. A no-op default, as for the other Health calls
+- [ ] **Today:** a steps row like water and fasting, switched on in Settings > Apple Health (off by default), for the day Home shows. It reads again when the app returns to the foreground. An optional daily goal (preference `steps_goal`, device-local like the Health switches)
+- [ ] **Summary:** steps per day for the range, as a line or a chart
+- [ ] **When Health is off or access is refused:** the row explains how to turn it on instead of showing 0. iOS does not say whether read access was granted, so "no data" and "no access" look the same; word the row for both
+- [ ] **Not stored:** steps are read live, so they are not in the database or in backups. If Health access is later turned off, past steps no longer show. Revisit only if that proves a problem
+- [ ] **Paperwork:** `NSHealthShareUsageDescription` in `Info.plist` and the Apple Health section of [`docs/privacy.md`](./docs/privacy.md) both say the app reads steps
+- [ ] **Android:** steps come through Health Connect, with [A4](#a4--health-connect)
+- [ ] Tests with a fake `HealthService`: the row shows the total and the goal, hides when switched off, and shows the hint with no data. The simulator has no step data, so the real read needs a phone
+
+**Done when:** today's steps on Today match the Health app's figure on a real iPhone.
 
 ### A3 — Pro purchase on Google Play
 **M · B2, D5**
