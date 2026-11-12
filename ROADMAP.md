@@ -4,7 +4,7 @@ Every open item in one place. Items are listed in order of impact, most importan
 
 **Sizes:** **S** = about a day or less · **M** = 2–5 days · **L** = 1–2 weeks · **XL** = needs its own detailed plan first.
 
-When an item is finished, delete it here and add a line to [What's Built](./PRODUCT.md#whats-built). When a new idea comes up, give it a size and a blocker and place it by impact. A schema change takes the next version number when work starts (v14 is next).
+When an item is finished, delete it here and add a line to [What's Built](./PRODUCT.md#whats-built). When a new idea comes up, give it a size and a blocker and place it by impact. A schema change takes the next version number when work starts (v15 is next).
 
 ---
 
@@ -15,7 +15,8 @@ When an item is finished, delete it here and add a line to [What's Built](./PROD
 | **B1** | Paid Apple Developer account ($99/yr) | Buy it; then App Store Connect agreements, tax and banking | [Sell Pro on iOS](#sell-pro-on-ios-m21-launch), [M20 iCloud sync](#m20--icloud-sync) |
 | **B2** | Google Play developer account ($25, once) and a 14-day closed test with 12+ testers | Create the account; recruit testers as soon as [A2](#a2--check-the-free-app-on-android) is done | [A3](#a3--pro-purchase-on-google-play), [A6](#a6--play-store-release) |
 | **B3** | A phone in hand for manual testing | Install a build (`install-iphone` skill) and work through the checklist | [iPhone checks](#iphone-checks), part of [A2](#a2--check-the-free-app-on-android) |
-| **D1–D8** | A decision that is yours to make | Accept the proposed answer, or choose another | See [Decisions](#decisions) |
+| **B4** | Chains whose sites refuse automated downloads | Download each chain's nutrition PDF in a browser into `tool/menus/sources/` | [M24](#m24--more-restaurant-menus) |
+| **D1–D8** (D3 is settled) | A decision that is yours to make | Accept the proposed answer, or choose another | See [Decisions](#decisions) |
 | **Dep** | Another roadmap item has to come first | Finish that item | [Adaptive goals](#adaptive-goals), [A4](#a4--health-connect), [A5](#a5--android-home-screen-widget) |
 
 The privacy policy is live ([`docs/privacy.md`](./docs/privacy.md), contact logbite.app@gmail.com), so it no longer blocks selling Pro, Health Connect or the Play listing. A new network call or Health type means a policy update.
@@ -33,7 +34,7 @@ In order of impact.
 | 3 | [A2 — Check the free app on Android](#a2--check-the-free-app-on-android) | S | — | — (an API 35+ emulator image; a physical phone for the last checks) | The last step before Android can be released |
 | 4 | [A6 — Play Store release](#a6--play-store-release) | M + 14 days | — | B2, A2 | Puts the free app in front of Android users; the 14-day closed test is the long wait |
 | 5 | [M25 — Target weight guide](#m25--target-weight-guide) | M | Free | D4 | A first-week feature for new users, and adaptive goals needs it |
-| 6 | [M24 — Fast food menus](#m24--fast-food-menus) | L | Free | D3 | Everyday logging value; the bundled-food reader it needs is built |
+| 6 | [M24 — More restaurant menus](#m24--more-restaurant-menus) | M | Free | B4 | The feature is built with five chains; the largest chains are still missing |
 | 7 | [Adaptive goals](#adaptive-goals) | L | Free | Dep: M25 | The main thing competitors charge for, offered free |
 | 8 | [CSV export of the log](#csv-export-of-the-log) | S | Free (proposed) | D1 | Small, and part of the promise that data is portable |
 | 9 | [A3 — Pro purchase on Google Play](#a3--pro-purchase-on-google-play) | M | Pro | B2, D5 | Android revenue; only matters once A6 is out |
@@ -43,7 +44,7 @@ In order of impact.
 | 13 | [A1 — Android native config leftovers](#a1--android-native-config-leftovers) | S | — | D8 | Only affects the Play download size |
 | 14 | [M20 — iCloud sync](#m20--icloud-sync) | XL | Pro | B1, D7 | The largest job, for a second device that may never exist; D7 may cut it |
 
-**Can start now:** A2 (rank 3). **Cheapest to unblock:** accepting the proposed answers to D1, D4 and D3 opens CSV export, M25 and M24 at no cost, and installing a build on the iPhone opens rank 1.
+**Can start now:** A2 (rank 3). **Cheapest to unblock:** accepting the proposed answers to D1 and D4 opens CSV export and M25 at no cost, and installing a build on the iPhone opens rank 1.
 
 ---
 
@@ -55,7 +56,6 @@ Each decision is yours to make. Most have a proposed answer; accepting it unbloc
 |---|---|---|---|
 | **D1** | Is a CSV export of the log free or Pro? | Free: it is data portability (Principle 1). Pro keeps the formatted PDF report | CSV export |
 | **D2** | Is Siri Shortcuts free (a faster way to log, Principle 3) or Pro (connects the app to something else)? | No proposal yet | Siri Shortcuts |
-| **D3** | Where fast food menu values come from, and whether the license lets them ship in the app | Hand-entered from each chain's published nutrition info for a short list of US chains, USDA FoodData Central where it covers an item, and the source and date stored on each item. Open Food Facts (ODbL share-alike) and paid APIs are out | M24 |
 | **D4** | Target weight guide defaults and wording | Steady pace by default, the calorie floor rule, the screen's text reviewed by someone outside the project before release. Decide too whether to offer the WHO's lower BMI cutoffs for Asian populations | M25, and then adaptive goals |
 | **D5** | Trial on Android (Play has no $0 one-time products) | No trial on Android for the first release, just Buy; a trial kept on the device if purchase rates are low. (A Play subscription trial would change the model) | A3 |
 | **D6** | Pro price | $9.99 launch then $14.99 is a guess (MacroFactor ~$72/yr, Cronometer Gold ~$55/yr). Pro now has four features (widget, Apple Health, reports, themes and icons) | Selling Pro |
@@ -141,24 +141,18 @@ Helps the user pick a reasonable target weight and pace from height, weight, age
 
 **Done when:** a user can see their healthy band, pick a target and pace, and save a target weight and calorie goal that show on Home and Summary.
 
-### M24 — Fast food menus
-**L · Free · schema v14 (`food_items.menu_item_id`, `menu_version`) · blocked by D3**
+### M24 — More restaurant menus
+**M · Free · no schema change · blocked by B4**
 
-**Detailed plan:** [`M24_FAST_FOOD_MENUS_PLAN.md`](./M24_FAST_FOOD_MENUS_PLAN.md). It wins where it differs from the list below.
+Restaurant menus are built ([What's Built](./PRODUCT.md#whats-built)) and ship with Arby's, Chick-fil-A, Dunkin', Five Guys and Sonic: 1,771 items, values read on 2026-11-12. What is left is data. How a chain is added is in the [README](./README.md#restaurant-menus); the rule that never bends is that every value comes from the chain's own document, never from memory or a third-party site.
 
-Log a menu item from a common chain in a few taps. Most of the work is gathering and checking the data, not the code. The starter foods already built the bundled-file reader and search (`core/bundled_foods.dart`) and the copy into the catalog (`CatalogRepository.adoptBundledFood`, which matches by name; `menu_item_id` replaces that here).
+- [ ] **B4 — chains whose sites refuse automated downloads.** Download each chain's own US nutrition PDF in a browser into `tool/menus/sources/`, then write an extractor for it. Refused on 2026-11-12: McDonald's, KFC, Panda Express, Dairy Queen, Panera, Shake Shack, In-N-Out, Zaxby's, Raising Cane's, Bojangles, Qdoba, Jersey Mike's, Checkers. Subway and Pizza Hut did not answer
+- [ ] **Chains whose values load inside a web app, with no document found:** Wendy's, Taco Bell, Burger King, Popeyes, Starbucks, Chipotle, Culver's, Whataburger, Domino's, Little Caesars, Jack in the Box. Each needs a published PDF found by hand (many have one linked from the nutrition page), or its numbers saved from the chain's page
+- [ ] **PDFs fetched but not yet entered:** Buffalo Wild Wings (its guide lists a wing count plus each sauce as separate rows, so it needs its own layout work), Portillo's, Baskin-Robbins, Auntie Anne's
+- [ ] Build-your-own chains (Subway, Chipotle, pizza): components and standard builds only, as Five Guys is listed now
+- [ ] Re-check every chain a few times a year: re-run its extractor against the chain's current document, then `python3 tool/make_menus.py`, which raises the version so unedited foods on users' phones refresh. **Last checked: 2026-11-12**
 
-- [ ] **Data:** the 15–20 largest US chains, each item with its source and the date checked, re-checked a few times a year
-- [ ] **Bundled, offline:** `assets/menus/menus.json` (`version`, `checkedAt`, `chains[]` → `items[]` with category, the seven nutrients and `servingWeightG`). Values per item as served; each size is its own item. Updated with app releases
-- [ ] `MenuRepository` with a pure parser in `core/`; reject items with negative values or no calories
-- [ ] **Add Food:** a "Restaurants" entry → chains (names only, no logos) → items by category, with search within a chain and across all
-- [ ] **Logging:** the normal servings flow. The first log saves the item as a catalog food (so it shows in Recent and can go in meals and plans); `menu_item_id` stops a second copy
-- [ ] **Edits stay the user's:** an edited menu food is no longer updated. An unedited one takes newer values from a new release; past entries keep their snapshot
-- [ ] "Values from <chain>, checked <month year>. Recipes change." with a link to report a wrong value (`url_launcher`)
-- [ ] Backup: `menu_item_id` optional on read. Migration test v13 → v14
-- [ ] Tests: the parser (valid, bad rows skipped, newer version), search across chains, first log makes one catalog food and the second reuses it, an edited food isn't updated, the Add sheet flow
-
-**Done when:** a medium fries from a listed chain can be logged in under five taps, with no typing except the search.
+**Done when:** the ten largest US chains by sales are listed, each traceable to a document the chain published.
 
 ### Adaptive goals
 **L · Free · no schema change · after M25**

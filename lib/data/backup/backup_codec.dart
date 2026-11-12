@@ -195,11 +195,16 @@ class BackupCodec {
       );
       return BackupData(
         // Foods and meals from before schema v9 have no favorite flag (brand
-        // and cooked weight read as null).
+        // and cooked weight read as null), and foods from before v14 no
+        // weight-unknown flag.
         foodItems: _rows(
           current,
           'food_items',
-          (row) => FoodItem.fromJson({'favorite': false, ...row}),
+          (row) => FoodItem.fromJson({
+            'favorite': false,
+            'weightUnknown': false,
+            ...row,
+          }),
         ),
         meals: _rows(
           current,

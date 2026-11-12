@@ -6,7 +6,7 @@
 
 | Property | Decision |
 |---|---|
-| Storage | Local SQLite via `drift`, database file `food_log`, schema version 13 (history below) |
+| Storage | Local SQLite via `drift`, database file `food_log`, schema version 14 (history below) |
 | User preferences | `shared_preferences` (separate from SQLite) |
 | ID format | UUID v4 via `uuid` (`TEXT` primary keys) |
 | Weights | Stored in grams (`*_g`). Users pick g or oz for display only; 1 oz = 28.3495 g |
@@ -39,6 +39,9 @@ Saved catalog foods. Macros are stored per 1 serving, where 1 serving is `servin
 | `barcode` | TEXT | Yes | Schema v6. Digits of an EAN/UPC (8 to 14), saved when a food is created from a scan or typed in the food form. Indexed (`food_items_barcode`). Null = none (every row from before v6). Not unique; a scan matches the first non-archived food by name |
 | `brand` | TEXT | Yes | Schema v9. Up to 100 characters, e.g. from an Open Food Facts lookup. Shown beside the name and matched by catalog search. Null = none |
 | `favorite` | BOOL | No | Schema v9. Default `false`. Starred foods are pinned at the top of Add Food |
+| `menu_item_id` | TEXT | Yes | Schema v14. `"<chain id>/<item id>"` of the bundled restaurant menu item this food was copied from (`assets/menus/menus.json`). Indexed (`food_items_menu_item_id`). Null for every other food. Picking the same menu item again reuses this food, un-archiving it if needed |
+| `menu_version` | INT | Yes | Schema v14. The bundled menus' `version` this food's values match. At launch, a menu food with a version below the bundled file's takes the file's name, nutrients and serving weight. Null = not a menu food, or the user saved it in the food form: an edited food is never refreshed. Starring and archiving do not clear it |
+| `weight_unknown` | BOOL | No | Schema v14. Default `false`. True for a restaurant item whose chain publishes no weight: the food is counted in items only, `serving_weight_g` holds a placeholder of 1 that is never shown, and logging by weight is not offered. Saving the food form with a weight clears it |
 
 ---
 
@@ -416,7 +419,7 @@ lib/
 | 11 | Serving presets | New `food_servings` table: `id`, `food_item_id` (cascade, indexed), `name` (1–40), `weight_g` (> 0), `created_at` |
 | 12 | Water tracking | New `water_log` table: `log_date` (key), `amount_ml` (> 0) |
 | 13 | Fasting timer | New `fasts` table: `id`, `started_at`, `ended_at` (nullable, not before the start) |
-| 14 (planned) | M24 | `food_items.menu_item_id` (nullable, indexed): links a catalog food to its bundled menu item |
+| 14 | M24 restaurant menus | `food_items.menu_item_id` (nullable, indexed) and `menu_version` (nullable): link a catalog food to its bundled menu item and the menus version its values match. `food_items.weight_unknown` (default false): a restaurant item with no published weight |
 
 Each step has a drift migration test (`make-migrations`), a row here, and a backup that still reads older files.
 

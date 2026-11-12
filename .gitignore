@@ -46,3 +46,7 @@ app.*.map.json
 
 # Gradle build output
 /android/build/
+
+# The chains' own nutrition documents, downloaded to extract from.
+tool/menus/sources/
+__pycache__/

@@ -2,12 +2,18 @@ import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/bundled_foods.dart';
+import '../../core/menus.dart';
 import '../../core/nutrition_math.dart';
 import '../../core/validation.dart';
 import '../database/app_database.dart';
 import '../database/daos/meal_dao.dart';
 
 const _uuid = Uuid();
+
+/// The serving weight stored for a food whose weight is unknown
+/// (`food_items.weight_unknown`). The column must be positive; the value is
+/// never shown.
+const unknownServingWeightG = 1.0;
 
 /// A food (by catalog id) and how many grams of it a meal contains.
 class MealItemInput {
@@ -92,6 +98,62 @@ class CatalogRepository {
         return (await _db.foodDao.findById(id))!;
       });
 
+  /// The catalog food for a restaurant menu [item], copying it in the first
+  /// time it is used, with the chain as its brand. [version] is the bundled
+  /// menus' version the values come from. A food already copied from that
+  /// item is returned as it is, with any edits made to it, and un-archived
+  /// if it was archived, so picking an item twice never makes a second copy.
+  Future<FoodItem> adoptMenuItem(MenuItem item, {required int version}) =>
+      _db.transaction(() async {
+        final existing = await _db.foodDao.findByMenuItemId(item.id);
+        if (existing != null) {
+          if (!existing.archived) return existing;
+          await _db.foodDao.setArchived(existing.id, archived: false);
+          return (await _db.foodDao.findById(existing.id))!;
+        }
+        final id = await _insertFood(
+          name: item.name,
+          perServing: item.perItem,
+          servingWeightG: item.servingWeightG ?? unknownServingWeightG,
+          brand: item.chainName,
+          menuItemId: item.id,
+          menuVersion: version,
+          weightUnknown: item.servingWeightG == null,
+        );
+        return (await _db.foodDao.findById(id))!;
+      });
+
+  /// Brings menu foods the user has not edited up to [menus], when their
+  /// values match an older file: the item's name, nutrients and serving
+  /// weight are rewritten. Edited foods, foods whose item has left the file
+  /// and log entries are left alone. Returns how many foods changed.
+  Future<int> refreshMenuFoods(MenuCatalog menus) => _db.transaction(() async {
+    final stale = await _db.foodDao.findMenuFoodsBelowVersion(menus.version);
+    var updated = 0;
+    for (final food in stale) {
+      final item = menus.itemById(food.menuItemId!);
+      if (item == null) continue;
+      await _db.foodDao.updateFood(
+        food.id,
+        FoodItemsCompanion(
+          name: Value(item.name),
+          calories: Value(item.perItem.calories),
+          protein: Value(item.perItem.protein),
+          carbs: Value(item.perItem.carbs),
+          fat: Value(item.perItem.fat),
+          fiber: Value(item.perItem.fiber),
+          sugar: Value(item.perItem.sugar),
+          sodium: Value(item.perItem.sodium),
+          servingWeightG: Value(item.servingWeightG ?? unknownServingWeightG),
+          weightUnknown: Value(item.servingWeightG == null),
+          menuVersion: Value(menus.version),
+        ),
+      );
+      updated++;
+    }
+    return updated;
+  });
+
   Future<String> createFood({
     required String name,
     required Macros perServing,
@@ -99,6 +161,27 @@ class CatalogRepository {
     WeightUnit displayUnit = WeightUnit.g,
     String? barcode,
     String? brand,
+  }) => _insertFood(
+    name: name,
+    perServing: perServing,
+    servingWeightG: servingWeightG,
+    displayUnit: displayUnit,
+    barcode: barcode,
+    brand: brand,
+  );
+
+  /// The menu columns are set only by [adoptMenuItem]: a food made in the
+  /// form, or duplicated from a menu food, is the user's own.
+  Future<String> _insertFood({
+    required String name,
+    required Macros perServing,
+    required double servingWeightG,
+    WeightUnit displayUnit = WeightUnit.g,
+    String? barcode,
+    String? brand,
+    String? menuItemId,
+    int? menuVersion,
+    bool weightUnknown = false,
   }) async {
     final id = _uuid.v4();
     _validateFood(name, perServing, servingWeightG);
@@ -117,11 +200,18 @@ class CatalogRepository {
         displayUnit: Value(displayUnit.name),
         barcode: Value(_cleanBarcode(barcode)),
         brand: Value(_cleanBrand(brand)),
+        menuItemId: Value(menuItemId),
+        menuVersion: Value(menuVersion),
+        weightUnknown: Value(weightUnknown),
       ),
     );
     return id;
   }
 
+  /// Saves the food form. A restaurant menu food becomes the user's own
+  /// version: it keeps its link to the menu item but is no longer refreshed
+  /// when the bundled menus change. A food with no known weight gains one
+  /// when the saved weight differs from its placeholder.
   Future<void> updateFood(
     String id, {
     required String name,
@@ -132,9 +222,15 @@ class CatalogRepository {
     String? brand,
   }) async {
     _validateFood(name, perServing, servingWeightG);
+    final existing = await _db.foodDao.findById(id);
     await _db.foodDao.updateFood(
       id,
       FoodItemsCompanion(
+        weightUnknown: Value(
+          existing != null &&
+              existing.weightUnknown &&
+              servingWeightG == existing.servingWeightG,
+        ),
         name: Value(name.trim()),
         calories: Value(perServing.calories),
         protein: Value(perServing.protein),
@@ -147,6 +243,7 @@ class CatalogRepository {
         displayUnit: Value(displayUnit.name),
         barcode: Value(_cleanBarcode(barcode)),
         brand: Value(_cleanBrand(brand)),
+        menuVersion: const Value(null),
       ),
     );
   }

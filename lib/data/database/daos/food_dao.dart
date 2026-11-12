@@ -52,6 +52,29 @@ class FoodDao extends DatabaseAccessor<AppDatabase> with _$FoodDaoMixin {
             ..limit(1))
           .getSingleOrNull();
 
+  /// The food copied from the bundled menu item [menuItemId], archived or
+  /// not, or null. If several share it, a non-archived one wins.
+  Future<FoodItem?> findByMenuItemId(String menuItemId) =>
+      (select(foodItems)
+            ..where((t) => t.menuItemId.equals(menuItemId))
+            ..orderBy([
+              (t) => OrderingTerm.asc(t.archived),
+              (t) => OrderingTerm.asc(t.id),
+            ])
+            ..limit(1))
+          .getSingleOrNull();
+
+  /// Menu foods whose values match a menus file older than [version]. An
+  /// edited menu food has no version, so it is never among them.
+  Future<List<FoodItem>> findMenuFoodsBelowVersion(int version) =>
+      (select(foodItems)..where(
+            (t) =>
+                t.menuItemId.isNotNull() &
+                t.menuVersion.isNotNull() &
+                t.menuVersion.isSmallerThanValue(version),
+          ))
+          .get();
+
   Future<int> updateFood(String id, FoodItemsCompanion changes) =>
       (update(foodItems)..where((t) => t.id.equals(id))).write(changes);
 

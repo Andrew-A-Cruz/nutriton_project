@@ -2,14 +2,19 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/bundled_foods.dart';
+import '../../core/menus.dart';
 import '../../core/metrics.dart';
 import '../../core/nutrition_math.dart';
 import '../../data/database/app_database.dart';
 import '../../providers/catalog_providers.dart';
 import '../../providers/infrastructure_providers.dart';
+import '../../providers/menu_providers.dart';
 import '../common/archivable_list.dart';
 import '../common/error_feedback.dart';
 import '../common/form_widgets.dart';
+
+/// How many restaurant menu items a catalog search lists.
+const maxMenuResults = 15;
 
 /// Active catalog foods matching [search], by name.
 class FoodList extends ConsumerWidget {
@@ -19,7 +24,12 @@ class FoodList extends ConsumerWidget {
     required this.onTap,
     this.archivable = false,
     this.onBundledTap,
+    this.onMenuTap,
   });
+
+  /// Shows matching restaurant menu items under the starter foods while
+  /// searching, when set. Called with the one tapped.
+  final ValueChanged<MenuItem>? onMenuTap;
 
   /// Shows matching starter foods under the catalog's own while searching,
   /// when set. Called with the one tapped.
@@ -51,8 +61,25 @@ class FoodList extends ConsumerWidget {
                 // catalog's own.
                 exclude: {for (final f in rows) f.name.toLowerCase()},
               );
+        final menuTap = onMenuTap;
+        // An item already copied in shows once, as the catalog's own.
+        final adopted = {for (final f in rows) ?f.menuItemId};
+        final menuItems = menuTap == null || search.trim().isEmpty
+            ? const <MenuItem>[]
+            : [
+                for (final item in searchMenuItems(
+                  ref.watch(menusProvider).value ?? MenuCatalog.empty,
+                  search,
+                  limit: maxMenuResults + adopted.length,
+                ))
+                  if (!adopted.contains(item.id)) item,
+              ].take(maxMenuResults).toList();
         final footer = [
-          if (bundled.isNotEmpty) const _BundledHeader(),
+          if (bundled.isNotEmpty)
+            const _FooterHeader(
+              'COMMON FOODS (USDA FoodData Central)',
+              key: Key('bundled-foods-header'),
+            ),
           for (final (i, food) in bundled.indexed)
             CupertinoListTile(
               key: Key('bundled-food-$i'),
@@ -63,6 +90,19 @@ class FoodList extends ConsumerWidget {
               ),
               trailing: const Icon(CupertinoIcons.add_circled),
               onTap: () => bundledTap!(food),
+            ),
+          if (menuItems.isNotEmpty)
+            const _FooterHeader('RESTAURANTS', key: Key('menu-foods-header')),
+          for (final (i, item) in menuItems.indexed)
+            CupertinoListTile(
+              key: Key('menu-food-$i'),
+              title: Text(item.name),
+              subtitle: Text(
+                '${item.chainName} · '
+                '${Metric.calories.format(item.perItem.calories)} kcal',
+              ),
+              trailing: const Icon(CupertinoIcons.add_circled),
+              onTap: () => menuTap!(item),
             ),
         ];
         if (rows.isEmpty && footer.isEmpty) {
@@ -86,8 +126,12 @@ class FoodList extends ConsumerWidget {
             subtitle: Text(
               [
                 ?food.brand,
-                '${Metric.calories.format(food.calories)} kcal per '
-                    '${formatWeight(food.servingWeightG, _foodUnit(food))}',
+                // A restaurant item with no published weight.
+                if (food.weightUnknown)
+                  '${Metric.calories.format(food.calories)} kcal per item'
+                else
+                  '${Metric.calories.format(food.calories)} kcal per '
+                      '${formatWeight(food.servingWeightG, _foodUnit(food))}',
               ].join(' · '),
             ),
             trailing: FavoriteButton(
@@ -105,17 +149,18 @@ class FoodList extends ConsumerWidget {
   }
 }
 
-/// The heading above the starter foods, with where they come from.
-class _BundledHeader extends StatelessWidget {
-  const _BundledHeader();
+/// The heading above a section of bundled foods.
+class _FooterHeader extends StatelessWidget {
+  const _FooterHeader(this.text, {super.key});
+
+  final String text;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
       child: Text(
-        'COMMON FOODS (USDA FoodData Central)',
-        key: const Key('bundled-foods-header'),
+        text,
         style: TextStyle(
           fontSize: 13,
           color: CupertinoColors.secondaryLabel.resolveFrom(context),

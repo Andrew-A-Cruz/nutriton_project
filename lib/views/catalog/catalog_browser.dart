@@ -2,10 +2,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/bundled_foods.dart';
+import '../../core/menus.dart';
 import '../../data/database/app_database.dart';
 import '../../data/database/daos/log_dao.dart';
 import '../../providers/catalog_providers.dart';
 import '../../providers/log_providers.dart';
+import '../../providers/menu_providers.dart';
 import 'food_list.dart';
 import 'meal_list.dart';
 
@@ -23,7 +25,17 @@ class CatalogBrowser extends StatefulWidget {
     this.onScan,
     this.onSearchOnline,
     this.onBundledFoodTap,
+    this.onRestaurants,
+    this.onMenuItemTap,
   });
+
+  /// Shows a "Restaurants" row above the foods when not searching, when set
+  /// and there are bundled menus.
+  final VoidCallback? onRestaurants;
+
+  /// Lists matching restaurant menu items under the starter foods while
+  /// searching foods, when set. Called with the one tapped.
+  final ValueChanged<MenuItem>? onMenuItemTap;
 
   /// Lists matching starter foods under the catalog's own while searching
   /// foods, when set. Called with the one tapped.
@@ -116,6 +128,9 @@ class _CatalogBrowserState extends State<CatalogBrowser> {
             trailing: const CupertinoListTileChevron(),
             onTap: () => searchOnline(_search.trim()),
           ),
+        if (widget.onRestaurants case final openRestaurants?
+            when _section == CatalogSection.foods && _search.trim().isEmpty)
+          _RestaurantsRow(onTap: openRestaurants),
         Expanded(
           child: switch (_section) {
             CatalogSection.foods => FoodList(
@@ -123,6 +138,7 @@ class _CatalogBrowserState extends State<CatalogBrowser> {
               onTap: widget.onFoodTap,
               archivable: widget.archivable,
               onBundledTap: widget.onBundledFoodTap,
+              onMenuTap: widget.onMenuItemTap,
             ),
             CatalogSection.meals => MealList(
               search: _search,
@@ -132,6 +148,26 @@ class _CatalogBrowserState extends State<CatalogBrowser> {
           },
         ),
       ],
+    );
+  }
+}
+
+/// The way into the restaurant menus. Hidden when none are bundled.
+class _RestaurantsRow extends ConsumerWidget {
+  const _RestaurantsRow({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final chains = ref.watch(menusProvider).value?.chains ?? const [];
+    if (chains.isEmpty) return const SizedBox.shrink();
+    return CupertinoListTile(
+      key: const Key('restaurants-entry'),
+      leading: const Icon(CupertinoIcons.building_2_fill),
+      title: const Text('Restaurants'),
+      trailing: const CupertinoListTileChevron(),
+      onTap: onTap,
     );
   }
 }

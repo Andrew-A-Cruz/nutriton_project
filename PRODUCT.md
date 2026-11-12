@@ -58,7 +58,7 @@ A calorie and macro tracker for iPhone (Android planned), built in Flutter. Loca
 | Meal sections; fiber, sugar, sodium | |
 | Streaks and reminders; weigh-ins | |
 | Water tracking; fasting timer | |
-| Nutrition label scan; starter foods | |
+| Nutrition label scan; starter foods; restaurant menus | |
 | Every backlog item marked Free in the roadmap | |
 
 The JSON backup and a shareable report are different things: the backup is the user's own safety (free); a report is a formatted summary for someone else (Pro).
@@ -117,7 +117,7 @@ Family Sharing is on for Pro. Development builds can't buy anything; `--dart-def
 
 ## What's Built
 
-As of November 2026, schema v13. Known gaps that are worth doing are in the roadmap.
+As of November 2026, schema v14. Known gaps that are worth doing are in the roadmap.
 
 | Milestone | What | Notes and known limits |
 |---|---|---|
@@ -160,5 +160,6 @@ As of November 2026, schema v13. Known gaps that are worth doing are in the road
 | M23 | Themes and app icons (Pro): Settings > Appearance picks one of six accent colours (kept, but not used, without Pro) and, on iOS, one of four app icons (`AppDelegate` channel `logbite/app_icon`; icon sets made by `tool/make_alt_icons.py`). An icon already chosen stays without Pro | The colour is device-local, not in backups. Charts keep their own colours. Icon switching is untested on a phone; Android has no icon picker |
 | Nutrition label scan | New Food > Scan a nutrition label: take or choose a photo, and the calories, protein, carbs, fat, fiber, sugar, sodium and serving weight read from it fill the form for review. Reads US labels and EU tables (per serving and per 100 g, kJ or kcal, decimal commas, English, German, French, Spanish and Italian names), on the device (`core/label_scan.dart`) | New foods only. Tested against Apple Vision output for rendered labels and once on an Android emulator, not yet on real packaging. Curved or glossy labels will read worse. Adds `image_picker` |
 | Starter foods | Searching in Add Food lists matching generic foods under the catalog's own ("COMMON FOODS"): 6,158 foods from USDA FoodData Central SR Legacy, bundled and searched offline. Tapping one copies it into the catalog (100 g serving, with up to three USDA portions) and opens the servings screen | Add Food only. SR Legacy (2018) only, not Foundation Foods. USDA names ("Chicken, broilers or fryers, breast…"). A food is copied when tapped, even if it is then not logged |
+| Restaurant menus (M24) | Add Food > Restaurants lists chains by name, then a chain's items by category, with a search within the chain and across all of them; a food search in Add Food also lists matching menu items under "RESTAURANTS". Tapping an item copies it into the catalog once, with the chain as its brand, and opens the servings screen, so a menu item is logged in five taps. Bundled and offline: `assets/menus/menus.json`, built by `tool/make_menus.py` from one file per chain. Ships with Arby's, Chick-fil-A, Dunkin', Five Guys and Sonic (1,771 items, values read from each chain's own document on 2026-11-12). Dunkin', Sonic and Arby's fountain drinks are published with no weight: those foods are counted in items (`food_items.weight_unknown`), read "per item" in lists, and the servings screen offers no logging by weight for them; typing a weight in the food form gives such a food one. Each chain's screen says where its values come from and when they were checked, with a link to report a wrong one by email. A new release's values replace an unedited menu food's at launch; a food the user has edited is never changed (schema v14: `food_items.menu_item_id`, `menu_version` and `weight_unknown`) | Five chains only; the rest are in the roadmap. Limited time and regional items are left out. A food with no known weight added to a meal shows as "1 g" there (1 g stands for one item). Five Guys is listed as components, since it publishes no built burgers. Names only, no logos. An item is copied when tapped, even if it is then not logged. The parser lives in `core/menus.dart` and the catalog writes in `CatalogRepository`; there is no separate menu repository. Not yet run on a phone |
 | iPad and landscape | From 700 points wide, Today shows Add Food as a pane beside the day (its own navigator; logging returns to the catalog), and Summary puts taller charts in their own column | Catalog and Settings are unchanged. Not yet seen on an iPad |
 | Android checks (A2, partly) | On an API 33 emulator: system back closes pushed pages, sheets, dialogs and now the app tour; the keyboard resizes forms; dark mode is readable; a backup imports from Downloads; the label scan and starter foods work. Pro is hidden on Android | See A2 in the roadmap for what is left (API 35+ edge-to-edge and predictive back, a physical phone) |

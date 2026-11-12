@@ -100,7 +100,9 @@ class _FoodFormViewState extends ConsumerState<FoodFormView> {
         ? ref.read(preferencesProvider).displayUnit
         : WeightUnit.values.asNameMap()[source.displayUnit] ?? WeightUnit.g;
     _initialUnit = _unit;
-    _initialWeightText = source == null
+    // A restaurant item with no published weight shows none: leaving the
+    // field empty keeps it that way, and typing a weight gives it one.
+    _initialWeightText = source == null || source.weightUnknown
         ? ''
         : _weightText(source.servingWeightG, _unit);
     _weight = TextEditingController(text: _initialWeightText);

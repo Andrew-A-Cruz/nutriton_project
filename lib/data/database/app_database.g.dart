@@ -181,6 +181,43 @@ class $FoodItemsTable extends FoodItems
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _menuItemIdMeta = const VerificationMeta(
+    'menuItemId',
+  );
+  @override
+  late final GeneratedColumn<String> menuItemId = GeneratedColumn<String>(
+    'menu_item_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _menuVersionMeta = const VerificationMeta(
+    'menuVersion',
+  );
+  @override
+  late final GeneratedColumn<int> menuVersion = GeneratedColumn<int>(
+    'menu_version',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _weightUnknownMeta = const VerificationMeta(
+    'weightUnknown',
+  );
+  @override
+  late final GeneratedColumn<bool> weightUnknown = GeneratedColumn<bool>(
+    'weight_unknown',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("weight_unknown" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -198,6 +235,9 @@ class $FoodItemsTable extends FoodItems
     barcode,
     brand,
     favorite,
+    menuItemId,
+    menuVersion,
+    weightUnknown,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -318,6 +358,33 @@ class $FoodItemsTable extends FoodItems
         favorite.isAcceptableOrUnknown(data['favorite']!, _favoriteMeta),
       );
     }
+    if (data.containsKey('menu_item_id')) {
+      context.handle(
+        _menuItemIdMeta,
+        menuItemId.isAcceptableOrUnknown(
+          data['menu_item_id']!,
+          _menuItemIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('menu_version')) {
+      context.handle(
+        _menuVersionMeta,
+        menuVersion.isAcceptableOrUnknown(
+          data['menu_version']!,
+          _menuVersionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('weight_unknown')) {
+      context.handle(
+        _weightUnknownMeta,
+        weightUnknown.isAcceptableOrUnknown(
+          data['weight_unknown']!,
+          _weightUnknownMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -387,6 +454,18 @@ class $FoodItemsTable extends FoodItems
         DriftSqlType.bool,
         data['${effectivePrefix}favorite'],
       )!,
+      menuItemId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}menu_item_id'],
+      ),
+      menuVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}menu_version'],
+      ),
+      weightUnknown: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}weight_unknown'],
+      )!,
     );
   }
 
@@ -423,6 +502,20 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
 
   /// Starred foods are pinned at the top of Add Food.
   final bool favorite;
+
+  /// `"<chain id>/<item id>"` of the bundled restaurant menu item this food
+  /// was copied from. Null for every other food.
+  final String? menuItemId;
+
+  /// The bundled menus' version this food's values match, so a newer file
+  /// can refresh it. Null when it is not a menu food, or once the user has
+  /// edited it: an edited food is never refreshed.
+  final int? menuVersion;
+
+  /// True for a restaurant item whose chain publishes no weight for it. The
+  /// food is then counted in items only: [servingWeightG] is a placeholder
+  /// of 1 that is never shown, and logging by weight is not offered.
+  final bool weightUnknown;
   const FoodItem({
     required this.id,
     required this.name,
@@ -439,6 +532,9 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     this.barcode,
     this.brand,
     required this.favorite,
+    this.menuItemId,
+    this.menuVersion,
+    required this.weightUnknown,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -468,6 +564,13 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
       map['brand'] = Variable<String>(brand);
     }
     map['favorite'] = Variable<bool>(favorite);
+    if (!nullToAbsent || menuItemId != null) {
+      map['menu_item_id'] = Variable<String>(menuItemId);
+    }
+    if (!nullToAbsent || menuVersion != null) {
+      map['menu_version'] = Variable<int>(menuVersion);
+    }
+    map['weight_unknown'] = Variable<bool>(weightUnknown);
     return map;
   }
 
@@ -498,6 +601,13 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
           ? const Value.absent()
           : Value(brand),
       favorite: Value(favorite),
+      menuItemId: menuItemId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(menuItemId),
+      menuVersion: menuVersion == null && nullToAbsent
+          ? const Value.absent()
+          : Value(menuVersion),
+      weightUnknown: Value(weightUnknown),
     );
   }
 
@@ -522,6 +632,9 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
       barcode: serializer.fromJson<String?>(json['barcode']),
       brand: serializer.fromJson<String?>(json['brand']),
       favorite: serializer.fromJson<bool>(json['favorite']),
+      menuItemId: serializer.fromJson<String?>(json['menuItemId']),
+      menuVersion: serializer.fromJson<int?>(json['menuVersion']),
+      weightUnknown: serializer.fromJson<bool>(json['weightUnknown']),
     );
   }
   @override
@@ -543,6 +656,9 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
       'barcode': serializer.toJson<String?>(barcode),
       'brand': serializer.toJson<String?>(brand),
       'favorite': serializer.toJson<bool>(favorite),
+      'menuItemId': serializer.toJson<String?>(menuItemId),
+      'menuVersion': serializer.toJson<int?>(menuVersion),
+      'weightUnknown': serializer.toJson<bool>(weightUnknown),
     };
   }
 
@@ -562,6 +678,9 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     Value<String?> barcode = const Value.absent(),
     Value<String?> brand = const Value.absent(),
     bool? favorite,
+    Value<String?> menuItemId = const Value.absent(),
+    Value<int?> menuVersion = const Value.absent(),
+    bool? weightUnknown,
   }) => FoodItem(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -578,6 +697,9 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     barcode: barcode.present ? barcode.value : this.barcode,
     brand: brand.present ? brand.value : this.brand,
     favorite: favorite ?? this.favorite,
+    menuItemId: menuItemId.present ? menuItemId.value : this.menuItemId,
+    menuVersion: menuVersion.present ? menuVersion.value : this.menuVersion,
+    weightUnknown: weightUnknown ?? this.weightUnknown,
   );
   FoodItem copyWithCompanion(FoodItemsCompanion data) {
     return FoodItem(
@@ -600,6 +722,15 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
       barcode: data.barcode.present ? data.barcode.value : this.barcode,
       brand: data.brand.present ? data.brand.value : this.brand,
       favorite: data.favorite.present ? data.favorite.value : this.favorite,
+      menuItemId: data.menuItemId.present
+          ? data.menuItemId.value
+          : this.menuItemId,
+      menuVersion: data.menuVersion.present
+          ? data.menuVersion.value
+          : this.menuVersion,
+      weightUnknown: data.weightUnknown.present
+          ? data.weightUnknown.value
+          : this.weightUnknown,
     );
   }
 
@@ -620,7 +751,10 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
           ..write('sodium: $sodium, ')
           ..write('barcode: $barcode, ')
           ..write('brand: $brand, ')
-          ..write('favorite: $favorite')
+          ..write('favorite: $favorite, ')
+          ..write('menuItemId: $menuItemId, ')
+          ..write('menuVersion: $menuVersion, ')
+          ..write('weightUnknown: $weightUnknown')
           ..write(')'))
         .toString();
   }
@@ -642,6 +776,9 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     barcode,
     brand,
     favorite,
+    menuItemId,
+    menuVersion,
+    weightUnknown,
   );
   @override
   bool operator ==(Object other) =>
@@ -661,7 +798,10 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
           other.sodium == this.sodium &&
           other.barcode == this.barcode &&
           other.brand == this.brand &&
-          other.favorite == this.favorite);
+          other.favorite == this.favorite &&
+          other.menuItemId == this.menuItemId &&
+          other.menuVersion == this.menuVersion &&
+          other.weightUnknown == this.weightUnknown);
 }
 
 class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
@@ -680,6 +820,9 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
   final Value<String?> barcode;
   final Value<String?> brand;
   final Value<bool> favorite;
+  final Value<String?> menuItemId;
+  final Value<int?> menuVersion;
+  final Value<bool> weightUnknown;
   final Value<int> rowid;
   const FoodItemsCompanion({
     this.id = const Value.absent(),
@@ -697,6 +840,9 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     this.barcode = const Value.absent(),
     this.brand = const Value.absent(),
     this.favorite = const Value.absent(),
+    this.menuItemId = const Value.absent(),
+    this.menuVersion = const Value.absent(),
+    this.weightUnknown = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   FoodItemsCompanion.insert({
@@ -715,6 +861,9 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     this.barcode = const Value.absent(),
     this.brand = const Value.absent(),
     this.favorite = const Value.absent(),
+    this.menuItemId = const Value.absent(),
+    this.menuVersion = const Value.absent(),
+    this.weightUnknown = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -739,6 +888,9 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     Expression<String>? barcode,
     Expression<String>? brand,
     Expression<bool>? favorite,
+    Expression<String>? menuItemId,
+    Expression<int>? menuVersion,
+    Expression<bool>? weightUnknown,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -757,6 +909,9 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
       if (barcode != null) 'barcode': barcode,
       if (brand != null) 'brand': brand,
       if (favorite != null) 'favorite': favorite,
+      if (menuItemId != null) 'menu_item_id': menuItemId,
+      if (menuVersion != null) 'menu_version': menuVersion,
+      if (weightUnknown != null) 'weight_unknown': weightUnknown,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -777,6 +932,9 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     Value<String?>? barcode,
     Value<String?>? brand,
     Value<bool>? favorite,
+    Value<String?>? menuItemId,
+    Value<int?>? menuVersion,
+    Value<bool>? weightUnknown,
     Value<int>? rowid,
   }) {
     return FoodItemsCompanion(
@@ -795,6 +953,9 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
       barcode: barcode ?? this.barcode,
       brand: brand ?? this.brand,
       favorite: favorite ?? this.favorite,
+      menuItemId: menuItemId ?? this.menuItemId,
+      menuVersion: menuVersion ?? this.menuVersion,
+      weightUnknown: weightUnknown ?? this.weightUnknown,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -847,6 +1008,15 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     if (favorite.present) {
       map['favorite'] = Variable<bool>(favorite.value);
     }
+    if (menuItemId.present) {
+      map['menu_item_id'] = Variable<String>(menuItemId.value);
+    }
+    if (menuVersion.present) {
+      map['menu_version'] = Variable<int>(menuVersion.value);
+    }
+    if (weightUnknown.present) {
+      map['weight_unknown'] = Variable<bool>(weightUnknown.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -871,6 +1041,9 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
           ..write('barcode: $barcode, ')
           ..write('brand: $brand, ')
           ..write('favorite: $favorite, ')
+          ..write('menuItemId: $menuItemId, ')
+          ..write('menuVersion: $menuVersion, ')
+          ..write('weightUnknown: $weightUnknown, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -5438,6 +5611,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'food_items_barcode',
     'CREATE INDEX food_items_barcode ON food_items (barcode)',
   );
+  late final Index foodItemsMenuItemId = Index(
+    'food_items_menu_item_id',
+    'CREATE INDEX food_items_menu_item_id ON food_items (menu_item_id)',
+  );
   late final Index mealFoodItemsMealId = Index(
     'meal_food_items_meal_id',
     'CREATE INDEX meal_food_items_meal_id ON meal_food_items (meal_id)',
@@ -5497,6 +5674,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     waterLog,
     fasts,
     foodItemsBarcode,
+    foodItemsMenuItemId,
     mealFoodItemsMealId,
     foodLogEntriesLogDate,
     foodLogEntriesCreatedAt,
@@ -5598,6 +5776,9 @@ typedef $$FoodItemsTableCreateCompanionBuilder =
       Value<String?> barcode,
       Value<String?> brand,
       Value<bool> favorite,
+      Value<String?> menuItemId,
+      Value<int?> menuVersion,
+      Value<bool> weightUnknown,
       Value<int> rowid,
     });
 typedef $$FoodItemsTableUpdateCompanionBuilder =
@@ -5617,6 +5798,9 @@ typedef $$FoodItemsTableUpdateCompanionBuilder =
       Value<String?> barcode,
       Value<String?> brand,
       Value<bool> favorite,
+      Value<String?> menuItemId,
+      Value<int?> menuVersion,
+      Value<bool> weightUnknown,
       Value<int> rowid,
     });
 
@@ -5814,6 +5998,21 @@ class $$FoodItemsTableFilterComposer
 
   ColumnFilters<bool> get favorite => $composableBuilder(
     column: $table.favorite,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get menuItemId => $composableBuilder(
+    column: $table.menuItemId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get menuVersion => $composableBuilder(
+    column: $table.menuVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get weightUnknown => $composableBuilder(
+    column: $table.weightUnknown,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6026,6 +6225,21 @@ class $$FoodItemsTableOrderingComposer
     column: $table.favorite,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get menuItemId => $composableBuilder(
+    column: $table.menuItemId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get menuVersion => $composableBuilder(
+    column: $table.menuVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get weightUnknown => $composableBuilder(
+    column: $table.weightUnknown,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$FoodItemsTableAnnotationComposer
@@ -6085,6 +6299,21 @@ class $$FoodItemsTableAnnotationComposer
 
   GeneratedColumn<bool> get favorite =>
       $composableBuilder(column: $table.favorite, builder: (column) => column);
+
+  GeneratedColumn<String> get menuItemId => $composableBuilder(
+    column: $table.menuItemId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get menuVersion => $composableBuilder(
+    column: $table.menuVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get weightUnknown => $composableBuilder(
+    column: $table.weightUnknown,
+    builder: (column) => column,
+  );
 
   Expression<T> mealFoodItemsRefs<T extends Object>(
     Expression<T> Function($$MealFoodItemsTableAnnotationComposer a) f,
@@ -6262,6 +6491,9 @@ class $$FoodItemsTableTableManager
                 Value<String?> barcode = const Value.absent(),
                 Value<String?> brand = const Value.absent(),
                 Value<bool> favorite = const Value.absent(),
+                Value<String?> menuItemId = const Value.absent(),
+                Value<int?> menuVersion = const Value.absent(),
+                Value<bool> weightUnknown = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => FoodItemsCompanion(
                 id: id,
@@ -6279,6 +6511,9 @@ class $$FoodItemsTableTableManager
                 barcode: barcode,
                 brand: brand,
                 favorite: favorite,
+                menuItemId: menuItemId,
+                menuVersion: menuVersion,
+                weightUnknown: weightUnknown,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -6298,6 +6533,9 @@ class $$FoodItemsTableTableManager
                 Value<String?> barcode = const Value.absent(),
                 Value<String?> brand = const Value.absent(),
                 Value<bool> favorite = const Value.absent(),
+                Value<String?> menuItemId = const Value.absent(),
+                Value<int?> menuVersion = const Value.absent(),
+                Value<bool> weightUnknown = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => FoodItemsCompanion.insert(
                 id: id,
@@ -6315,6 +6553,9 @@ class $$FoodItemsTableTableManager
                 barcode: barcode,
                 brand: brand,
                 favorite: favorite,
+                menuItemId: menuItemId,
+                menuVersion: menuVersion,
+                weightUnknown: weightUnknown,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
