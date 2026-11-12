@@ -19,7 +19,11 @@ class SummaryChart extends StatelessWidget {
     required this.goal,
     required this.bucketSize,
     this.neutral = false,
+    this.height = 220,
   });
+
+  /// Taller on a wide screen, where the chart has a column to itself.
+  final double height;
 
   final List<Bucket> buckets;
   final Metric metric;
@@ -58,7 +62,7 @@ class SummaryChart extends StatelessWidget {
     final labelColor = CupertinoColors.secondaryLabel.resolveFrom(context);
 
     final chart = SizedBox(
-      height: 220,
+      height: height,
       child: BarChart(
         BarChartData(
           minY: 0,

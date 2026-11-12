@@ -1,5 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/appearance.dart';
 import '../../core/body_weight.dart';
 import '../../core/date_key.dart';
 import '../../core/macro_split.dart';
@@ -7,6 +8,7 @@ import '../../core/metrics.dart';
 import '../../core/nutrition_math.dart';
 import '../../core/pro.dart';
 import '../../core/reminder.dart';
+import '../../core/water.dart';
 
 /// User settings. Loaded from [UserPreferences] at launch and saved back on
 /// every change.
@@ -23,6 +25,8 @@ class UserSettings {
     this.healthReadWeight = false,
     this.macroGoalPercents,
     Map<int, Map<Metric, double>> weekdayGoals = const {},
+    this.water = const WaterSettings(),
+    this.fastingEnabled = false,
   }) : trackedMetrics = {...trackedMetrics, primaryMetric},
        goals = Map.unmodifiable(_withMacroGoals(goals, macroGoalPercents)),
        weekdayGoals = Map.unmodifiable({
@@ -75,6 +79,12 @@ class UserSettings {
   /// e.g. more calories on training days. A metric missing here uses
   /// [goals]. In percent mode a day's macro grams follow its calorie goal.
   final Map<int, Map<Metric, double>> weekdayGoals;
+
+  /// Whether the water row shows on Today, its unit and its daily goal.
+  final WaterSettings water;
+
+  /// Whether the fasting timer shows on Today. Off until switched on.
+  final bool fastingEnabled;
 
   /// The goals in effect on each weekday, Monday first.
   final List<Map<Metric, double>> _goalsByWeekday;
@@ -132,6 +142,8 @@ class UserSettings {
     bool? healthWriteNutrition,
     bool? healthReadWeight,
     Map<int, Map<Metric, double>>? weekdayGoals,
+    WaterSettings? water,
+    bool? fastingEnabled,
   }) => UserSettings(
     onboardingComplete: onboardingComplete ?? this.onboardingComplete,
     primaryMetric: primaryMetric ?? this.primaryMetric,
@@ -144,6 +156,8 @@ class UserSettings {
     healthReadWeight: healthReadWeight ?? this.healthReadWeight,
     macroGoalPercents: macroGoalPercents,
     weekdayGoals: weekdayGoals ?? this.weekdayGoals,
+    water: water ?? this.water,
+    fastingEnabled: fastingEnabled ?? this.fastingEnabled,
   );
 }
 
@@ -171,6 +185,11 @@ class UserPreferences {
   static const autoBackupEnabledKey = 'auto_backup_enabled';
   static const lastAutoBackupKey = 'last_auto_backup_at';
   static const mindfulModeKey = 'mindful_mode';
+  static const themeKey = 'theme';
+  static const waterEnabledKey = 'water_enabled';
+  static const waterUnitKey = 'water_unit';
+  static const waterGoalKey = 'water_goal_ml';
+  static const fastingEnabledKey = 'fasting_enabled';
   static String goalKey(Metric metric) => 'goal_${metric.name}';
   static String weekdayGoalKey(Metric metric, int weekday) =>
       'goal_${metric.name}_${weekdayKeys[weekday - 1]}';
@@ -226,6 +245,17 @@ class UserPreferences {
                 m: g,
           },
       },
+      water: WaterSettings(
+        enabled: _prefs.getBool(waterEnabledKey) ?? true,
+        unit:
+            WaterUnit.values.asNameMap()[_prefs.getString(waterUnitKey)] ??
+            WaterUnit.glasses,
+        goalMl: switch (_prefs.getDouble(waterGoalKey)) {
+          final double g when g > 0 => g,
+          _ => null,
+        },
+      ),
+      fastingEnabled: _prefs.getBool(fastingEnabledKey) ?? false,
     );
   }
 
@@ -259,6 +289,14 @@ class UserPreferences {
       settings.healthWriteNutrition,
     );
     await _prefs.setBool(healthReadWeightKey, settings.healthReadWeight);
+    await _prefs.setBool(fastingEnabledKey, settings.fastingEnabled);
+    await _prefs.setBool(waterEnabledKey, settings.water.enabled);
+    await _prefs.setString(waterUnitKey, settings.water.unit.name);
+    if (settings.water.goalMl case final goal?) {
+      await _prefs.setDouble(waterGoalKey, goal);
+    } else {
+      await _prefs.remove(waterGoalKey);
+    }
     for (var d = DateTime.monday; d <= DateTime.sunday; d++) {
       for (final m in Metric.values) {
         final goal = settings.weekdayGoals[d]?[m];
@@ -345,6 +383,13 @@ class UserPreferences {
   bool readMindfulMode() => _prefs.getBool(mindfulModeKey) ?? false;
 
   Future<void> writeMindfulMode(bool on) => _prefs.setBool(mindfulModeKey, on);
+
+  /// The accent colour picked in Settings (Pro). Device-local, and kept when
+  /// Pro is lost so it returns with it.
+  AppTheme readTheme() => AppTheme.fromName(_prefs.getString(themeKey));
+
+  Future<void> writeTheme(AppTheme theme) =>
+      _prefs.setString(themeKey, theme.name);
 
   /// When the last automatic backup was written, or null if never.
   DateTime? readLastAutoBackup() {

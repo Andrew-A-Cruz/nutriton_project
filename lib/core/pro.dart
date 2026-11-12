@@ -157,7 +157,7 @@ enum ProFeature {
   themes(
     'Themes and App Icons',
     'Make Logbite look the way you like.',
-    available: false,
+    available: true,
   );
 
   const ProFeature(this.title, this.description, {required this.available});

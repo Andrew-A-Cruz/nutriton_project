@@ -4,12 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/preferences_providers.dart';
 import '../../providers/tour_providers.dart';
 import '../onboarding/preferences_form.dart';
+import 'appearance_section.dart';
 import 'apple_health_section.dart';
 import 'backup_section.dart';
 import 'error_log_view.dart';
+import 'fasting_section.dart';
 import 'planned_meals_view.dart';
 import 'pro_section.dart';
 import 'reminders_section.dart';
+import 'water_section.dart';
 import 'weekday_goals_view.dart';
 
 /// Settings, opened from the gear on Home. Reuses the onboarding form, so the
@@ -29,7 +32,10 @@ class SettingsView extends ConsumerWidget {
           extraSections: const [
             WeekdayGoalsSection(),
             PlannedMealsSection(),
+            WaterSection(),
+            FastingSection(),
             _MindfulSection(),
+            AppearanceSection(),
             RemindersSection(),
             AppleHealthSection(),
             BackupSection(),
@@ -48,6 +54,8 @@ class SettingsView extends ConsumerWidget {
                 healthReadWeight: current.healthReadWeight,
                 // Edited on their own page, so the form never has them.
                 weekdayGoals: current.weekdayGoals,
+                water: current.water,
+                fastingEnabled: current.fastingEnabled,
               ),
             );
             if (context.mounted) Navigator.of(context).pop();

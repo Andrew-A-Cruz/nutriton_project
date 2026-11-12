@@ -4,12 +4,15 @@ import 'package:path_provider/path_provider.dart';
 
 import 'app_database.steps.dart';
 import 'daos/body_weight_dao.dart';
+import 'daos/fast_dao.dart';
 import 'daos/food_dao.dart';
 import 'daos/log_dao.dart';
 import 'daos/meal_dao.dart';
 import 'daos/scheduled_meal_dao.dart';
 import 'daos/summary_dao.dart';
+import 'daos/water_dao.dart';
 import 'tables/body_weights.dart';
+import 'tables/fasts.dart';
 import 'tables/food_items.dart';
 import 'tables/food_servings.dart';
 import 'tables/food_log_entries.dart';
@@ -17,6 +20,7 @@ import 'tables/food_log_entry_items.dart';
 import 'tables/meal_food_items.dart';
 import 'tables/meals.dart';
 import 'tables/scheduled_meals.dart';
+import 'tables/water_log.dart';
 
 part 'app_database.g.dart';
 
@@ -31,8 +35,19 @@ part 'app_database.g.dart';
     ScheduledMealOutcomes,
     BodyWeights,
     FoodServings,
+    WaterLog,
+    Fasts,
   ],
-  daos: [FoodDao, MealDao, LogDao, SummaryDao, ScheduledMealDao, BodyWeightDao],
+  daos: [
+    FoodDao,
+    MealDao,
+    LogDao,
+    SummaryDao,
+    ScheduledMealDao,
+    BodyWeightDao,
+    WaterDao,
+    FastDao,
+  ],
 )
 class AppDatabase extends _$AppDatabase {
   /// Pass a [QueryExecutor] (e.g. `NativeDatabase.memory()`) in tests. The
@@ -40,7 +55,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -129,6 +144,14 @@ class AppDatabase extends _$AppDatabase {
       from10To11: (m, schema) async {
         await m.createTable(schema.foodServings);
         await m.create(schema.foodServingsFoodItemId);
+      },
+      // v11 -> v12: water drunk per day.
+      from11To12: (m, schema) async {
+        await m.createTable(schema.waterLog);
+      },
+      // v12 -> v13: the fasting timer's fasts.
+      from12To13: (m, schema) async {
+        await m.createTable(schema.fasts);
       },
     ),
     beforeOpen: (details) async {

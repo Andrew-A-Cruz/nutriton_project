@@ -87,8 +87,8 @@ final tourSteps = [
     target: TourTargets.date,
     title: 'Pick a day',
     body:
-        'Use the arrows to move between days, and tap the date to jump back '
-        'to today. Anything you log goes to the day shown here.',
+        'Use the arrows to move between days, and tap the date for a '
+        'calendar. Anything you log goes to the day shown here.',
   ),
   TourStep(
     target: TourTargets.totals,
@@ -243,7 +243,18 @@ class _AppTourOverlayState extends ConsumerState<AppTourOverlay> {
       );
     }
 
-    // Blocks taps and screen-reader focus on the app underneath.
+    // Android's back button ends the tour instead of leaving the app.
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) ref.read(tourProvider.notifier).finish();
+      },
+      // Blocks taps and screen-reader focus on the app underneath.
+      child: _tourLayer(hole, placed),
+    );
+  }
+
+  Widget _tourLayer(Rect? hole, Widget placed) {
     return BlockSemantics(
       child: Stack(
         children: [

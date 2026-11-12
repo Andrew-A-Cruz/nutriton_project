@@ -6,7 +6,7 @@
 
 | Property | Decision |
 |---|---|
-| Storage | Local SQLite via `drift`, database file `food_log`, schema version 9 (history below) |
+| Storage | Local SQLite via `drift`, database file `food_log`, schema version 13 (history below) |
 | User preferences | `shared_preferences` (separate from SQLite) |
 | ID format | UUID v4 via `uuid` (`TEXT` primary keys) |
 | Weights | Stored in grams (`*_g`). Users pick g or oz for display only; 1 oz = 28.3495 g |
@@ -178,6 +178,33 @@ In the backup as `food_servings`, which older backups lack (read as none).
 
 ---
 
+### `water_log`
+
+Water drunk (schema v12), one total per day. A day with none has no row. Always millilitres; the water unit preference only changes how it is shown.
+
+| Column | Type | Null | Notes |
+|---|---|---|---|
+| `log_date` | TEXT | No | Primary key. `yyyy-MM-dd` |
+| `amount_ml` | REAL | No | `> 0` (CHECK). The app keeps it at or below 20,000 |
+
+In the backup as `water_log`, which older backups lack (read as none).
+
+---
+
+### `fasts`
+
+Fasts from the fasting timer (schema v13). A row with no `ended_at` is the fast in progress; the repository keeps at most one.
+
+| Column | Type | Null | Notes |
+|---|---|---|---|
+| `id` | TEXT | No | Primary key (UUID) |
+| `started_at` | DATETIME | No | |
+| `ended_at` | DATETIME | Yes | Null while running. `CHECK (ended_at IS NULL OR ended_at >= started_at)` |
+
+In the backup as `fasts`, which older backups lack (read as none).
+
+---
+
 ### `body_weights`
 
 Body weight readings (schema v5; `source` added in v8), at most one per day. Setting a day again replaces its row. Always kilograms; the `body_weight_unit` preference only changes how a value is shown and typed.
@@ -211,6 +238,11 @@ Stored via `shared_preferences`, not in SQLite. Read on app launch to configure 
 | `health_read_weight` | Bool | Read body weight from Apple Health (iOS). Absent = off. In the backup `preferences` as `healthReadWeight`, optional on read the same way |
 | `reminder_<n>_enabled` | Bool | Daily reminder slot n (0 to 2) is on. Absent = off |
 | `reminder_<n>_minutes` | Int | Reminder slot n time, minutes after local midnight (defaults 540, 780, 1140). Both reminder keys are in the backup `preferences` as a `reminders` list, which older backups lack |
+| `water_enabled` | Bool | Whether the water row shows on Today. Absent = on |
+| `water_unit` | String | `"glasses"` (250 ml each, the default) or `"ml"`. Display only |
+| `water_goal_ml` | Float | Daily water goal in millilitres. Absent = no goal. The three water keys are in the backup `preferences` as `water` (`enabled`, `unit`, `goalMl`), optional on read |
+| `fasting_enabled` | Bool | Whether the fasting timer shows on Today. Absent = off. In the backup `preferences` as `fastingEnabled`, optional on read |
+| `theme` | String | The accent colour picked in Settings (Pro): `blue` (the default), `green`, `orange`, `purple`, `pink` or `teal`. Kept without Pro but not used. Device-local |
 | `onboarding_complete` | Bool | Gate for the onboarding screen |
 | `last_backup_at` | Int | When the last export succeeded, epoch ms. Device-local: not in the backup, and an import leaves it alone |
 | `auto_backup_enabled` | Bool | Automatic weekly backups. Absent = on. Device-local |
@@ -382,7 +414,9 @@ lib/
 | 9 | November 2026 improvements | `food_items.brand` (nullable) and `favorite`; `meals.favorite` and `cooked_weight_g` (nullable, recipes); indexes on `food_log_entries` (`created_at`, `food_item_id`, `meal_id`), `food_log_entry_items.entry_id` and `meal_food_items.meal_id` |
 | 10 | Manage planned meals | `scheduled_meals.end_date` (nullable): the last day of a repeating plan |
 | 11 | Serving presets | New `food_servings` table: `id`, `food_item_id` (cascade, indexed), `name` (1–40), `weight_g` (> 0), `created_at` |
-| 12 (planned) | M24 | `food_items.menu_item_id` (nullable, indexed): links a catalog food to its bundled menu item |
+| 12 | Water tracking | New `water_log` table: `log_date` (key), `amount_ml` (> 0) |
+| 13 | Fasting timer | New `fasts` table: `id`, `started_at`, `ended_at` (nullable, not before the start) |
+| 14 (planned) | M24 | `food_items.menu_item_id` (nullable, indexed): links a catalog food to its bundled menu item |
 
 Each step has a drift migration test (`make-migrations`), a row here, and a backup that still reads older files.
 

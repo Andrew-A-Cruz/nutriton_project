@@ -4,7 +4,7 @@ title: Logbite Privacy Policy
 
 # Logbite Privacy Policy
 
-**Effective:** November 8, 2026
+**Effective:** November 12, 2026
 
 Logbite is a calorie and macro tracker made by Andrew Cruz, an individual developer. This policy explains what happens to your information when you use the app.
 
@@ -33,6 +33,10 @@ The app also keeps a short list of recent errors on the device, which you can vi
 If you turn on the Apple Health options (a Pro feature), Logbite writes the nutrition totals you log (energy, protein, carbohydrates, fat, fiber, sugar and sodium) to Apple Health and reads your body weight from it. On Android, Health Connect would work the same way.
 
 This health data moves only between Logbite and Health on your device. It is never sent to the developer or any other party, and it is never used for advertising or marketing. You can turn the options off, or revoke access in the Health app or Health Connect settings, at any time.
+
+## Camera and photos
+
+The camera is used to scan a barcode and, if you choose, to photograph a nutrition label so the app can fill in a food's details. You can also choose an existing photo of a label. The text in the photo is read on your device. The photo is not saved by the app and is not sent anywhere.
 
 ## Notifications and the home screen widget
 

@@ -4936,6 +4936,488 @@ class FoodServingsCompanion extends UpdateCompanion<FoodServing> {
   }
 }
 
+class $WaterLogTable extends WaterLog with TableInfo<$WaterLogTable, WaterDay> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WaterLogTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _logDateMeta = const VerificationMeta(
+    'logDate',
+  );
+  @override
+  late final GeneratedColumn<String> logDate = GeneratedColumn<String>(
+    'log_date',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _amountMlMeta = const VerificationMeta(
+    'amountMl',
+  );
+  @override
+  late final GeneratedColumn<double> amountMl = GeneratedColumn<double>(
+    'amount_ml',
+    aliasedName,
+    false,
+    check: () => ComparableExpr(amountMl).isBiggerThanValue(0),
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [logDate, amountMl];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'water_log';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WaterDay> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('log_date')) {
+      context.handle(
+        _logDateMeta,
+        logDate.isAcceptableOrUnknown(data['log_date']!, _logDateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_logDateMeta);
+    }
+    if (data.containsKey('amount_ml')) {
+      context.handle(
+        _amountMlMeta,
+        amountMl.isAcceptableOrUnknown(data['amount_ml']!, _amountMlMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_amountMlMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {logDate};
+  @override
+  WaterDay map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WaterDay(
+      logDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}log_date'],
+      )!,
+      amountMl: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}amount_ml'],
+      )!,
+    );
+  }
+
+  @override
+  $WaterLogTable createAlias(String alias) {
+    return $WaterLogTable(attachedDatabase, alias);
+  }
+}
+
+class WaterDay extends DataClass implements Insertable<WaterDay> {
+  /// 'yyyy-MM-dd'. One row per day, so it is the key.
+  final String logDate;
+  final double amountMl;
+  const WaterDay({required this.logDate, required this.amountMl});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['log_date'] = Variable<String>(logDate);
+    map['amount_ml'] = Variable<double>(amountMl);
+    return map;
+  }
+
+  WaterLogCompanion toCompanion(bool nullToAbsent) {
+    return WaterLogCompanion(
+      logDate: Value(logDate),
+      amountMl: Value(amountMl),
+    );
+  }
+
+  factory WaterDay.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WaterDay(
+      logDate: serializer.fromJson<String>(json['logDate']),
+      amountMl: serializer.fromJson<double>(json['amountMl']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'logDate': serializer.toJson<String>(logDate),
+      'amountMl': serializer.toJson<double>(amountMl),
+    };
+  }
+
+  WaterDay copyWith({String? logDate, double? amountMl}) => WaterDay(
+    logDate: logDate ?? this.logDate,
+    amountMl: amountMl ?? this.amountMl,
+  );
+  WaterDay copyWithCompanion(WaterLogCompanion data) {
+    return WaterDay(
+      logDate: data.logDate.present ? data.logDate.value : this.logDate,
+      amountMl: data.amountMl.present ? data.amountMl.value : this.amountMl,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WaterDay(')
+          ..write('logDate: $logDate, ')
+          ..write('amountMl: $amountMl')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(logDate, amountMl);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WaterDay &&
+          other.logDate == this.logDate &&
+          other.amountMl == this.amountMl);
+}
+
+class WaterLogCompanion extends UpdateCompanion<WaterDay> {
+  final Value<String> logDate;
+  final Value<double> amountMl;
+  final Value<int> rowid;
+  const WaterLogCompanion({
+    this.logDate = const Value.absent(),
+    this.amountMl = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WaterLogCompanion.insert({
+    required String logDate,
+    required double amountMl,
+    this.rowid = const Value.absent(),
+  }) : logDate = Value(logDate),
+       amountMl = Value(amountMl);
+  static Insertable<WaterDay> custom({
+    Expression<String>? logDate,
+    Expression<double>? amountMl,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (logDate != null) 'log_date': logDate,
+      if (amountMl != null) 'amount_ml': amountMl,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WaterLogCompanion copyWith({
+    Value<String>? logDate,
+    Value<double>? amountMl,
+    Value<int>? rowid,
+  }) {
+    return WaterLogCompanion(
+      logDate: logDate ?? this.logDate,
+      amountMl: amountMl ?? this.amountMl,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (logDate.present) {
+      map['log_date'] = Variable<String>(logDate.value);
+    }
+    if (amountMl.present) {
+      map['amount_ml'] = Variable<double>(amountMl.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WaterLogCompanion(')
+          ..write('logDate: $logDate, ')
+          ..write('amountMl: $amountMl, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $FastsTable extends Fasts with TableInfo<$FastsTable, Fast> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $FastsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _startedAtMeta = const VerificationMeta(
+    'startedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> startedAt = GeneratedColumn<DateTime>(
+    'started_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endedAtMeta = const VerificationMeta(
+    'endedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> endedAt = GeneratedColumn<DateTime>(
+    'ended_at',
+    aliasedName,
+    true,
+    check: () =>
+        endedAt.isNull() | ComparableExpr(endedAt).isBiggerOrEqual(startedAt),
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, startedAt, endedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'fasts';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Fast> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('started_at')) {
+      context.handle(
+        _startedAtMeta,
+        startedAt.isAcceptableOrUnknown(data['started_at']!, _startedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_startedAtMeta);
+    }
+    if (data.containsKey('ended_at')) {
+      context.handle(
+        _endedAtMeta,
+        endedAt.isAcceptableOrUnknown(data['ended_at']!, _endedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Fast map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Fast(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      startedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}started_at'],
+      )!,
+      endedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}ended_at'],
+      ),
+    );
+  }
+
+  @override
+  $FastsTable createAlias(String alias) {
+    return $FastsTable(attachedDatabase, alias);
+  }
+}
+
+class Fast extends DataClass implements Insertable<Fast> {
+  final String id;
+  final DateTime startedAt;
+
+  /// Null while the fast is running. Never before [startedAt].
+  final DateTime? endedAt;
+  const Fast({required this.id, required this.startedAt, this.endedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['started_at'] = Variable<DateTime>(startedAt);
+    if (!nullToAbsent || endedAt != null) {
+      map['ended_at'] = Variable<DateTime>(endedAt);
+    }
+    return map;
+  }
+
+  FastsCompanion toCompanion(bool nullToAbsent) {
+    return FastsCompanion(
+      id: Value(id),
+      startedAt: Value(startedAt),
+      endedAt: endedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endedAt),
+    );
+  }
+
+  factory Fast.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Fast(
+      id: serializer.fromJson<String>(json['id']),
+      startedAt: serializer.fromJson<DateTime>(json['startedAt']),
+      endedAt: serializer.fromJson<DateTime?>(json['endedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'startedAt': serializer.toJson<DateTime>(startedAt),
+      'endedAt': serializer.toJson<DateTime?>(endedAt),
+    };
+  }
+
+  Fast copyWith({
+    String? id,
+    DateTime? startedAt,
+    Value<DateTime?> endedAt = const Value.absent(),
+  }) => Fast(
+    id: id ?? this.id,
+    startedAt: startedAt ?? this.startedAt,
+    endedAt: endedAt.present ? endedAt.value : this.endedAt,
+  );
+  Fast copyWithCompanion(FastsCompanion data) {
+    return Fast(
+      id: data.id.present ? data.id.value : this.id,
+      startedAt: data.startedAt.present ? data.startedAt.value : this.startedAt,
+      endedAt: data.endedAt.present ? data.endedAt.value : this.endedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Fast(')
+          ..write('id: $id, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('endedAt: $endedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, startedAt, endedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Fast &&
+          other.id == this.id &&
+          other.startedAt == this.startedAt &&
+          other.endedAt == this.endedAt);
+}
+
+class FastsCompanion extends UpdateCompanion<Fast> {
+  final Value<String> id;
+  final Value<DateTime> startedAt;
+  final Value<DateTime?> endedAt;
+  final Value<int> rowid;
+  const FastsCompanion({
+    this.id = const Value.absent(),
+    this.startedAt = const Value.absent(),
+    this.endedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  FastsCompanion.insert({
+    required String id,
+    required DateTime startedAt,
+    this.endedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       startedAt = Value(startedAt);
+  static Insertable<Fast> custom({
+    Expression<String>? id,
+    Expression<DateTime>? startedAt,
+    Expression<DateTime>? endedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (startedAt != null) 'started_at': startedAt,
+      if (endedAt != null) 'ended_at': endedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  FastsCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? startedAt,
+    Value<DateTime?>? endedAt,
+    Value<int>? rowid,
+  }) {
+    return FastsCompanion(
+      id: id ?? this.id,
+      startedAt: startedAt ?? this.startedAt,
+      endedAt: endedAt ?? this.endedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (startedAt.present) {
+      map['started_at'] = Variable<DateTime>(startedAt.value);
+    }
+    if (endedAt.present) {
+      map['ended_at'] = Variable<DateTime>(endedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FastsCompanion(')
+          ..write('id: $id, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('endedAt: $endedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -4950,6 +5432,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $ScheduledMealOutcomesTable(this);
   late final $BodyWeightsTable bodyWeights = $BodyWeightsTable(this);
   late final $FoodServingsTable foodServings = $FoodServingsTable(this);
+  late final $WaterLogTable waterLog = $WaterLogTable(this);
+  late final $FastsTable fasts = $FastsTable(this);
   late final Index foodItemsBarcode = Index(
     'food_items_barcode',
     'CREATE INDEX food_items_barcode ON food_items (barcode)',
@@ -4994,6 +5478,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this as AppDatabase,
   );
   late final BodyWeightDao bodyWeightDao = BodyWeightDao(this as AppDatabase);
+  late final WaterDao waterDao = WaterDao(this as AppDatabase);
+  late final FastDao fastDao = FastDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -5008,6 +5494,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     scheduledMealOutcomes,
     bodyWeights,
     foodServings,
+    waterLog,
+    fasts,
     foodItemsBarcode,
     mealFoodItemsMealId,
     foodLogEntriesLogDate,
@@ -9849,6 +10337,298 @@ typedef $$FoodServingsTableProcessedTableManager =
       FoodServing,
       PrefetchHooks Function({bool foodItemId})
     >;
+typedef $$WaterLogTableCreateCompanionBuilder =
+    WaterLogCompanion Function({
+      required String logDate,
+      required double amountMl,
+      Value<int> rowid,
+    });
+typedef $$WaterLogTableUpdateCompanionBuilder =
+    WaterLogCompanion Function({
+      Value<String> logDate,
+      Value<double> amountMl,
+      Value<int> rowid,
+    });
+
+class $$WaterLogTableFilterComposer
+    extends Composer<_$AppDatabase, $WaterLogTable> {
+  $$WaterLogTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get logDate => $composableBuilder(
+    column: $table.logDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get amountMl => $composableBuilder(
+    column: $table.amountMl,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$WaterLogTableOrderingComposer
+    extends Composer<_$AppDatabase, $WaterLogTable> {
+  $$WaterLogTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get logDate => $composableBuilder(
+    column: $table.logDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get amountMl => $composableBuilder(
+    column: $table.amountMl,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$WaterLogTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WaterLogTable> {
+  $$WaterLogTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get logDate =>
+      $composableBuilder(column: $table.logDate, builder: (column) => column);
+
+  GeneratedColumn<double> get amountMl =>
+      $composableBuilder(column: $table.amountMl, builder: (column) => column);
+}
+
+class $$WaterLogTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $WaterLogTable,
+          WaterDay,
+          $$WaterLogTableFilterComposer,
+          $$WaterLogTableOrderingComposer,
+          $$WaterLogTableAnnotationComposer,
+          $$WaterLogTableCreateCompanionBuilder,
+          $$WaterLogTableUpdateCompanionBuilder,
+          (WaterDay, BaseReferences<_$AppDatabase, $WaterLogTable, WaterDay>),
+          WaterDay,
+          PrefetchHooks Function()
+        > {
+  $$WaterLogTableTableManager(_$AppDatabase db, $WaterLogTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WaterLogTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$WaterLogTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$WaterLogTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> logDate = const Value.absent(),
+                Value<double> amountMl = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WaterLogCompanion(
+                logDate: logDate,
+                amountMl: amountMl,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String logDate,
+                required double amountMl,
+                Value<int> rowid = const Value.absent(),
+              }) => WaterLogCompanion.insert(
+                logDate: logDate,
+                amountMl: amountMl,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$WaterLogTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $WaterLogTable,
+      WaterDay,
+      $$WaterLogTableFilterComposer,
+      $$WaterLogTableOrderingComposer,
+      $$WaterLogTableAnnotationComposer,
+      $$WaterLogTableCreateCompanionBuilder,
+      $$WaterLogTableUpdateCompanionBuilder,
+      (WaterDay, BaseReferences<_$AppDatabase, $WaterLogTable, WaterDay>),
+      WaterDay,
+      PrefetchHooks Function()
+    >;
+typedef $$FastsTableCreateCompanionBuilder =
+    FastsCompanion Function({
+      required String id,
+      required DateTime startedAt,
+      Value<DateTime?> endedAt,
+      Value<int> rowid,
+    });
+typedef $$FastsTableUpdateCompanionBuilder =
+    FastsCompanion Function({
+      Value<String> id,
+      Value<DateTime> startedAt,
+      Value<DateTime?> endedAt,
+      Value<int> rowid,
+    });
+
+class $$FastsTableFilterComposer extends Composer<_$AppDatabase, $FastsTable> {
+  $$FastsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get endedAt => $composableBuilder(
+    column: $table.endedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$FastsTableOrderingComposer
+    extends Composer<_$AppDatabase, $FastsTable> {
+  $$FastsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get endedAt => $composableBuilder(
+    column: $table.endedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$FastsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $FastsTable> {
+  $$FastsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get startedAt =>
+      $composableBuilder(column: $table.startedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get endedAt =>
+      $composableBuilder(column: $table.endedAt, builder: (column) => column);
+}
+
+class $$FastsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $FastsTable,
+          Fast,
+          $$FastsTableFilterComposer,
+          $$FastsTableOrderingComposer,
+          $$FastsTableAnnotationComposer,
+          $$FastsTableCreateCompanionBuilder,
+          $$FastsTableUpdateCompanionBuilder,
+          (Fast, BaseReferences<_$AppDatabase, $FastsTable, Fast>),
+          Fast,
+          PrefetchHooks Function()
+        > {
+  $$FastsTableTableManager(_$AppDatabase db, $FastsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$FastsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$FastsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$FastsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> startedAt = const Value.absent(),
+                Value<DateTime?> endedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => FastsCompanion(
+                id: id,
+                startedAt: startedAt,
+                endedAt: endedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required DateTime startedAt,
+                Value<DateTime?> endedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => FastsCompanion.insert(
+                id: id,
+                startedAt: startedAt,
+                endedAt: endedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$FastsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $FastsTable,
+      Fast,
+      $$FastsTableFilterComposer,
+      $$FastsTableOrderingComposer,
+      $$FastsTableAnnotationComposer,
+      $$FastsTableCreateCompanionBuilder,
+      $$FastsTableUpdateCompanionBuilder,
+      (Fast, BaseReferences<_$AppDatabase, $FastsTable, Fast>),
+      Fast,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -9871,4 +10651,8 @@ class $AppDatabaseManager {
       $$BodyWeightsTableTableManager(_db, _db.bodyWeights);
   $$FoodServingsTableTableManager get foodServings =>
       $$FoodServingsTableTableManager(_db, _db.foodServings);
+  $$WaterLogTableTableManager get waterLog =>
+      $$WaterLogTableTableManager(_db, _db.waterLog);
+  $$FastsTableTableManager get fasts =>
+      $$FastsTableTableManager(_db, _db.fasts);
 }

@@ -54,6 +54,11 @@ void main() {
   testWidgets('Home groups entries into sections with calorie subtotals', (
     tester,
   ) async {
+    // Tall enough to build all four sections under the weigh-in and water
+    // rows; the list only builds what is on screen.
+    tester.view.physicalSize = const Size(800, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     await tester.runAsync(() async {
       await adhoc('Oatmeal', 300, MealSlot.breakfast);
       await adhoc('Soup', 200, MealSlot.dinner);

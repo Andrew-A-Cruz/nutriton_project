@@ -52,11 +52,13 @@ A calorie and macro tracker for iPhone (Android planned), built in Flutter. Loca
 | Barcode scan and Open Food Facts lookup | M19 Apple Health (built) |
 | Planned meals | M20 iCloud sync (CloudKit) |
 | Summary, every range; weight chart | M22 shareable PDF reports (built) |
-| Goals for calories and macros | M23 themes and alternate icons |
+| Goals for calories and macros | M23 themes and alternate icons (built) |
 | Recent and frequent foods, log again, copy day | |
 | Backup: export, import, automatic backups | |
 | Meal sections; fiber, sugar, sodium | |
 | Streaks and reminders; weigh-ins | |
+| Water tracking; fasting timer | |
+| Nutrition label scan; starter foods | |
 | Every backlog item marked Free in the roadmap | |
 
 The JSON backup and a shareable report are different things: the backup is the user's own safety (free); a report is a formatted summary for someone else (Pro).
@@ -100,6 +102,10 @@ Family Sharing is on for Pro. Development builds can't buy anything; `--dart-def
 - **Every native feature sits behind an interface with a no-op default** that `main` replaces: `NotificationScheduler`, `WidgetPublisher`, `HealthService`, `StoreService`. Tests override them with fakes, and an unsupported platform just runs without the feature.
 - **Backup is versioned JSON** (`version` 1), readable across schema versions. New nullable columns and tables are optional on read, so the format version stays 1; `BackupCodec` has a step-by-step upgrade pipeline for when it must change. A newer file is refused.
 - **Sync, if built, is CloudKit in Pro** (decided October 2026): no server, no running cost, Apple only. Supabase / Pro+ only if Android or web sync is ever wanted.
+- **The two-pane layouts start at 700 points wide** (`views/common/wide_layout.dart`): every iPad, and a large phone on its side. Tests run in the phone layout unless they ask for the wide one (`test/flutter_test_config.dart`), because Flutter's test window is 800 wide.
+- **Bundled foods are a text file, not a second database.** `assets/foods/generic_foods.tsv` is parsed in memory the first time a search needs it (`core/bundled_foods.dart`), and a food is copied into the catalog when picked (`CatalogRepository.adoptBundledFood`). M24's menus can reuse both.
+- **Text recognition is native, behind one channel** (`logbite/label_ocr`): Apple Vision on iOS, ML Kit's bundled Latin model on Android (about 11 MB per ABI). The table is rebuilt from text positions in pure Dart (`core/label_scan.dart`).
+- **Pro is hidden where it is not sold** (`proOfferedProvider`, false on Android until A3): no Pro row, lock badges, paywall or trial notice.
 - **Android Auto Backup stays on**, so the database is in the user's Google backup, as iCloud backup does on iOS. The welcome page says so.
 
 ### Conventions
@@ -111,7 +117,7 @@ Family Sharing is on for Pro. Development builds can't buy anything; `--dart-def
 
 ## What's Built
 
-As of November 2026, schema v11. Known gaps that are worth doing are in the roadmap.
+As of November 2026, schema v13. Known gaps that are worth doing are in the roadmap.
 
 | Milestone | What | Notes and known limits |
 |---|---|---|
@@ -149,3 +155,10 @@ As of November 2026, schema v11. Known gaps that are worth doing are in the road
 | Privacy policy | Hosted on GitHub Pages from `docs/privacy.md`, linked from the paywall, contact logbite.app@gmail.com | Update it with any new network call or Health type |
 | Done key | A Done bar above the iOS number keyboard, app-wide (`KeyboardDoneBar` in `CupertinoApp.builder`) | iOS only; Done, no Next. Untested on a phone |
 | Android | Release build runs on an API 36 emulator: onboarding, saving, reminders across reboots, camera opening, Open Food Facts lookup and backup sharing work. `minSdk` 26 and the `INTERNET` permission are set | No physical phone yet. Pro, the widget and Health are off on Android |
+| Water | A row on Today with − and + for one glass (250 ml), in glasses or ml, with an optional daily goal (Settings > Water); Summary shows the average per day with water. New `water_log` table (v12), one total per day, in backups | One glass per tap; no custom amount. Can be switched off |
+| Fasting timer | Settings > Fasting switches on a row on Today: Start fast, then the time so far and End. Settings > Fasting history lists finished fasts with their length and removes one. New `fasts` table (v13), in backups | Off by default. The row shows on today only. A start or end time cannot be edited, and there is no target length |
+| M23 | Themes and app icons (Pro): Settings > Appearance picks one of six accent colours (kept, but not used, without Pro) and, on iOS, one of four app icons (`AppDelegate` channel `logbite/app_icon`; icon sets made by `tool/make_alt_icons.py`). An icon already chosen stays without Pro | The colour is device-local, not in backups. Charts keep their own colours. Icon switching is untested on a phone; Android has no icon picker |
+| Nutrition label scan | New Food > Scan a nutrition label: take or choose a photo, and the calories, protein, carbs, fat, fiber, sugar, sodium and serving weight read from it fill the form for review. Reads US labels and EU tables (per serving and per 100 g, kJ or kcal, decimal commas, English, German, French, Spanish and Italian names), on the device (`core/label_scan.dart`) | New foods only. Tested against Apple Vision output for rendered labels and once on an Android emulator, not yet on real packaging. Curved or glossy labels will read worse. Adds `image_picker` |
+| Starter foods | Searching in Add Food lists matching generic foods under the catalog's own ("COMMON FOODS"): 6,158 foods from USDA FoodData Central SR Legacy, bundled and searched offline. Tapping one copies it into the catalog (100 g serving, with up to three USDA portions) and opens the servings screen | Add Food only. SR Legacy (2018) only, not Foundation Foods. USDA names ("Chicken, broilers or fryers, breast…"). A food is copied when tapped, even if it is then not logged |
+| iPad and landscape | From 700 points wide, Today shows Add Food as a pane beside the day (its own navigator; logging returns to the catalog), and Summary puts taller charts in their own column | Catalog and Settings are unchanged. Not yet seen on an iPad |
+| Android checks (A2, partly) | On an API 33 emulator: system back closes pushed pages, sheets, dialogs and now the app tour; the keyboard resizes forms; dark mode is readable; a backup imports from Downloads; the label scan and starter foods work. Pro is hidden on Android | See A2 in the roadmap for what is left (API 35+ edge-to-edge and predictive back, a physical phone) |

@@ -7,7 +7,9 @@
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Logbite writes your daily calories and nutrients to Apple Health.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Scan a food barcode to look up its nutrition details.</string>
+	<string>Scan a food barcode, or photograph a nutrition label, to fill in a food's nutrition details.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Choose a photo of a nutrition label to fill in a food's nutrition details.</string>
 	<!-- Shows the app's Documents folder (automatic backups) in the Files app. -->
 	<key>UIFileSharingEnabled</key>
 	<true/>

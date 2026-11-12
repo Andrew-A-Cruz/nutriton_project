@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../core/bundled_foods.dart';
 import '../../core/nutrition_math.dart';
 import '../../core/validation.dart';
 import '../database/app_database.dart';
@@ -63,6 +64,33 @@ class CatalogRepository {
   }
 
   Future<void> removeServing(String id) => _db.foodDao.deleteServing(id);
+
+  /// The catalog food for a bundled [food], copying it in the first time it
+  /// is used: a 100 g serving with the bundled values and portions. A food
+  /// with the same name and no brand already in the catalog is used as it
+  /// is, with any edits made to it, so picking a bundled food twice never
+  /// makes a second copy.
+  Future<FoodItem> adoptBundledFood(BundledFood food) =>
+      _db.transaction(() async {
+        final name = food.name.trim();
+        final existing = await _db.foodDao.findActiveUnbrandedByName(name);
+        if (existing != null) return existing;
+        final id = await createFood(
+          name: name.length > maxNameLength
+              ? name.substring(0, maxNameLength)
+              : name,
+          perServing: food.per100g,
+          servingWeightG: 100,
+        );
+        for (final p in food.portions) {
+          await addServing(
+            id,
+            name: p.name.length > 40 ? p.name.substring(0, 40) : p.name,
+            weightG: p.weightG,
+          );
+        }
+        return (await _db.foodDao.findById(id))!;
+      });
 
   Future<String> createFood({
     required String name,

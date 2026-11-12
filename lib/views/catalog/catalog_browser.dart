@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/bundled_foods.dart';
 import '../../data/database/app_database.dart';
 import '../../data/database/daos/log_dao.dart';
 import '../../providers/catalog_providers.dart';
@@ -21,7 +22,12 @@ class CatalogBrowser extends StatefulWidget {
     this.showRecent = false,
     this.onScan,
     this.onSearchOnline,
+    this.onBundledFoodTap,
   });
+
+  /// Lists matching starter foods under the catalog's own while searching
+  /// foods, when set. Called with the one tapped.
+  final ValueChanged<BundledFood>? onBundledFoodTap;
 
   final ValueChanged<FoodItem> onFoodTap;
   final ValueChanged<Meal> onMealTap;
@@ -116,6 +122,7 @@ class _CatalogBrowserState extends State<CatalogBrowser> {
               search: _search,
               onTap: widget.onFoodTap,
               archivable: widget.archivable,
+              onBundledTap: widget.onBundledFoodTap,
             ),
             CatalogSection.meals => MealList(
               search: _search,

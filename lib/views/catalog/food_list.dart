@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/bundled_foods.dart';
 import '../../core/metrics.dart';
 import '../../core/nutrition_math.dart';
 import '../../data/database/app_database.dart';
@@ -17,7 +18,12 @@ class FoodList extends ConsumerWidget {
     required this.search,
     required this.onTap,
     this.archivable = false,
+    this.onBundledTap,
   });
+
+  /// Shows matching starter foods under the catalog's own while searching,
+  /// when set. Called with the one tapped.
+  final ValueChanged<BundledFood>? onBundledTap;
 
   final String search;
   final ValueChanged<FoodItem> onTap;
@@ -35,7 +41,31 @@ class FoodList extends ConsumerWidget {
         stack: stack,
       ),
       data: (rows) {
-        if (rows.isEmpty) {
+        final bundledTap = onBundledTap;
+        final bundled = bundledTap == null || search.trim().isEmpty
+            ? const <BundledFood>[]
+            : searchBundledFoods(
+                ref.watch(genericFoodsProvider).value ?? const [],
+                search,
+                // A starter food already copied in shows once, as the
+                // catalog's own.
+                exclude: {for (final f in rows) f.name.toLowerCase()},
+              );
+        final footer = [
+          if (bundled.isNotEmpty) const _BundledHeader(),
+          for (final (i, food) in bundled.indexed)
+            CupertinoListTile(
+              key: Key('bundled-food-$i'),
+              title: Text(food.name),
+              subtitle: Text(
+                '${Metric.calories.format(food.per100g.calories)} kcal per '
+                '100 g',
+              ),
+              trailing: const Icon(CupertinoIcons.add_circled),
+              onTap: () => bundledTap!(food),
+            ),
+        ];
+        if (rows.isEmpty && footer.isEmpty) {
           return CatalogEmptyText(
             search.trim().isEmpty
                 ? 'No foods yet. Tap + to add one.'
@@ -45,6 +75,7 @@ class FoodList extends ConsumerWidget {
         return ArchivableList<FoodItem>(
           items: rows,
           idOf: (food) => food.id,
+          footer: footer,
           onArchive: archivable
               ? (food) => ref
                     .read(catalogRepositoryProvider)
@@ -70,6 +101,26 @@ class FoodList extends ConsumerWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// The heading above the starter foods, with where they come from.
+class _BundledHeader extends StatelessWidget {
+  const _BundledHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+      child: Text(
+        'COMMON FOODS (USDA FoodData Central)',
+        key: const Key('bundled-foods-header'),
+        style: TextStyle(
+          fontSize: 13,
+          color: CupertinoColors.secondaryLabel.resolveFrom(context),
+        ),
+      ),
     );
   }
 }

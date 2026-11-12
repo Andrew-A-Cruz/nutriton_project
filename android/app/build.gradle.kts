@@ -68,6 +68,9 @@ android {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    // The nutrition label scan (MainActivity.kt). The bundled Latin model, so
+    // a label is read offline and nothing is downloaded on first use.
+    implementation("com.google.mlkit:text-recognition:16.0.1")
 }
 
 flutter {

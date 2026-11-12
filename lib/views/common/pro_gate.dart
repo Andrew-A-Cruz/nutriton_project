@@ -6,7 +6,8 @@ import '../paywall/paywall_view.dart';
 
 /// Wraps a Pro feature's entry point: [child] with Pro, otherwise a "Pro"
 /// lock badge that opens the paywall. Only Pro entry points use it, so free
-/// features never see a paywall.
+/// features never see a paywall. Where Pro is not sold (see
+/// [proOfferedProvider]) there is nothing to offer, so it shows nothing.
 class ProGate extends ConsumerWidget {
   const ProGate({super.key, required this.child});
 
@@ -15,6 +16,7 @@ class ProGate extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (ref.watch(proProvider)) return child;
+    if (!ref.watch(proOfferedProvider)) return const SizedBox.shrink();
     final color = CupertinoTheme.of(context).primaryColor;
     return CupertinoButton(
       key: const Key('pro-lock'),

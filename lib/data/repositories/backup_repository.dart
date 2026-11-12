@@ -38,6 +38,8 @@ class BackupRepository {
               .get(),
           bodyWeights: await _db.select(_db.bodyWeights).get(),
           foodServings: await _db.select(_db.foodServings).get(),
+          waterDays: await _db.select(_db.waterLog).get(),
+          fasts: await _db.select(_db.fasts).get(),
           settings: _prefs.read(),
         ),
       );
@@ -60,6 +62,8 @@ class BackupRepository {
     try {
       await _db.transaction(() async {
         // Children first, so no delete trips a foreign key.
+        await _db.delete(_db.fasts).go();
+        await _db.delete(_db.waterLog).go();
         await _db.delete(_db.bodyWeights).go();
         await _db.delete(_db.foodServings).go();
         await _db.delete(_db.scheduledMealOutcomes).go();
@@ -81,6 +85,8 @@ class BackupRepository {
           b.insertAll(_db.scheduledMealOutcomes, data.scheduledMealOutcomes);
           b.insertAll(_db.bodyWeights, data.bodyWeights);
           b.insertAll(_db.foodServings, data.foodServings);
+          b.insertAll(_db.waterLog, data.waterDays);
+          b.insertAll(_db.fasts, data.fasts);
         });
       });
     } on Exception {

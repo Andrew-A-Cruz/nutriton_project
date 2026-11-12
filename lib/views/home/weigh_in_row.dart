@@ -52,7 +52,7 @@ class WeighInRow extends ConsumerWidget {
                     style: TextStyle(
                       fontSize: 15,
                       color: kg == null
-                          ? CupertinoColors.activeBlue.resolveFrom(context)
+                          ? CupertinoTheme.of(context).primaryColor
                           : CupertinoColors.label.resolveFrom(context),
                     ),
                   ),
