@@ -8,6 +8,7 @@ import 'providers/health_providers.dart';
 import 'providers/menu_providers.dart';
 import 'providers/preferences_providers.dart';
 import 'providers/reminder_providers.dart';
+import 'providers/shortcuts_providers.dart';
 import 'providers/review_providers.dart';
 import 'providers/widget_providers.dart';
 import 'views/catalog/catalog_view.dart';
@@ -61,6 +62,9 @@ class _RootGate extends ConsumerWidget {
     ref.watch(autoBackupPlanProvider);
     // Brings unedited restaurant foods up to this release's menus.
     ref.watch(menuRefreshPlanProvider);
+    // Keeps Siri's answers current and logs what Siri was asked to log.
+    ref.watch(shortcutsPublishPlanProvider);
+    ref.watch(shortcutRequestsProvider);
     final onboarded = ref.watch(
       preferencesProvider.select((s) => s.onboardingComplete),
     );
@@ -68,8 +72,43 @@ class _RootGate extends ConsumerWidget {
   }
 }
 
-class _HomeTabs extends StatelessWidget {
+/// The three tabs. On Android, Back at the root of Catalog or Summary goes
+/// to Today first, and only Back on Today leaves the app, as in most Android
+/// apps with a tab bar.
+class _HomeTabs extends StatefulWidget {
   const _HomeTabs();
+
+  @override
+  State<_HomeTabs> createState() => _HomeTabsState();
+}
+
+class _HomeTabsState extends State<_HomeTabs> {
+  final _controller = CupertinoTabController();
+
+  /// Each tab's own navigator.
+  final _navigators = List.generate(3, (_) => GlobalKey<NavigatorState>());
+
+  /// Whether the shown tab has a pushed page, which Back pops first.
+  bool _tabCanPop = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Rebuilds the PopScope below when the tab changes.
+    _controller.addListener(_tabChanged);
+  }
+
+  void _tabChanged() => setState(() {
+    _tabCanPop = _navigators[_controller.index].currentState?.canPop() ?? false;
+  });
+
+  @override
+  void dispose() {
+    _controller
+      ..removeListener(_tabChanged)
+      ..dispose();
+    super.dispose();
+  }
 
   static final List<({String label, IconData icon, TourTarget? tourTarget})>
   _tabs = [
@@ -88,10 +127,34 @@ class _HomeTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return PopScope(
+      // A page pushed inside a tab pops first; CupertinoTabView does that,
+      // so this steps aside while the tab can pop.
+      canPop: _controller.index == 0 || _tabCanPop,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && !_tabCanPop && _controller.index != 0) {
+          _controller.index = 0;
+        }
+      },
+      child: NotificationListener<NavigationNotification>(
+        onNotification: (n) {
+          if (n.canHandlePop != _tabCanPop) {
+            setState(() => _tabCanPop = n.canHandlePop);
+          }
+          // Keeps going up: the app uses it for Android's predictive back.
+          return false;
+        },
+        child: _buildTabs(),
+      ),
+    );
+  }
+
+  Widget _buildTabs() {
     return Stack(
       children: [
         // Each tab gets its own CupertinoTabView, so it keeps its own stack.
         CupertinoTabScaffold(
+          controller: _controller,
           tabBar: CupertinoTabBar(
             items: [
               for (final tab in _tabs)
@@ -108,6 +171,7 @@ class _HomeTabs extends StatelessWidget {
             ],
           ),
           tabBuilder: (context, index) => CupertinoTabView(
+            navigatorKey: _navigators[index],
             builder: (context) => switch (index) {
               0 => const HomeView(),
               1 => const CatalogView(),

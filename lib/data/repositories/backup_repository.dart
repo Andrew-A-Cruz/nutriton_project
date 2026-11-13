@@ -2,6 +2,7 @@ import '../../core/date_key.dart';
 import '../backup/backup_codec.dart';
 import '../database/app_database.dart';
 import '../preferences/user_preferences.dart';
+import '../report/log_csv.dart';
 
 export '../backup/backup_codec.dart' show BackupData, BackupException;
 
@@ -22,6 +23,15 @@ class BackupRepository {
   /// Suggested file name, e.g. `logbite-backup-2026-10-21.json`.
   static String fileNameFor(DateTime date) =>
       'logbite-backup-${dateKey(date)}.json';
+
+  /// Suggested file name for the CSV, e.g. `logbite-log-2026-10-21.csv`.
+  static String csvFileNameFor(DateTime date) =>
+      'logbite-log-${dateKey(date)}.csv';
+
+  /// Every log entry as CSV (see [logCsv]). For spreadsheets; it cannot be
+  /// imported back.
+  Future<String> exportLogCsv() async =>
+      logCsv(await _db.select(_db.foodLogEntries).get());
 
   Future<String> exportJson() {
     return _db.transaction(() async {

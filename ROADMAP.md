@@ -16,7 +16,7 @@ When an item is finished, delete it here and add a line to [What's Built](./PROD
 | **B2** | Google Play developer account ($25, once) and a 14-day closed test with 12+ testers | Create the account; recruit testers as soon as [A2](#a2--check-the-free-app-on-android) is done | [A3](#a3--pro-purchase-on-google-play), [A6](#a6--play-store-release) |
 | **B3** | A phone in hand for manual testing | Install a build (`install-iphone` skill) and work through the checklist | [iPhone checks](#iphone-checks), part of [A2](#a2--check-the-free-app-on-android) |
 | **B4** | Chains whose sites refuse automated downloads | Download each chain's nutrition PDF in a browser into `tool/menus/sources/` | [M24](#m24--more-restaurant-menus) |
-| **D1–D9** (D3 is settled) | A decision that is yours to make | Accept the proposed answer, or choose another | See [Decisions](#decisions) |
+| **D4, D8** | A decision that is yours to make | Accept the proposed answer, or choose another | See [Decisions](#decisions) |
 | **Dep** | Another roadmap item has to come first | Finish that item | [Adaptive goals](#adaptive-goals), [A4](#a4--health-connect), [A5](#a5--android-home-screen-widget) |
 
 The privacy policy is live ([`docs/privacy.md`](./docs/privacy.md), contact logbite.app@gmail.com), so it no longer blocks selling Pro, Health Connect or the Play listing. A new network call or Health type means a policy update.
@@ -30,39 +30,40 @@ In order of impact.
 | # | Item | Size | Tier | Blocked by | Why it ranks here |
 |---|---|---|---|---|---|
 | 1 | [iPhone checks](#iphone-checks) | S | — | B3 | Much of what is built, including everything added this month, has never run on a real phone, and every release depends on it |
-| 2 | [Sell Pro on iOS (M21 launch)](#sell-pro-on-ios-m21-launch) | M | Pro | B1, D6 | Nothing earns money until this is done, and the App Store release has no plan yet |
-| 3 | [A2 — Check the free app on Android](#a2--check-the-free-app-on-android) | S | — | — (an API 35+ emulator image; a physical phone for the last checks) | The last step before Android can be released |
+| 2 | [Sell Pro on iOS (M21 launch)](#sell-pro-on-ios-m21-launch) | M | Pro | B1 | Nothing earns money until this is done, and the App Store release has no plan yet |
+| 3 | [A2 — Check the free app on Android](#a2--check-the-free-app-on-android) | S | — | A newer Android emulator (for API 35+); a physical phone for the last checks | The last step before Android can be released |
 | 4 | [A6 — Play Store release](#a6--play-store-release) | M + 14 days | — | B2, A2 | Puts the free app in front of Android users; the 14-day closed test is the long wait |
 | 5 | [M25 — Target weight guide](#m25--target-weight-guide) | M | Free | D4 | A first-week feature for new users, and adaptive goals needs it |
 | 6 | [M24 — More restaurant menus](#m24--more-restaurant-menus) | M | Free | B4 | The feature is built with five chains; the largest chains are still missing |
 | 7 | [Adaptive goals](#adaptive-goals) | L | Free | Dep: M25 | The main thing competitors charge for, offered free |
-| 8 | [CSV export of the log](#csv-export-of-the-log) | S | Free (proposed) | D1 | Small, and part of the promise that data is portable |
-| 9 | [M26 — Step counter](#m26--step-counter) | M | Pro (proposed) | D9, B3 | Asked for; the Apple Health connection it needs is built, so it is mostly a new row and a chart |
-| 10 | [A3 — Pro purchase on Google Play](#a3--pro-purchase-on-google-play) | M | Pro | B2, D5 | Android revenue; only matters once A6 is out |
-| 11 | [A4 — Health Connect](#a4--health-connect) | M | Pro | Dep: A3 | A Pro extra on Android |
-| 12 | [A5 — Android home screen widget](#a5--android-home-screen-widget) | M | Pro | Dep: A3 | A Pro extra on Android |
-| 13 | [Siri Shortcuts / App Intents](#siri-shortcuts--app-intents) | L | ? | D2 | A faster way to log for some users |
-| 14 | [A1 — Android native config leftovers](#a1--android-native-config-leftovers) | S | — | D8 | Only affects the Play download size |
-| 15 | [M20 — iCloud sync](#m20--icloud-sync) | XL | Pro | B1, D7 | The largest job, for a second device that may never exist; D7 may cut it |
+| 8 | [A3 — Pro purchase on Google Play](#a3--pro-purchase-on-google-play) | M | Pro | B2 | Android revenue; only matters once A6 is out |
+| 9 | [A4 — Health Connect](#a4--health-connect) | M | Pro | Dep: A3 | A Pro extra on Android |
+| 10 | [A5 — Android home screen widget](#a5--android-home-screen-widget) | M | Pro | Dep: A3 | A Pro extra on Android |
+| 11 | [A1 — Android native config leftovers](#a1--android-native-config-leftovers) | S | — | D8 | Only affects the Play download size |
+| 12 | [M20 — iCloud sync](#m20--icloud-sync) | XL | Pro | B1 | The largest job, and no second device is planned; kept as a Pro feature for users who have one |
 
-**Can start now:** A2 (rank 3). **Cheapest to unblock:** accepting the proposed answers to D1 and D4 opens CSV export and M25 at no cost, and installing a build on the iPhone opens rank 1.
+**Can start now:** nothing else without you. CSV export, the step counter (M26) and Siri Shortcuts were built on 2026-11-12 ([What's Built](./PRODUCT.md#whats-built)); their phone checks are under [iPhone checks](#iphone-checks). **Cheapest to unblock:** accepting D4's defaults opens M25 (the outside review of its text can come before release), and installing a build on the iPhone opens rank 1.
 
 ---
 
 ## Decisions
 
-Each decision is yours to make. Most have a proposed answer; accepting it unblocks the item.
+Each decision is yours to make. Accepting the proposed answer unblocks the item.
 
 | ID | Decision | Proposed | Unblocks |
 |---|---|---|---|
-| **D1** | Is a CSV export of the log free or Pro? | Free: it is data portability (Principle 1). Pro keeps the formatted PDF report | CSV export |
-| **D2** | Is Siri Shortcuts free (a faster way to log, Principle 3) or Pro (connects the app to something else)? | No proposal yet | Siri Shortcuts |
-| **D4** | Target weight guide defaults and wording | Steady pace by default, the calorie floor rule, the screen's text reviewed by someone outside the project before release. Decide too whether to offer the WHO's lower BMI cutoffs for Asian populations | M25, and then adaptive goals |
-| **D5** | Trial on Android (Play has no $0 one-time products) | No trial on Android for the first release, just Buy; a trial kept on the device if purchase rates are low. (A Play subscription trial would change the model) | A3 |
-| **D6** | Pro price | $9.99 launch then $14.99 is a guess (MacroFactor ~$72/yr, Cronometer Gold ~$55/yr). Pro now has four features (widget, Apple Health, reports, themes and icons) | Selling Pro |
-| **D7** | Is a second device actually planned? If not, M20 can be cut | No proposal yet | M20 |
+| **D4** | Target weight guide defaults and wording | Steady pace by default, the calorie floor rule, the screen's text reviewed by someone outside the project before release (you will find the reviewer later). Decide too whether to offer the WHO's lower BMI cutoffs for Asian populations | M25, and then adaptive goals |
 | **D8** | Bundle ML Kit's models in the Android app, or let Google Play services download them? Bundled: works offline at once, but the label scan's text model adds about 11 MB per ABI and the barcode model a few more. Unbundled: a much smaller download, but the first scan waits for the model and needs Play services | Bundled, as built, until the Play listing's size matters | A1 |
-| **D9** | Step counter: free or Pro, and where the steps come from | Pro, with the rest of Apple Health (it connects the app to something else). Steps are read from Apple Health only, which already merges iPhone and Apple Watch steps; no counting from the phone's motion sensor. Read live, not stored, so no schema change and nothing new in backups | M26 |
+
+**Settled on 2026-11-12:**
+
+- **D1** CSV export of the log is free (data portability).
+- **D2** Siri Shortcuts are free (a faster way to log).
+- **D3** Restaurant menus come only from each chain's own published documents.
+- **D5** Android gets a 14-day trial kept on the device, since Play has no $0 one-time product (details in [A3](#a3--pro-purchase-on-google-play)). If that proves unworkable, Android ships with no trial, just Buy.
+- **D6** Pro is $9.99 at launch, then $14.99, once.
+- **D7** No second device is planned, but iCloud sync stays on the roadmap as a Pro feature, last by impact.
+- **D9** The step counter is Pro, read from Apple Health only (no counting from the phone's motion sensor), read live and not stored.
 
 ---
 
@@ -87,11 +88,14 @@ Built but never tried on a real iPhone:
 - [ ] Search Add Food for a starter food ("banana"), log it, and find it in the Catalog with its portions
 - [ ] On an iPad or with the phone on its side: Add Food sits beside the day and logs to it; Summary's charts get their own column
 - [ ] Share a month's report from Summary (the share sheet, then open the PDF in Files or Mail) and read it as a dietitian would (M22)
+- [ ] Export the log as CSV and open it in Numbers or Excel: names with apostrophes read correctly, empty cells for nutrients not recorded
+- [ ] **Steps (M26):** Settings > Apple Health > Show steps, allow Steps, and check today's figure on Today matches the Health app's (with a Watch too, if there is one); walk, return to the app and see it update; Summary's average for the week. Then refuse access in Health and check the row's hint
+- [ ] **Siri Shortcuts:** "How much is left in Logbite" answers without opening the app, before and after logging, and just after midnight; "Log ⟨a saved meal⟩ in Logbite" opens the app and logs it once, cold and with the app already open; the shortcuts show in the Shortcuts app and Spotlight; a new meal's name works after it is saved
 
 Pro features are unlocked in `install-iphone` builds. The Android phone checks are part of [A2](#a2--check-the-free-app-on-android).
 
 ### Sell Pro on iOS (M21 launch)
-**M · B1, D6**
+**M · B1**
 
 M21 is built and tested in code. To sell it:
 
@@ -107,9 +111,9 @@ M21 is built and tested in code. To sell it:
 ### A2 — Check the free app on Android
 Checked on an API 33 emulator (the separate "Logbite Test API 33" AVD, which has room to install the app): onboarding, saving, the keyboard resizing forms and dialogs, dark mode, system back on pushed pages, sheets, dialogs and the app tour, a backup import from Downloads, starter foods and the nutrition label scan from a chosen photo. Pro is hidden on Android until A3. Still to check:
 
-- [ ] **Predictive back** (on by default at SDK 36) and **edge-to-edge** (enforced from SDK 35): status bar icons readable in light and dark; the tab bar and bottom buttons clear the gesture bar and the 3-button bar. Needs an API 35 or 36 system image; only API 33 is installed
-- [ ] Back at the root of the Catalog or Summary tab leaves the app. Decide whether it should go to Today first
-- [ ] The largest font size and a small screen (Roboto widths differ from SF Pro)
+- [ ] **Predictive back** (on by default at SDK 36) and **edge-to-edge** (enforced from SDK 35): status bar icons readable in light and dark; the tab bar and bottom buttons clear the gesture bar and the 3-button bar. Needs an API 35 or 36 system image, and the installed emulator (31.3) is too old to run one: update the Android Emulator, the command-line tools and a JDK 17 from Android Studio's SDK Manager first
+- [x] Back at the root of Catalog or Summary now goes to Today first, and Back on Today leaves the app (2026-11-12, `_HomeTabs` in `app.dart`; tested with `handlePopRoute`)
+- [x] The largest font size (1.3 on API 33) on a small screen (720×1280 at 320 dpi): Today, Summary and Settings fit, and Export log as CSV opens the share sheet (2026-11-12). Recheck at 2.0 once an API 34+ image runs (Android 14 allows up to 200%)
 - [ ] Backup import from Drive
 - [ ] On a physical phone: decode a real barcode; reminders after an app update; the label scan from the camera
 
@@ -161,36 +165,15 @@ Restaurant menus are built ([What's Built](./PRODUCT.md#whats-built)) and ship w
 
 MacroFactor's main paid feature, and the app already stores intake and body weight. M25 gives the starting estimate; this re-estimates energy use weekly from average intake and the weight trend, and suggests a goal change. Runs on the device. Suggest only; never change a goal without a confirm.
 
-### CSV export of the log
-**S · Free (if D1 is accepted) · no schema change**
-
-One row per entry (date, name, type, macros), readable in a spreadsheet, from the Backup section in Settings.
-
-### M26 — Step counter
-**M · Pro (if D9 is accepted) · no schema change · blocked by D9; B3 to verify**
-
-Show the day's steps, read from Apple Health. The app counts nothing itself. The Health connection is built (`lib/data/health/`, the `health` plugin): it writes nutrition and reads body weight, and does not yet ask for steps.
-
-- [ ] **Read:** add step count (`HealthDataType.STEPS`) to the types `HealthService` requests, and a method that returns a day's total. Use the plugin's de-duplicated total, so iPhone and Watch steps are not counted twice. A no-op default, as for the other Health calls
-- [ ] **Today:** a steps row like water and fasting, switched on in Settings > Apple Health (off by default), for the day Home shows. It reads again when the app returns to the foreground. An optional daily goal (preference `steps_goal`, device-local like the Health switches)
-- [ ] **Summary:** steps per day for the range, as a line or a chart
-- [ ] **When Health is off or access is refused:** the row explains how to turn it on instead of showing 0. iOS does not say whether read access was granted, so "no data" and "no access" look the same; word the row for both
-- [ ] **Not stored:** steps are read live, so they are not in the database or in backups. If Health access is later turned off, past steps no longer show. Revisit only if that proves a problem
-- [ ] **Paperwork:** `NSHealthShareUsageDescription` in `Info.plist` and the Apple Health section of [`docs/privacy.md`](./docs/privacy.md) both say the app reads steps
-- [ ] **Android:** steps come through Health Connect, with [A4](#a4--health-connect)
-- [ ] Tests with a fake `HealthService`: the row shows the total and the goal, hides when switched off, and shows the hint with no data. The simulator has no step data, so the real read needs a phone
-
-**Done when:** today's steps on Today match the Health app's figure on a real iPhone.
-
 ### A3 — Pro purchase on Google Play
-**M · B2, D5**
+**M · B2**
 
 RevenueCat handles Play Billing with the same entitlements.
 
 - [ ] Play Console payments profile and merchant account; the 15% fee tier
 - [ ] Products with the same IDs as iOS (`com.nutriton.app.pro` and the tips); attach them to `pro` in RevenueCat with a Play service account
 - [ ] `RevenueCatStoreService`: read `REVENUECAT_ANDROID_KEY`, pick the key by platform, allow Android in `isSupported`
-- [ ] Trial per D5 (it fits behind `StoreService`). Grandfathering needs nothing: `isGrandfathered` is false on Android
+- [ ] **Trial (D5):** Play has no $0 one-time product, so the 14-day trial is kept on the device behind `StoreService`: "Start trial" saves its start date in preferences, and Pro is unlocked until 14 days later. Android Auto Backup restores the date after a reinstall on the same Google account, but clearing the app's data restarts it; accept that. Check Play's policy allows it before building; if not, ship with Buy only. Grandfathering needs nothing: `isGrandfathered` is false on Android
 - [ ] Store-neutral wording in `pro_section.dart`, `paywall_view.dart` (two) and `revenuecat_store_service.dart` (two)
 - [ ] Test with license testers on the internal track: buy, reinstall and restore, refund, offline launch, and the review prompt (it only shows in Play-installed builds)
 
@@ -205,6 +188,7 @@ The `health` plugin talks to Health Connect, so `HealthService`, `HealthSync`, t
 - [ ] Availability: built into Android 14+, a separate app on 9–13. Offer to install it when missing; hide the section where unavailable
 - [ ] **Nutrition is one `NutritionRecord` per time range**, not one sample per nutrient. Write one record per day from the same totals as `nutritionSamples`. Delete-then-write stays idempotent
 - [ ] Confirm the sodium unit the plugin expects on Android
+- [ ] Steps (M26) through Health Connect: `readDailySteps` and the steps permission
 - [ ] **History limit:** by default only ~30 days before permission was granted can be read. Decide whether to request `READ_HEALTH_DATA_HISTORY` for the 90-day weight read
 - [ ] Health Connect reports refused reads, so "Read body weight" can show a real refusal
 - [ ] Say "Health Connect" on Android: the Settings section, `ProFeature.appleHealth`'s text, the "from Health" label, the trial notice, and the denied-access hint
@@ -226,11 +210,6 @@ The `health` plugin talks to Health Connect, so `HealthService`, `HealthSync`, t
 
 **Done when:** logging updates the widget within seconds, it shows an empty day after midnight without opening the app, and it shows "Pro" when Pro is off.
 
-### Siri Shortcuts / App Intents
-**L · tier set by D2 · no schema change**
-
-"Log my usual breakfast" or "How many calories are left?" from Siri, Spotlight or the Action button. Needs a Swift App Intents target and a platform channel, like the widget.
-
 ### A1 — Android native config leftovers
 **S · blocked by D8**
 
@@ -239,9 +218,9 @@ The application ID is `com.andrewcruz.logbite` (permanent after the first Play u
 - [ ] Model size: `mobile_scanner` bundles ML Kit's barcode model and the label scan bundles its text model (`com.google.mlkit:text-recognition` in `android/app/build.gradle.kts`). Keep them, or switch each to the unbundled model (`mobile_scanner`'s Gradle property; `play-services-mlkit-text-recognition`)
 
 ### M20 — iCloud sync
-**XL · Pro · B1, D7**
+**XL · Pro · B1**
 
-Free personal teams can't provision iCloud. Plan this one in detail before starting. Outline: the CloudKit private database (the user's own iCloud quota, no account), one record type per table, `updated_at` and `deleted` on every table, last-write-wins per row, a Swift layer behind a platform channel. The sync action goes behind `ProGate`; records already synced stay without Pro. Set `ProFeature.iCloudSync.available` when it ships. On Android, hide the feature rather than rename it.
+No second device is planned (D7), so this stays last; it is kept for users who have an iPad as well as a phone. Free personal teams can't provision iCloud. Plan this one in detail before starting. Outline: the CloudKit private database (the user's own iCloud quota, no account), one record type per table, `updated_at` and `deleted` on every table, last-write-wins per row, a Swift layer behind a platform channel. The sync action goes behind `ProGate`; records already synced stay without Pro. Set `ProFeature.iCloudSync.available` when it ships. On Android, hide the feature rather than rename it.
 
 ---
 

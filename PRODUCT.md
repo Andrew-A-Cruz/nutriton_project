@@ -37,10 +37,10 @@ A calorie and macro tracker for iPhone (Android planned), built in Flutter. Loca
 
 ## Free vs Pro
 
-| Tier | Price (proposed) | Type | Covers |
+| Tier | Price | Type | Covers |
 |---|---|---|---|
 | Free | $0 | — | Nearly everything: logging, catalog, meals, recipes, barcode scan, planned meals, all history and charts, goals, backup |
-| Pro | $9.99 at launch, then $14.99, once | Non-consumable IAP | Home screen widget, Apple Health, iCloud sync, shareable reports, themes and icons |
+| Pro | $9.99 at launch, then $14.99, once | Non-consumable IAP | Home screen widget, Apple Health, step counter, iCloud sync, shareable reports, themes and icons |
 | Pro+ (only if ever built) | ~$2.99/mo or $19.99/yr | Subscription | Only features with a running cost to us (server sync) |
 | Tip jar | $1.99 / $4.99 / $9.99 | Consumable IAP | Unlocks nothing |
 
@@ -50,14 +50,15 @@ A calorie and macro tracker for iPhone (Android planned), built in Flutter. Loca
 |---|---|
 | Logging, catalog, meals, recipes, quick add, favorites | M18 home screen widget (built) |
 | Barcode scan and Open Food Facts lookup | M19 Apple Health (built) |
-| Planned meals | M20 iCloud sync (CloudKit) |
+| Planned meals | M20 iCloud sync (CloudKit), planned |
 | Summary, every range; weight chart | M22 shareable PDF reports (built) |
 | Goals for calories and macros | M23 themes and alternate icons (built) |
-| Recent and frequent foods, log again, copy day | |
-| Backup: export, import, automatic backups | |
+| Recent and frequent foods, log again, copy day | M26 step counter from Apple Health (built) |
+| Backup: export, import, automatic backups; CSV export of the log | |
 | Meal sections; fiber, sugar, sodium | |
 | Streaks and reminders; weigh-ins | |
 | Water tracking; fasting timer | |
+| Siri Shortcuts | |
 | Nutrition label scan; starter foods; restaurant menus | |
 | Every backlog item marked Free in the roadmap | |
 
@@ -99,7 +100,7 @@ Family Sharing is on for Pro. Development builds can't buy anything; `--dart-def
 - **Weights in grams, body weight in kg, dates as `yyyy-MM-dd` text.** Units are for display only.
 - **Null nutrient means "not recorded"**, different from 0. Sums treat null as 0 but show coverage ("sodium recorded for 3 of 5 entries").
 - **Summary averages over days with at least one entry**, shown as "days logged: n of N".
-- **Every native feature sits behind an interface with a no-op default** that `main` replaces: `NotificationScheduler`, `WidgetPublisher`, `HealthService`, `StoreService`. Tests override them with fakes, and an unsupported platform just runs without the feature.
+- **Every native feature sits behind an interface with a no-op default** that `main` replaces: `NotificationScheduler`, `WidgetPublisher`, `HealthService`, `StoreService`, `ShortcutsBridge`. Tests override them with fakes, and an unsupported platform just runs without the feature.
 - **Backup is versioned JSON** (`version` 1), readable across schema versions. New nullable columns and tables are optional on read, so the format version stays 1; `BackupCodec` has a step-by-step upgrade pipeline for when it must change. A newer file is refused.
 - **Sync, if built, is CloudKit in Pro** (decided October 2026): no server, no running cost, Apple only. Supabase / Pro+ only if Android or web sync is ever wanted.
 - **The two-pane layouts start at 700 points wide** (`views/common/wide_layout.dart`): every iPad, and a large phone on its side. Tests run in the phone layout unless they ask for the wide one (`test/flutter_test_config.dart`), because Flutter's test window is 800 wide.
@@ -137,7 +138,7 @@ As of November 2026, schema v14. Known gaps that are worth doing are in the road
 | M21 | Pro unlock in code: RevenueCat, cached status, 14-day trial, paywall, `ProGate`, tip jar, review prompt | Can't sell until the App Store setup is done. Grandfathering is built but off (`grandfatherBeforeBuild = null`) |
 | October 2026 review | Stale "today" fix, undo on swipe-delete, edit any entry and move it to another day, backup upgrades, migration tooling, Copy yesterday double-tap, release signing, form overflow at 2x text | |
 | November 2026 | Quick add, recipes with cooked weight, favorites, duplicate food (v9), movable Summary end date, bars coloured by goal, automatic weekly backups, VoiceOver labels, comma decimal input, error log, CI, stricter lints, scan from Add Food, brand, word search, log indexes | Comma decimals: input, and display since the locale item below |
-| M22 | Shareable PDF report (Pro): the share button on Summary sends the range shown, with averages against goals, days on target, the weight change and daily totals (`core/report.dart`, `data/report/report_pdf.dart`) | No CSV yet (D1). Standard PDF fonts, so text is ASCII only. Untested on a phone |
+| M22 | Shareable PDF report (Pro): the share button on Summary sends the range shown, with averages against goals, days on target, the weight change and daily totals (`core/report.dart`, `data/report/report_pdf.dart`) | Standard PDF fonts, so text is ASCII only. Untested on a phone |
 | Macro split | Share of calories from protein, carbs and fat (4 / 4 / 9 kcal per g) as a stacked bar with a legend: the day on Home, the range's averages on Summary (`core/macro_split.dart`, `MacroSplitBar`) | Shown only to people tracking protein, carbs or fat. Uses the grams, so alcohol calories don't count |
 | Macro goals as % | In the goals form, "% of calories" sets protein, carbs and fat as shares of the calorie goal (must add to 100), showing the grams live. The grams are derived and saved as ordinary goals, so they follow the calorie goal | Needs a calorie goal. Backups carry the percentages; older app versions read the grams |
 | Copy an entry | Long-press an entry > "Copy to another day": a date picker (tomorrow by default) or a "Copy to tomorrow" shortcut, then an undo banner | |
@@ -162,4 +163,7 @@ As of November 2026, schema v14. Known gaps that are worth doing are in the road
 | Starter foods | Searching in Add Food lists matching generic foods under the catalog's own ("COMMON FOODS"): 6,158 foods from USDA FoodData Central SR Legacy, bundled and searched offline. Tapping one copies it into the catalog (100 g serving, with up to three USDA portions) and opens the servings screen | Add Food only. SR Legacy (2018) only, not Foundation Foods. USDA names ("Chicken, broilers or fryers, breast…"). A food is copied when tapped, even if it is then not logged |
 | Restaurant menus (M24) | Add Food > Restaurants lists chains by name, then a chain's items by category, with a search within the chain and across all of them; a food search in Add Food also lists matching menu items under "RESTAURANTS". Tapping an item copies it into the catalog once, with the chain as its brand, and opens the servings screen, so a menu item is logged in five taps. Bundled and offline: `assets/menus/menus.json`, built by `tool/make_menus.py` from one file per chain. Ships with Arby's, Chick-fil-A, Dunkin', Five Guys and Sonic (1,771 items, values read from each chain's own document on 2026-11-12). Dunkin', Sonic and Arby's fountain drinks are published with no weight: those foods are counted in items (`food_items.weight_unknown`), read "per item" in lists, and the servings screen offers no logging by weight for them; typing a weight in the food form gives such a food one. Each chain's screen says where its values come from and when they were checked, with a link to report a wrong one by email. A new release's values replace an unedited menu food's at launch; a food the user has edited is never changed (schema v14: `food_items.menu_item_id`, `menu_version` and `weight_unknown`) | Five chains only; the rest are in the roadmap. Limited time and regional items are left out. A food with no known weight added to a meal shows as "1 g" there (1 g stands for one item). Five Guys is listed as components, since it publishes no built burgers. Names only, no logos. An item is copied when tapped, even if it is then not logged. The parser lives in `core/menus.dart` and the catalog writes in `CatalogRepository`; there is no separate menu repository. Not yet run on a phone |
 | iPad and landscape | From 700 points wide, Today shows Add Food as a pane beside the day (its own navigator; logging returns to the catalog), and Summary puts taller charts in their own column | Catalog and Settings are unchanged. Not yet seen on an iPad |
-| Android checks (A2, partly) | On an API 33 emulator: system back closes pushed pages, sheets, dialogs and now the app tour; the keyboard resizes forms; dark mode is readable; a backup imports from Downloads; the label scan and starter foods work. Pro is hidden on Android | See A2 in the roadmap for what is left (API 35+ edge-to-edge and predictive back, a physical phone) |
+| Android checks (A2, partly) | On an API 33 emulator: system back closes pushed pages, sheets, dialogs and now the app tour; the keyboard resizes forms; dark mode is readable; a backup imports from Downloads; the label scan and starter foods work. Pro is hidden on Android. Back at the root of Catalog or Summary goes to Today first, and only Back on Today leaves the app | See A2 in the roadmap for what is left (API 35+ edge-to-edge and predictive back, a physical phone) |
+| CSV export | Settings > Backup > Export log as CSV shares `logbite-log-<date>.csv`: one row per entry, oldest first, with date, time, meal, type, name, servings and every nutrient (`data/report/log_csv.dart`). UTF-8 with a byte order mark for Excel; a nutrient not recorded is an empty cell; names a spreadsheet would run as a formula start with `'` | Export only; it cannot be imported. Not a backup, so the last backup date is unchanged |
+| M26 step counter | Settings > Apple Health > Show steps (Pro, off by default) asks for read access to Steps, then Today shows the day's steps under the water row, against an optional daily goal, and Summary's averages card shows the average per day with steps. Read live from Apple Health in hourly buckets that HealthKit counts once across iPhone and Watch (`readDailySteps`), again each time the app returns to the foreground. With no steps, the row says how to allow access instead of showing 0 | Device-local switch and goal (`health_show_steps`, `steps_goal`), not in backups; steps are never stored. iOS only (Android with A4). The simulator has no steps, so the real read is untested until a phone |
+| Siri Shortcuts | Free, iOS 16+. "How much is left in Logbite" answers from a sentence the app keeps current (today's primary metric against its goal), without opening the app. "Log ⟨item⟩ in Logbite" logs a saved meal (not a recipe) or a starred food for today, in the slot for the time of day, at the servings last used; Siri opens the app to do it. Also in Spotlight, the Shortcuts app and the Action button. Swift in `ios/Runner/LogbiteShortcuts.swift` (App Intents) reads the App Group defaults the widget uses; the app publishes there and takes requests over channel `logbite/shortcuts` (`core/shortcuts.dart`, `data/shortcuts/`) | A request older than 10 minutes is dropped. Not yet run on a phone or with Siri; the simulator build compiles and Xcode extracts both intents |

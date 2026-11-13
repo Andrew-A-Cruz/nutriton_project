@@ -24,6 +24,12 @@ abstract class HealthService {
   /// Body weights recorded from [startDate] to [endDate] inclusive, at most
   /// one per day (the latest), oldest first.
   Future<List<WeightReading>> readBodyWeights(String startDate, String endDate);
+
+  /// Steps per day from [startDate] to [endDate] inclusive, keyed
+  /// 'yyyy-MM-dd', counted once across iPhone and Watch. Days without steps
+  /// are missing. Without read access this is empty, as HealthKit does not
+  /// say access was refused.
+  Future<Map<String, int>> readDailySteps(String startDate, String endDate);
 }
 
 /// For platforms without a health store, and the default until `main`
@@ -45,4 +51,10 @@ class NoopHealthService implements HealthService {
     String startDate,
     String endDate,
   ) async => const [];
+
+  @override
+  Future<Map<String, int>> readDailySteps(
+    String startDate,
+    String endDate,
+  ) async => const {};
 }

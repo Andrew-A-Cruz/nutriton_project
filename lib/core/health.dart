@@ -27,6 +27,9 @@ enum HealthGroup {
 
   /// Reads body weight.
   weight,
+
+  /// Reads the step count.
+  steps,
 }
 
 /// How many days back (counting today) are written when writing is turned on.
@@ -91,4 +94,44 @@ List<WeightReading> dailyWeights(Iterable<TimedWeight> readings) {
   }
   final keys = latest.keys.toList()..sort();
   return [for (final k in keys) (date: k, kg: latest[k]!.kg)];
+}
+
+/// One stretch of steps from the health store, already de-duplicated across
+/// devices: when it started and how many steps.
+typedef TimedSteps = ({DateTime from, double steps});
+
+/// Total steps per local day from [stretches], keyed 'yyyy-MM-dd'. A stretch
+/// counts on the day it starts; ones that are not a positive number are
+/// skipped. Totals are rounded to whole steps.
+Map<String, int> dailySteps(Iterable<TimedSteps> stretches) {
+  final totals = <String, double>{};
+  for (final s in stretches) {
+    if (!s.steps.isFinite || s.steps <= 0) continue;
+    final key = dateKey(s.from);
+    totals[key] = (totals[key] ?? 0) + s.steps;
+  }
+  return {for (final e in totals.entries) e.key: e.value.round()};
+}
+
+/// The highest daily step goal accepted.
+const maxStepsGoal = 100000;
+
+/// "8,214" or "8,214 / 10,000" with a goal. [format] groups the thousands.
+String stepsProgressText(
+  int steps,
+  int? goal, {
+  required String Function(int) format,
+}) => goal == null || goal <= 0
+    ? format(steps)
+    : '${format(steps)} / ${format(goal)}';
+
+/// The average of the days in [days] that have steps, rounded, or null when
+/// none do.
+int? averageDailySteps(Map<String, int> days) {
+  final counted = [
+    for (final v in days.values)
+      if (v > 0) v,
+  ];
+  if (counted.isEmpty) return null;
+  return (counted.reduce((a, b) => a + b) / counted.length).round();
 }

@@ -9,6 +9,7 @@ import 'package:nutriton_project/data/database/app_database.dart';
 import 'package:nutriton_project/data/preferences/user_preferences.dart';
 import 'package:nutriton_project/data/repositories/backup_repository.dart';
 import 'package:nutriton_project/data/repositories/catalog_repository.dart';
+import 'package:nutriton_project/data/repositories/log_repository.dart';
 import 'package:nutriton_project/providers/backup_providers.dart';
 import 'package:nutriton_project/providers/infrastructure_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,7 +21,7 @@ import '../support/test_app.dart';
 class FakeBackupFileIo implements BackupFileIo {
   String? pickResult;
   bool saveResult = true;
-  final saved = <({String fileName, String contents})>[];
+  final saved = <({String fileName, String contents, String mimeType})>[];
   int picks = 0;
 
   @override
@@ -28,8 +29,9 @@ class FakeBackupFileIo implements BackupFileIo {
     required String fileName,
     required String contents,
     Rect? origin,
+    String mimeType = 'application/json',
   }) async {
-    saved.add((fileName: fileName, contents: contents));
+    saved.add((fileName: fileName, contents: contents, mimeType: mimeType));
     return saveResult;
   }
 
@@ -126,6 +128,28 @@ void main() {
     );
     expect(io.saved.single.contents, contains('Current food'));
     expect(find.text('Backup saved.'), findsOneWidget);
+    await unmount(tester);
+  });
+
+  testWidgets('the CSV export shares the log, not a backup', (tester) async {
+    await LogRepository(db).logAdhoc(
+      logDate: '2026-11-12',
+      name: 'Toast',
+      macros: const Macros(calories: 90),
+    );
+    await openSettingsAndShow(tester, const Key('backup-export-csv'));
+
+    await tester.tap(find.byKey(const Key('backup-export-csv')));
+    await settle(tester);
+
+    final saved = io.saved.single;
+    expect(saved.fileName, matches(r'^logbite-log-\d{4}-\d{2}-\d{2}\.csv$'));
+    expect(saved.mimeType, 'text/csv');
+    expect(saved.contents, contains('2026-11-12,'));
+    expect(saved.contents, contains(',Toast,'));
+    expect(find.text('Log exported.'), findsOneWidget);
+    // Not a backup: the last backup day is unchanged.
+    expect(prefs.get(UserPreferences.lastBackupKey), isNull);
     await unmount(tester);
   });
 

@@ -16,6 +16,7 @@ import 'day_log_list.dart';
 import 'macro_summary.dart';
 import 'streak_badge.dart';
 import 'trial_ended_notice.dart';
+import 'steps_row.dart';
 import 'water_row.dart';
 import 'weigh_in_row.dart';
 
@@ -58,6 +59,7 @@ class HomeView extends ConsumerWidget {
         const SliverToBoxAdapter(child: TrialEndedNotice()),
         SliverToBoxAdapter(child: WeighInRow(date: date)),
         SliverToBoxAdapter(child: WaterRow(date: date)),
+        SliverToBoxAdapter(child: StepsRow(date: date)),
         SliverToBoxAdapter(child: FastingRow(date: date)),
         if (entriesAsync.hasError)
           SliverFillRemaining(

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/widgets.dart' show AppLifecycleListener;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/date_key.dart';
@@ -84,4 +85,78 @@ final healthWeightPlanProvider = Provider<void>((ref) {
         .importWeights(enabled: enabled, today: today)
         .catchError((Object _) {}),
   );
+});
+
+/// Whether Today shows the step count. Device-local (see
+/// `UserPreferences.readShowSteps`).
+class ShowStepsNotifier extends Notifier<bool> {
+  @override
+  bool build() => ref.watch(userPreferencesProvider).readShowSteps();
+
+  Future<void> set(bool on) async {
+    state = on;
+    await ref.read(userPreferencesProvider).writeShowSteps(on);
+  }
+}
+
+final showStepsProvider = NotifierProvider<ShowStepsNotifier, bool>(
+  ShowStepsNotifier.new,
+);
+
+/// The daily step goal, or null for none. Device-local.
+class StepsGoalNotifier extends Notifier<int?> {
+  @override
+  int? build() => ref.watch(userPreferencesProvider).readStepsGoal();
+
+  Future<void> set(int? goal) async {
+    state = goal == null || goal <= 0 ? null : goal;
+    await ref.read(userPreferencesProvider).writeStepsGoal(state);
+  }
+}
+
+final stepsGoalProvider = NotifierProvider<StepsGoalNotifier, int?>(
+  StepsGoalNotifier.new,
+);
+
+/// Whether steps are read and shown: the switch is on, with Pro, where a
+/// health store exists. The switch stays as it was when Pro lapses, so
+/// steps come back with Pro.
+final stepsEnabledProvider = Provider<bool>(
+  (ref) =>
+      ref.watch(healthSupportedProvider) &&
+      ref.watch(showStepsProvider) &&
+      ref.watch(proProvider),
+);
+
+/// Counts up each time the app returns to the foreground, so steps walked
+/// meanwhile show without a restart.
+class StepsRefreshNotifier extends Notifier<int> {
+  @override
+  int build() {
+    ref.keepAlive();
+    final lifecycle = AppLifecycleListener(onResume: () => state++);
+    ref.onDispose(lifecycle.dispose);
+    return 0;
+  }
+}
+
+final stepsRefreshProvider = NotifierProvider<StepsRefreshNotifier, int>(
+  StepsRefreshNotifier.new,
+);
+
+/// A range of days, both 'yyyy-MM-dd' and inclusive.
+typedef StepsRange = ({String start, String end});
+
+/// Steps per day in a range, read live from the health store and never
+/// stored. Empty while steps are off. Read again when the app returns to the
+/// foreground.
+final dailyStepsProvider = FutureProvider.family<Map<String, int>, StepsRange>((
+  ref,
+  range,
+) async {
+  if (!ref.watch(stepsEnabledProvider)) return const {};
+  ref.watch(stepsRefreshProvider);
+  return ref
+      .watch(healthServiceProvider)
+      .readDailySteps(range.start, range.end);
 });

@@ -95,7 +95,7 @@ void main() {
       await openSettings(tester);
 
       await scrollTo(tester, find.text('Read body weight'));
-      expect(lock, findsNWidgets(2));
+      expect(lock, findsNWidgets(3));
       expect(writeSwitch, findsNothing);
 
       await tester.ensureVisible(lock.first);

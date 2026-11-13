@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/body_weight.dart';
 import '../../core/date_key.dart';
+import '../../core/health.dart' show averageDailySteps;
 import '../../core/macro_split.dart';
 import '../../core/metrics.dart';
 import '../../core/report.dart';
@@ -13,6 +14,7 @@ import '../../core/water.dart';
 import '../../data/preferences/user_preferences.dart';
 import '../../data/report/report_pdf.dart';
 import '../../providers/body_weight_providers.dart';
+import '../../providers/health_providers.dart';
 import '../../providers/preferences_providers.dart';
 import '../../providers/report_providers.dart';
 import '../../providers/summary_providers.dart';
@@ -151,6 +153,12 @@ class _ReportBody extends ConsumerWidget {
             query: (endDate: report.endKey, range: report.range),
             water: settings.water,
           ),
+        if (ref.watch(stepsEnabledProvider))
+          _StepsLine(
+            start: report.startKey,
+            end: report.endKey,
+            singleDay: report.range == SummaryRange.day,
+          ),
       ],
     );
     final weightCard = report.range == SummaryRange.day
@@ -240,6 +248,42 @@ class _WaterLine extends ConsumerWidget {
           : 'Water: $amount a day, over ${days.length} '
                 '${days.length == 1 ? 'day' : 'days'}',
       key: const Key('summary-water'),
+      style: TextStyle(
+        fontSize: 13,
+        color: CupertinoColors.secondaryLabel.resolveFrom(context),
+      ),
+    );
+  }
+}
+
+/// Steps from Apple Health over the range: the average of the days that have
+/// any, or a single day's total. Nothing when Health has none.
+class _StepsLine extends ConsumerWidget {
+  const _StepsLine({
+    required this.start,
+    required this.end,
+    required this.singleDay,
+  });
+
+  final String start;
+  final String end;
+  final bool singleDay;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final days =
+        ref.watch(dailyStepsProvider((start: start, end: end))).value ??
+        const <String, int>{};
+    final average = averageDailySteps(days);
+    if (average == null) return const SizedBox.shrink();
+    final counted = days.values.where((v) => v > 0).length;
+    final amount = NumberFormat.decimalPattern().format(average);
+    return Text(
+      singleDay
+          ? 'Steps: $amount'
+          : 'Steps: $amount a day, over $counted '
+                '${counted == 1 ? 'day' : 'days'}',
+      key: const Key('summary-steps'),
       style: TextStyle(
         fontSize: 13,
         color: CupertinoColors.secondaryLabel.resolveFrom(context),

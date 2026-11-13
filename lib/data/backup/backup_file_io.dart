@@ -13,11 +13,12 @@ abstract class BackupFileIo {
   /// Offers [contents] to the user as a file called [fileName] (the share sheet
   /// on iOS and Android, a save dialog on desktop, a download on web). Returns
   /// false if cancelled. [origin] is the on-screen box the iPad share popover
-  /// points at.
+  /// points at. [mimeType] is JSON unless given.
   Future<bool> save({
     required String fileName,
     required String contents,
     Rect? origin,
+    String mimeType,
   });
 
   /// Lets the user pick a backup file and returns its text, or null if
@@ -42,24 +43,30 @@ class FilePickerBackupFileIo implements BackupFileIo {
     required String fileName,
     required String contents,
     Rect? origin,
+    String mimeType = 'application/json',
   }) async {
-    if (_useShareSheet) return _share(fileName, contents, origin);
+    if (_useShareSheet) return _share(fileName, contents, origin, mimeType);
     final saved = await FilePicker.saveFile(
       fileName: fileName,
       bytes: utf8.encode(contents),
-      mimeType: 'application/json',
-      dialogTitle: 'Save backup',
+      mimeType: mimeType,
+      dialogTitle: 'Save file',
     );
     return saved != null;
   }
 
-  Future<bool> _share(String fileName, String contents, Rect? origin) async {
+  Future<bool> _share(
+    String fileName,
+    String contents,
+    Rect? origin,
+    String mimeType,
+  ) async {
     final dir = await getTemporaryDirectory();
     final file = File('${dir.path}${Platform.pathSeparator}$fileName');
     await file.writeAsString(contents);
     final result = await SharePlus.instance.share(
       ShareParams(
-        files: [XFile(file.path, mimeType: 'application/json')],
+        files: [XFile(file.path, mimeType: mimeType)],
         sharePositionOrigin: origin,
       ),
     );

@@ -141,7 +141,7 @@ enum ProFeature {
   ),
   appleHealth(
     'Apple Health',
-    'Send nutrition to Health and read your weight from it.',
+    'Send nutrition to Health; read your weight and steps from it.',
     available: true,
   ),
   iCloudSync(
