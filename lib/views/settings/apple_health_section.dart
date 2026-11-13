@@ -2,9 +2,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/health.dart';
+import '../../core/validation.dart';
 import '../../providers/health_providers.dart';
 import '../../providers/preferences_providers.dart';
 import '../common/error_feedback.dart';
+import '../common/form_widgets.dart';
 import '../common/pro_gate.dart';
 
 /// Settings section for Apple Health, off by default and shown only where a
@@ -20,6 +22,43 @@ class AppleHealthSection extends ConsumerStatefulWidget {
 
 class _AppleHealthSectionState extends ConsumerState<AppleHealthSection> {
   String? _denied;
+  late final TextEditingController _stepsGoal;
+  String? _stepsGoalError;
+
+  @override
+  void initState() {
+    super.initState();
+    _stepsGoal = TextEditingController(
+      text: ref.read(stepsGoalProvider)?.toString() ?? '',
+    );
+  }
+
+  @override
+  void dispose() {
+    _stepsGoal.dispose();
+    super.dispose();
+  }
+
+  void _stepsGoalChanged(String text) {
+    final notifier = ref.read(stepsGoalProvider.notifier);
+    if (text.trim().isEmpty) {
+      setState(() => _stepsGoalError = null);
+      notifier.set(null);
+      return;
+    }
+    final value = parseNumber(text);
+    if (value == null ||
+        value < 1 ||
+        value > maxStepsGoal ||
+        value != value.roundToDouble()) {
+      setState(
+        () => _stepsGoalError = 'Enter a whole number from 1 to $maxStepsGoal',
+      );
+      return;
+    }
+    setState(() => _stepsGoalError = null);
+    notifier.set(value.round());
+  }
 
   Future<void> _toggle(HealthGroup group, bool on) async {
     if (on) {
@@ -43,10 +82,15 @@ class _AppleHealthSectionState extends ConsumerState<AppleHealthSection> {
       }
     }
     setState(() => _denied = null);
+    if (group == HealthGroup.steps) {
+      await ref.read(showStepsProvider.notifier).set(on);
+      return;
+    }
     final settings = ref.read(preferencesProvider);
     await ref.read(preferencesProvider.notifier).save(switch (group) {
       HealthGroup.nutrition => settings.copyWith(healthWriteNutrition: on),
       HealthGroup.weight => settings.copyWith(healthReadWeight: on),
+      HealthGroup.steps => settings,
     });
   }
 
@@ -59,6 +103,7 @@ class _AppleHealthSectionState extends ConsumerState<AppleHealthSection> {
     final read = ref.watch(
       preferencesProvider.select((s) => s.healthReadWeight),
     );
+    final steps = ref.watch(showStepsProvider);
     return CupertinoFormSection.insetGrouped(
       header: const Text('APPLE HEALTH'),
       footer: Text(
@@ -66,7 +111,9 @@ class _AppleHealthSectionState extends ConsumerState<AppleHealthSection> {
             'Write nutrition sends each day\'s energy, protein, carbs, fat '
                 'and, when recorded, fiber, sugar and sodium, for the last '
                 '$healthBackfillDays days and onwards. Read body weight fills '
-                'days where you have not entered a weight.',
+                'days where you have not entered a weight. Show steps puts '
+                'the day\'s steps on Today; they are read from Health each '
+                'time and are not saved in Logbite or its backups.',
         style: _denied == null
             ? null
             : const TextStyle(color: CupertinoColors.systemRed),
@@ -92,6 +139,26 @@ class _AppleHealthSectionState extends ConsumerState<AppleHealthSection> {
             ),
           ),
         ),
+        CupertinoListTile(
+          title: const Text('Show steps'),
+          trailing: ProGate(
+            child: CupertinoSwitch(
+              key: const Key('health-steps-switch'),
+              value: steps,
+              onChanged: (on) => _toggle(HealthGroup.steps, on),
+            ),
+          ),
+        ),
+        if (steps && ref.watch(stepsEnabledProvider))
+          formRow(
+            fieldKey: const Key('steps-goal'),
+            label: 'Daily step goal',
+            controller: _stepsGoal,
+            error: _stepsGoalError,
+            placeholder: 'No goal',
+            suffix: 'steps',
+            onChanged: _stepsGoalChanged,
+          ),
       ],
     );
   }

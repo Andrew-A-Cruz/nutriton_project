@@ -190,6 +190,8 @@ class UserPreferences {
   static const waterUnitKey = 'water_unit';
   static const waterGoalKey = 'water_goal_ml';
   static const fastingEnabledKey = 'fasting_enabled';
+  static const healthShowStepsKey = 'health_show_steps';
+  static const stepsGoalKey = 'steps_goal';
   static String goalKey(Metric metric) => 'goal_${metric.name}';
   static String weekdayGoalKey(Metric metric, int weekday) =>
       'goal_${metric.name}_${weekdayKeys[weekday - 1]}';
@@ -399,4 +401,23 @@ class UserPreferences {
 
   Future<void> writeLastAutoBackup(DateTime when) =>
       _prefs.setInt(lastAutoBackupKey, when.millisecondsSinceEpoch);
+
+  /// Whether Today shows the step count from Apple Health (off by default).
+  /// Device-local: Health access belongs to this phone, so a backup neither
+  /// contains nor changes it.
+  bool readShowSteps() => _prefs.getBool(healthShowStepsKey) ?? false;
+
+  Future<void> writeShowSteps(bool on) =>
+      _prefs.setBool(healthShowStepsKey, on);
+
+  /// The daily step goal, or null for none. Device-local, like
+  /// [readShowSteps].
+  int? readStepsGoal() {
+    final goal = _prefs.getInt(stepsGoalKey);
+    return goal == null || goal <= 0 ? null : goal;
+  }
+
+  Future<void> writeStepsGoal(int? goal) => goal == null || goal <= 0
+      ? _prefs.remove(stepsGoalKey)
+      : _prefs.setInt(stepsGoalKey, goal);
 }

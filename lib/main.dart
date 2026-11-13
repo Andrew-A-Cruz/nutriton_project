@@ -16,6 +16,8 @@ import 'data/notifications/local_notification_scheduler.dart';
 import 'data/notifications/notification_scheduler.dart';
 import 'data/health/health_service.dart';
 import 'data/health/plugin_health_service.dart';
+import 'data/shortcuts/shortcuts_bridge.dart';
+import 'providers/shortcuts_providers.dart';
 import 'providers/appearance_providers.dart';
 import 'providers/backup_providers.dart';
 import 'providers/health_providers.dart';
@@ -71,6 +73,9 @@ Future<void> main() async {
               ? HomeWidgetPublisher()
               : const NoopWidgetPublisher(),
         ),
+        // Siri and Shortcuts are iOS only.
+        if (AppGroupShortcutsBridge.isSupported)
+          shortcutsBridgeProvider.overrideWithValue(AppGroupShortcutsBridge()),
         // Apple Health is iOS only; Health Connect on Android is not built.
         healthSupportedProvider.overrideWithValue(
           PluginHealthService.isSupported,

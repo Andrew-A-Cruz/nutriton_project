@@ -10,6 +10,12 @@ class FakeHealthService implements HealthService {
   bool grant;
   List<WeightReading> weights = [];
 
+  /// What a steps read returns, filtered to the asked range.
+  Map<String, int> steps = {};
+
+  /// Every `readDailySteps` range, in order.
+  final List<({String start, String end})> stepReads = [];
+
   final List<HealthGroup> authorizations = [];
 
   /// Every `replaceDailyNutrition` call, in order.
@@ -54,5 +60,18 @@ class FakeHealthService implements HealthService {
         if (w.date.compareTo(startDate) >= 0 && w.date.compareTo(endDate) <= 0)
           w,
     ];
+  }
+
+  @override
+  Future<Map<String, int>> readDailySteps(
+    String startDate,
+    String endDate,
+  ) async {
+    stepReads.add((start: startDate, end: endDate));
+    return {
+      for (final e in steps.entries)
+        if (e.key.compareTo(startDate) >= 0 && e.key.compareTo(endDate) <= 0)
+          e.key: e.value,
+    };
   }
 }

@@ -57,6 +57,10 @@ class PluginHealthService implements HealthService {
         [HealthDataType.WEIGHT],
         permissions: [HealthDataAccess.READ],
       ),
+      HealthGroup.steps => _health.requestAuthorization(
+        [HealthDataType.STEPS],
+        permissions: [HealthDataAccess.READ],
+      ),
     };
   }
 
@@ -103,6 +107,28 @@ class PluginHealthService implements HealthService {
       for (final p in points)
         if (p.value case final NumericHealthValue v)
           (when: p.dateFrom, kg: v.numericValue.toDouble()),
+    ]);
+  }
+
+  /// One statistics query in hourly buckets, which HealthKit sums once
+  /// across devices, as the Health app does. Hours, not days, so a day that
+  /// changes the clock still splits at local midnight.
+  @override
+  Future<Map<String, int>> readDailySteps(
+    String startDate,
+    String endDate,
+  ) async {
+    await _ready();
+    final points = await _health.getHealthIntervalDataFromTypes(
+      startDate: dateFromKey(startDate),
+      endDate: dateFromKey(addDays(endDate, 1)),
+      types: [HealthDataType.STEPS],
+      interval: 3600,
+    );
+    return dailySteps([
+      for (final p in points)
+        if (p.value case final NumericHealthValue v)
+          (from: p.dateFrom, steps: v.numericValue.toDouble()),
     ]);
   }
 }

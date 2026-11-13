@@ -63,6 +63,36 @@ class _BackupSectionState extends ConsumerState<BackupSection> {
     }
   }
 
+  final _csvKey = GlobalKey();
+
+  /// Shares the log as a CSV for a spreadsheet. Not a backup, so the last
+  /// backup date stays as it is.
+  Future<void> _exportCsv() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    _setStatus(null);
+    try {
+      final box = _csvKey.currentContext?.findRenderObject();
+      final origin = box is RenderBox
+          ? box.localToGlobal(Offset.zero) & box.size
+          : null;
+      final csv = await ref.read(backupRepositoryProvider).exportLogCsv();
+      final saved = await ref
+          .read(backupFileIoProvider)
+          .save(
+            fileName: BackupRepository.csvFileNameFor(DateTime.now()),
+            contents: csv,
+            origin: origin,
+            mimeType: 'text/csv',
+          );
+      if (saved) _setStatus('Log exported.');
+    } on Exception {
+      _setStatus('Could not export the log.', error: true);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   Future<void> _import() =>
       _restoreFrom(() => ref.read(backupFileIoProvider).pick());
 
@@ -153,7 +183,9 @@ class _BackupSectionState extends ConsumerState<BackupSection> {
       header: const Text('BACKUP'),
       footer: status == null
           ? Text(
-              'Export saves everything to a JSON file. Automatic backups are '
+              'Export saves everything to a JSON file. The CSV has one row '
+              'per log entry, for a spreadsheet; it cannot be imported. '
+              'Automatic backups are '
               'written once a week, after the day\'s first entry; the newest '
               '$autoBackupsKept are kept on this phone.\n'
               '${lastBackupLabel(ref.watch(lastBackupProvider), now)}\n'
@@ -175,6 +207,16 @@ class _BackupSectionState extends ConsumerState<BackupSection> {
             title: const Text('Export data'),
             trailing: const CupertinoListTileChevron(),
             onTap: _busy ? null : _export,
+          ),
+        ),
+        KeyedSubtree(
+          key: _csvKey,
+          child: CupertinoListTile(
+            key: const Key('backup-export-csv'),
+            title: const Text('Export log as CSV'),
+            subtitle: const Text('For a spreadsheet'),
+            trailing: const CupertinoListTileChevron(),
+            onTap: _busy ? null : _exportCsv,
           ),
         ),
         CupertinoListTile(

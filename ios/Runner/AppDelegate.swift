@@ -18,6 +18,28 @@ import Vision
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
     registerAppIconChannel(messenger: engineBridge.applicationRegistrar.messenger())
     registerLabelOcrChannel(messenger: engineBridge.applicationRegistrar.messenger())
+    registerShortcutsChannel(messenger: engineBridge.applicationRegistrar.messenger())
+  }
+
+  /// Siri and Shortcuts (LogbiteShortcuts.swift). The intents call "request"
+  /// on Dart when they leave a "log this" request while the app runs; Dart
+  /// calls "itemsChanged" after publishing new meals or foods, so Siri learns
+  /// their names.
+  private func registerShortcutsChannel(messenger: FlutterBinaryMessenger) {
+    let channel = FlutterMethodChannel(name: "logbite/shortcuts", binaryMessenger: messenger)
+    ShortcutsStore.notifyApp = {
+      DispatchQueue.main.async { channel.invokeMethod("request", arguments: nil) }
+    }
+    channel.setMethodCallHandler { call, result in
+      guard call.method == "itemsChanged" else {
+        result(FlutterMethodNotImplemented)
+        return
+      }
+      if #available(iOS 16.0, *) {
+        LogbiteShortcuts.updateAppShortcutParameters()
+      }
+      result(nil)
+    }
   }
 
   /// The nutrition label scan: "recognize" takes the path of a photo and
