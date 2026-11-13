@@ -12,7 +12,7 @@ const _pages = <_WelcomePage>[
   ),
   (
     icon: CupertinoIcons.plus_circle_fill,
-    title: 'Log in a few taps',
+    title: 'Add food in a few taps',
     body:
         'Pick a recent food, a saved food or meal, or type in a one-off. '
         'Scan a barcode to fill in nutrition facts for you.',

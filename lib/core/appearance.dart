@@ -1,8 +1,8 @@
-/// The Pro appearance choices: accent colour themes and alternate app icons.
-/// Pure Dart, so colours are plain ARGB ints.
+/// The Pro appearance choices: accent color themes and alternate app icons.
+/// Pure Dart, so colors are plain ARGB ints.
 library;
 
-/// An accent colour for buttons, links and switches. The system light and
+/// An accent color for buttons, links and switches. The system light and
 /// dark appearance stays; only the accent changes.
 enum AppTheme {
   blue('Blue', light: 0xFF007AFF, dark: 0xFF0A84FF),

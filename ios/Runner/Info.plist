@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Logbite reads your body weight and, if you turn on Show steps, your step count from Apple Health so they appear in the app.</string>
+	<string>Logbite reads your body weight and, if you turn on Show Steps, your step count from Apple Health so they appear in the app.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Logbite writes your daily calories and nutrients to Apple Health.</string>
 	<key>NSCameraUsageDescription</key>

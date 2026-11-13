@@ -2,7 +2,7 @@
 
 import 'package:drift/drift.dart';
 
-/// Water drunk, one total per day. Always millilitres; the water unit
+/// Water drunk, one total per day. Always milliliters; the water unit
 /// preference only changes how it is shown. A day with none has no row.
 @DataClassName('WaterDay')
 class WaterLog extends Table {

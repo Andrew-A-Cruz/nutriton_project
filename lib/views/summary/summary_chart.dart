@@ -30,7 +30,7 @@ class SummaryChart extends StatelessWidget {
   final double? goal;
   final BucketSize bucketSize;
 
-  /// Mindful mode: every bar one colour, with no under / over legend.
+  /// Mindful mode: every bar one color, with no under / over legend.
   final bool neutral;
 
   /// At most this many x-axis labels, so they never overlap.

@@ -8,7 +8,7 @@ import '../../core/health.dart';
 import '../../providers/health_providers.dart';
 
 /// The day's steps from Apple Health, under the water row: the total, against
-/// the goal when there is one. Shown only while "Show steps" is on, with Pro.
+/// the goal when there is one. Shown only while "Show Steps" is on, with Pro.
 ///
 /// With no steps for the day it says how to allow access instead of showing
 /// 0: HealthKit does not say whether reading was refused, so "no steps" and

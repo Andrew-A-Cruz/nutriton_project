@@ -22,7 +22,7 @@ class PlannedMealsSection extends ConsumerWidget {
       children: [
         CupertinoListTile(
           key: const Key('planned-meals'),
-          title: const Text('Planned meals'),
+          title: const Text('Planned Meals'),
           additionalInfo: count == null ? null : Text('$count'),
           trailing: const CupertinoListTileChevron(),
           onTap: () => Navigator.of(context).push(
@@ -104,7 +104,7 @@ class PlannedMealsView extends ConsumerWidget {
     final plans = ref.watch(allPlansProvider);
     return CupertinoPageScaffold(
       navigationBar: const CupertinoNavigationBar(
-        middle: Text('Planned meals'),
+        middle: Text('Planned Meals'),
       ),
       child: SafeArea(
         child: plans.when(

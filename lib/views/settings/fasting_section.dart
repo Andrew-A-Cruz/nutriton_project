@@ -27,7 +27,7 @@ class FastingSection extends ConsumerWidget {
       ),
       children: [
         CupertinoListTile(
-          title: const Text('Fasting timer'),
+          title: const Text('Fasting Timer'),
           trailing: CupertinoSwitch(
             key: const Key('fasting-enabled'),
             value: enabled,
@@ -42,7 +42,7 @@ class FastingSection extends ConsumerWidget {
         if (enabled || (count ?? 0) > 0)
           CupertinoListTile(
             key: const Key('fasting-history'),
-            title: const Text('Fasting history'),
+            title: const Text('Fasting History'),
             additionalInfo: count == null ? null : Text('$count'),
             trailing: const CupertinoListTileChevron(),
             onTap: () => Navigator.of(context).push(
@@ -115,7 +115,7 @@ class FastingHistoryView extends ConsumerWidget {
     final fasts = ref.watch(finishedFastsProvider);
     return CupertinoPageScaffold(
       navigationBar: const CupertinoNavigationBar(
-        middle: Text('Fasting history'),
+        middle: Text('Fasting History'),
       ),
       child: SafeArea(
         child: fasts.when(

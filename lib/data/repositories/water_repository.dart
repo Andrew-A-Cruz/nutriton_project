@@ -1,7 +1,7 @@
 import '../../core/water.dart';
 import '../database/app_database.dart';
 
-/// Water drunk per day, always in millilitres.
+/// Water drunk per day, always in milliliters.
 class WaterRepository {
   WaterRepository(this._db);
 
@@ -26,7 +26,7 @@ class WaterRepository {
     });
   }
 
-  /// The total for [logDate] in millilitres, 0 when none. Re-emits on every
+  /// The total for [logDate] in milliliters, 0 when none. Re-emits on every
   /// write.
   Stream<double> watchAmount(String logDate) =>
       _db.waterDao.watchForDate(logDate).map((r) => r?.amountMl ?? 0);

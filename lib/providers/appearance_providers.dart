@@ -5,7 +5,7 @@ import '../data/app_icon/app_icon_service.dart';
 import 'entitlement_providers.dart';
 import 'preferences_providers.dart';
 
-/// The accent colour the user picked. Kept without Pro, so it comes back
+/// The accent color the user picked. Kept without Pro, so it comes back
 /// when Pro does. Device-local, like mindful mode.
 class ThemeChoiceNotifier extends Notifier<AppTheme> {
   @override
@@ -21,7 +21,7 @@ final themeChoiceProvider = NotifierProvider<ThemeChoiceNotifier, AppTheme>(
   ThemeChoiceNotifier.new,
 );
 
-/// The accent colour in use: the picked one with Pro, the standard one
+/// The accent color in use: the picked one with Pro, the standard one
 /// without.
 final appThemeProvider = Provider<AppTheme>(
   (ref) => effectiveTheme(

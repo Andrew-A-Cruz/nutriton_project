@@ -99,7 +99,7 @@ void main() {
     await unmount(tester);
   });
 
-  testWidgets('mindful mode marks logged days without goal colours', (
+  testWidgets('mindful mode marks logged days without goal colors', (
     tester,
   ) async {
     await log(tester, '2026-11-04', 2600);

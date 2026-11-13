@@ -81,7 +81,7 @@ class _WaterSectionState extends ConsumerState<WaterSection> {
       ),
       children: [
         CupertinoListTile(
-          title: const Text('Track water'),
+          title: const Text('Track Water'),
           trailing: CupertinoSwitch(
             key: const Key('water-enabled'),
             value: water.enabled,
@@ -105,7 +105,7 @@ class _WaterSectionState extends ConsumerState<WaterSection> {
           ),
           formRow(
             fieldKey: const Key('water-goal'),
-            label: 'Daily goal',
+            label: 'Daily Goal',
             controller: _goal,
             error: _error,
             placeholder: 'No goal',

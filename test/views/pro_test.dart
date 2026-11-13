@@ -94,7 +94,7 @@ void main() {
       await settle(tester);
       await openSettings(tester);
 
-      await scrollTo(tester, find.text('Read body weight'));
+      await scrollTo(tester, find.text('Read Body Weight'));
       expect(lock, findsNWidgets(3));
       expect(writeSwitch, findsNothing);
 
@@ -185,7 +185,7 @@ void main() {
       await tester.pumpWidget(app());
       await settle(tester);
       await openSettings(tester);
-      await scrollTo(tester, find.text('Read body weight'));
+      await scrollTo(tester, find.text('Read Body Weight'));
       await tester.ensureVisible(lock.first);
       await tester.pump();
       await tester.tap(lock.first, warnIfMissed: true);

@@ -28,7 +28,7 @@ class MyApp extends ConsumerWidget {
     return CupertinoApp(
       title: 'Logbite',
       // The standard theme is Cupertino's own, so nothing changes without
-      // Pro; another accent colour keeps the system light and dark modes.
+      // Pro; another accent color keeps the system light and dark modes.
       theme: theme == AppTheme.standard
           ? null
           : CupertinoThemeData(

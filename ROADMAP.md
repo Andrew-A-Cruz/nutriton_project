@@ -83,13 +83,13 @@ Built but never tried on a real iPhone:
 - [ ] Log a food by a portion (e.g. 1.5 cups) and check the servings
 - [ ] Haptics: a light tap on logging, a firmer one on swipe-delete
 - [ ] Water: + and − on Today; Fasting: start a fast, lock the phone, and check the time on return
-- [ ] Appearance: change the accent colour, and change the app icon (iOS shows its own "You have changed the icon" alert) and back
+- [ ] Appearance: change the accent color, and change the app icon (iOS shows its own "You have changed the icon" alert) and back
 - [ ] Scan a real nutrition label with the camera and from a photo: a US label, an EU table, a curved or glossy package. Check each value read
 - [ ] Search Add Food for a starter food ("banana"), log it, and find it in the Catalog with its portions
 - [ ] On an iPad or with the phone on its side: Add Food sits beside the day and logs to it; Summary's charts get their own column
 - [ ] Share a month's report from Summary (the share sheet, then open the PDF in Files or Mail) and read it as a dietitian would (M22)
 - [ ] Export the log as CSV and open it in Numbers or Excel: names with apostrophes read correctly, empty cells for nutrients not recorded
-- [ ] **Steps (M26):** Settings > Apple Health > Show steps, allow Steps, and check today's figure on Today matches the Health app's (with a Watch too, if there is one); walk, return to the app and see it update; Summary's average for the week. Then refuse access in Health and check the row's hint
+- [ ] **Steps (M26):** Settings > Apple Health > Show Steps, allow Steps, and check today's figure on Today matches the Health app's (with a Watch too, if there is one); walk, return to the app and see it update; Summary's average for the week. Then refuse access in Health and check the row's hint
 - [ ] **Siri Shortcuts:** "How much is left in Logbite" answers without opening the app, before and after logging, and just after midnight; "Log ⟨a saved meal⟩ in Logbite" opens the app and logs it once, cold and with the app already open; the shortcuts show in the Shortcuts app and Spotlight; a new meal's name works after it is saved
 
 Pro features are unlocked in `install-iphone` builds. The Android phone checks are part of [A2](#a2--check-the-free-app-on-android).
@@ -113,7 +113,7 @@ Checked on an API 33 emulator (the separate "Logbite Test API 33" AVD, which has
 
 - [ ] **Predictive back** (on by default at SDK 36) and **edge-to-edge** (enforced from SDK 35): status bar icons readable in light and dark; the tab bar and bottom buttons clear the gesture bar and the 3-button bar. Needs an API 35 or 36 system image, and the installed emulator (31.3) is too old to run one: update the Android Emulator, the command-line tools and a JDK 17 from Android Studio's SDK Manager first
 - [x] Back at the root of Catalog or Summary now goes to Today first, and Back on Today leaves the app (2026-11-12, `_HomeTabs` in `app.dart`; tested with `handlePopRoute`)
-- [x] The largest font size (1.3 on API 33) on a small screen (720×1280 at 320 dpi): Today, Summary and Settings fit, and Export log as CSV opens the share sheet (2026-11-12). Recheck at 2.0 once an API 34+ image runs (Android 14 allows up to 200%)
+- [x] The largest font size (1.3 on API 33) on a small screen (720×1280 at 320 dpi): Today, Summary and Settings fit, and Export Log as CSV opens the share sheet (2026-11-12). Recheck at 2.0 once an API 34+ image runs (Android 14 allows up to 200%)
 - [ ] Backup import from Drive
 - [ ] On a physical phone: decode a real barcode; reminders after an app update; the label scan from the camera
 
@@ -203,7 +203,7 @@ The `health` plugin talks to Health Connect, so `HealthService`, `HealthSync`, t
 `buildWidgetSnapshot` and `widgetPlanProvider` are reused; the native widget is new.
 
 - [ ] A Kotlin widget under `android/app/src/main/` (Jetpack Glance, or `RemoteViews` with a circular `ProgressBar`), its `appwidget-provider` XML and the manifest `<receiver>`
-- [ ] It reads the keys `WidgetSnapshot.toMap()` writes and draws remaining calories, the ring, the over-goal colour and the locked state, like `TodayWidget.swift`
+- [ ] It reads the keys `WidgetSnapshot.toMap()` writes and draws remaining calories, the ring, the over-goal color and the locked state, like `TodayWidget.swift`
 - [ ] Midnight: no timelines on Android. Compare the snapshot's `dateKey` with today on every update; add an inexact midnight alarm or accept the 30-minute minimum period
 - [ ] `HomeWidgetPublisher`: allow Android, call `setAppGroupId` only on iOS, pass the receiver's qualified name to `updateWidget`
 - [ ] Light and dark, Android 12+ rounded corners and sizing

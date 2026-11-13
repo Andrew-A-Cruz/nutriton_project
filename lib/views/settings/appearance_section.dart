@@ -7,14 +7,14 @@ import '../../providers/entitlement_providers.dart';
 import '../common/error_feedback.dart';
 import '../common/pro_gate.dart';
 
-/// The colour of [theme] for the current light or dark appearance.
+/// The color of [theme] for the current light or dark appearance.
 CupertinoDynamicColor themeColor(AppTheme theme) =>
     CupertinoDynamicColor.withBrightness(
       color: Color(theme.light),
       darkColor: Color(theme.dark),
     );
 
-/// Settings section for the accent colour and the app icon (Pro). Without
+/// Settings section for the accent color and the app icon (Pro). Without
 /// Pro each picker is a lock badge that opens the paywall. Choices apply at
 /// once. The icon picker shows only where the system can change the icon.
 class AppearanceSection extends ConsumerWidget {
@@ -48,12 +48,12 @@ class AppearanceSection extends ConsumerWidget {
     return CupertinoFormSection.insetGrouped(
       header: const Text('APPEARANCE'),
       footer: const Text(
-        'The accent colour is used for buttons and links. Light and dark '
+        'The accent color is used for buttons and links. Light and dark '
         'mode still follow your device.',
       ),
       children: [
         _Picker(
-          label: 'Accent colour',
+          label: 'Accent Color',
           pro: pro,
           children: [
             for (final t in AppTheme.values)
@@ -73,7 +73,7 @@ class AppearanceSection extends ConsumerWidget {
         ),
         if (iconSupported)
           _Picker(
-            label: 'App icon',
+            label: 'App Icon',
             pro: pro,
             children: [
               for (final c in AppIconChoice.values)
