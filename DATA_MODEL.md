@@ -183,7 +183,7 @@ In the backup as `food_servings`, which older backups lack (read as none).
 
 ### `water_log`
 
-Water drunk (schema v12), one total per day. A day with none has no row. Always millilitres; the water unit preference only changes how it is shown.
+Water drunk (schema v12), one total per day. A day with none has no row. Always milliliters; the water unit preference only changes how it is shown.
 
 | Column | Type | Null | Notes |
 |---|---|---|---|
@@ -243,9 +243,9 @@ Stored via `shared_preferences`, not in SQLite. Read on app launch to configure 
 | `reminder_<n>_minutes` | Int | Reminder slot n time, minutes after local midnight (defaults 540, 780, 1140). Both reminder keys are in the backup `preferences` as a `reminders` list, which older backups lack |
 | `water_enabled` | Bool | Whether the water row shows on Today. Absent = on |
 | `water_unit` | String | `"glasses"` (250 ml each, the default) or `"ml"`. Display only |
-| `water_goal_ml` | Float | Daily water goal in millilitres. Absent = no goal. The three water keys are in the backup `preferences` as `water` (`enabled`, `unit`, `goalMl`), optional on read |
+| `water_goal_ml` | Float | Daily water goal in milliliters. Absent = no goal. The three water keys are in the backup `preferences` as `water` (`enabled`, `unit`, `goalMl`), optional on read |
 | `fasting_enabled` | Bool | Whether the fasting timer shows on Today. Absent = off. In the backup `preferences` as `fastingEnabled`, optional on read |
-| `theme` | String | The accent colour picked in Settings (Pro): `blue` (the default), `green`, `orange`, `purple`, `pink` or `teal`. Kept without Pro but not used. Device-local |
+| `theme` | String | The accent color picked in Settings (Pro): `blue` (the default), `green`, `orange`, `purple`, `pink` or `teal`. Kept without Pro but not used. Device-local |
 | `onboarding_complete` | Bool | Gate for the onboarding screen |
 | `last_backup_at` | Int | When the last export succeeded, epoch ms. Device-local: not in the backup, and an import leaves it alone |
 | `auto_backup_enabled` | Bool | Automatic weekly backups. Absent = on. Device-local |

@@ -185,7 +185,7 @@ class _BackupSectionState extends ConsumerState<BackupSection> {
           ? Text(
               'Export saves everything to a JSON file. The CSV has one row '
               'per log entry, for a spreadsheet; it cannot be imported. '
-              'Automatic backups are '
+              'Automatic Backups are '
               'written once a week, after the day\'s first entry; the newest '
               '$autoBackupsKept are kept on this phone.\n'
               '${lastBackupLabel(ref.watch(lastBackupProvider), now)}\n'
@@ -204,7 +204,7 @@ class _BackupSectionState extends ConsumerState<BackupSection> {
           key: _exportKey,
           child: CupertinoListTile(
             key: const Key('backup-export'),
-            title: const Text('Export data'),
+            title: const Text('Export Data'),
             trailing: const CupertinoListTileChevron(),
             onTap: _busy ? null : _export,
           ),
@@ -213,7 +213,7 @@ class _BackupSectionState extends ConsumerState<BackupSection> {
           key: _csvKey,
           child: CupertinoListTile(
             key: const Key('backup-export-csv'),
-            title: const Text('Export log as CSV'),
+            title: const Text('Export Log as CSV'),
             subtitle: const Text('For a spreadsheet'),
             trailing: const CupertinoListTileChevron(),
             onTap: _busy ? null : _exportCsv,
@@ -221,13 +221,13 @@ class _BackupSectionState extends ConsumerState<BackupSection> {
         ),
         CupertinoListTile(
           key: const Key('backup-import'),
-          title: const Text('Import data'),
+          title: const Text('Import Data'),
           subtitle: const Text('Replaces everything'),
           trailing: const CupertinoListTileChevron(),
           onTap: _busy ? null : _import,
         ),
         CupertinoListTile(
-          title: const Text('Automatic backups'),
+          title: const Text('Automatic Backups'),
           trailing: CupertinoSwitch(
             key: const Key('auto-backup-toggle'),
             value: ref.watch(autoBackupEnabledProvider),
@@ -237,7 +237,7 @@ class _BackupSectionState extends ConsumerState<BackupSection> {
         ),
         CupertinoListTile(
           key: const Key('auto-backup-restore'),
-          title: const Text('Restore automatic backup'),
+          title: const Text('Restore Automatic Backup'),
           subtitle: const Text('Replaces everything'),
           trailing: const CupertinoListTileChevron(),
           onTap: _busy ? null : _restoreAutomatic,
@@ -256,7 +256,7 @@ class AutoBackupListView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return CupertinoPageScaffold(
       navigationBar: const CupertinoNavigationBar(
-        middle: Text('Automatic backups'),
+        middle: Text('Automatic Backups'),
       ),
       child: SafeArea(
         child: FutureBuilder<List<String>>(

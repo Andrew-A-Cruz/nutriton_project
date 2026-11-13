@@ -76,12 +76,12 @@ class _MindfulSection extends ConsumerWidget {
       header: const Text('DISPLAY'),
       footer: const Text(
         'Mindful mode hides calorie and macro numbers on Today and the streak '
-        'badge, and draws Summary bars in one colour. Your log, goals and '
+        'badge, and draws Summary bars in one color. Your log, goals and '
         'reminders stay as they are.',
       ),
       children: [
         CupertinoListTile(
-          title: const Text('Mindful mode'),
+          title: const Text('Mindful Mode'),
           trailing: CupertinoSwitch(
             key: const Key('mindful-mode'),
             value: ref.watch(mindfulModeProvider),
@@ -104,7 +104,7 @@ class _HelpSection extends ConsumerWidget {
       children: [
         CupertinoListTile(
           key: const Key('show-tour'),
-          title: const Text('Show app tour'),
+          title: const Text('Show App Tour'),
           trailing: const CupertinoListTileChevron(),
           onTap: () {
             ref.read(tourProvider.notifier).start();
@@ -113,7 +113,7 @@ class _HelpSection extends ConsumerWidget {
         ),
         CupertinoListTile(
           key: const Key('open-error-log'),
-          title: const Text('Error log'),
+          title: const Text('Error Log'),
           trailing: const CupertinoListTileChevron(),
           onTap: () => Navigator.of(context).push(
             CupertinoPageRoute<void>(builder: (_) => const ErrorLogView()),

@@ -73,7 +73,7 @@ class _ErrorLogViewState extends ConsumerState<ErrorLogView> {
     final when = DateFormat.yMMMd().add_jm();
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
-        middle: const Text('Error log'),
+        middle: const Text('Error Log'),
         trailing: entries.isEmpty
             ? null
             : CupertinoButton(

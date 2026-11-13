@@ -9,7 +9,7 @@ final waterRepositoryProvider = Provider<WaterRepository>(
   (ref) => WaterRepository(ref.watch(databaseProvider)),
 );
 
-/// Millilitres of water on one day ('yyyy-MM-dd'), 0 when none. Re-emits on
+/// Milliliters of water on one day ('yyyy-MM-dd'), 0 when none. Re-emits on
 /// every write.
 final waterForDateProvider = StreamProvider.family<double, String>(
   (ref, date) => ref.watch(waterRepositoryProvider).watchAmount(date),

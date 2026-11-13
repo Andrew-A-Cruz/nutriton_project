@@ -39,7 +39,7 @@ void main() {
     expect(find.text('Welcome to Logbite'), findsOneWidget);
     await tester.tap(find.byKey(const Key('welcome-next')));
     await settle(tester);
-    expect(find.text('Log in a few taps'), findsOneWidget);
+    expect(find.text('Add food in a few taps'), findsOneWidget);
 
     for (var i = 0; i < 3; i++) {
       await tester.tap(find.byKey(const Key('welcome-next')));

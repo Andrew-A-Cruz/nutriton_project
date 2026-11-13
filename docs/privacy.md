@@ -30,7 +30,7 @@ The app also keeps a short list of recent errors on the device, which you can vi
 
 ## Apple Health and Health Connect
 
-If you turn on the Apple Health options (a Pro feature), Logbite writes the nutrition totals you log (energy, protein, carbohydrates, fat, fiber, sugar and sodium) to Apple Health and reads your body weight from it. If you turn on Show steps, it also reads your step count to show on Today and in Summary; steps are read each time they are shown and are not saved in Logbite or its backups. On Android, Health Connect would work the same way.
+If you turn on the Apple Health options (a Pro feature), Logbite writes the nutrition totals you log (energy, protein, carbohydrates, fat, fiber, sugar and sodium) to Apple Health and reads your body weight from it. If you turn on Show Steps, it also reads your step count to show on Today and in Summary; steps are read each time they are shown and are not saved in Logbite or its backups. On Android, Health Connect would work the same way.
 
 This health data moves only between Logbite and Health on your device. It is never sent to the developer or any other party, and it is never used for advertising or marketing. You can turn the options off, or revoke access in the Health app or Health Connect settings, at any time.
 

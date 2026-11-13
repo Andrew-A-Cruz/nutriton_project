@@ -20,7 +20,7 @@ Future<void> showLogCalendar(BuildContext context, {required String date}) =>
       ),
     );
 
-/// A month of days with a dot on each logged one, coloured by the primary
+/// A month of days with a dot on each logged one, colored by the primary
 /// metric against its goal. Tapping a day jumps Today there, so it is also a
 /// "go to date" picker.
 class LogCalendarView extends ConsumerStatefulWidget {
@@ -157,7 +157,7 @@ class _LogCalendarViewState extends ConsumerState<LogCalendarView> {
   }
 }
 
-/// Dot colours, the same as the Summary bars.
+/// Dot colors, the same as the Summary bars.
 Color? _markColor(BuildContext context, DayMark mark) => switch (mark) {
   DayMark.none => null,
   DayMark.logged => CupertinoColors.systemGrey.resolveFrom(context),

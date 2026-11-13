@@ -105,7 +105,7 @@ class MacroSummary extends StatelessWidget {
 }
 
 /// Mindful mode's card: each tracked metric with a goal as a label and a
-/// bar, in one calm colour that does not change when over. Nothing when no
+/// bar, in one calm color that does not change when over. Nothing when no
 /// metric has a goal.
 class _MindfulTotals extends StatelessWidget {
   const _MindfulTotals({
@@ -357,7 +357,7 @@ class _ProgressBar extends StatelessWidget {
   final double fraction;
   final bool over;
 
-  /// One calm colour whatever the progress (mindful mode).
+  /// One calm color whatever the progress (mindful mode).
   final bool neutral;
 
   @override

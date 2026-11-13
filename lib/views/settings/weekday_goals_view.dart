@@ -44,7 +44,7 @@ class WeekdayGoalsSection extends ConsumerWidget {
       children: [
         CupertinoListTile(
           key: const Key('weekday-goals'),
-          title: const Text('Goals by weekday'),
+          title: const Text('Goals by Weekday'),
           additionalInfo: Text(
             days == 0 ? 'Off' : '$days day${days == 1 ? '' : 's'}',
           ),
@@ -76,7 +76,7 @@ class WeekdayGoalsView extends ConsumerWidget {
 
     return CupertinoPageScaffold(
       navigationBar: const CupertinoNavigationBar(
-        middle: Text('Goals by weekday'),
+        middle: Text('Goals by Weekday'),
       ),
       child: SafeArea(
         child: ListView(
@@ -225,7 +225,7 @@ class _WeekdayEditorState extends ConsumerState<_WeekdayEditor> {
             CupertinoButton(
               key: const Key('weekday-goals-clear'),
               onPressed: _clear,
-              child: const Text('Use the usual goals'),
+              child: const Text('Use the Usual Goals'),
             ),
           ],
         ),

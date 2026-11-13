@@ -386,7 +386,7 @@ class UserPreferences {
 
   Future<void> writeMindfulMode(bool on) => _prefs.setBool(mindfulModeKey, on);
 
-  /// The accent colour picked in Settings (Pro). Device-local, and kept when
+  /// The accent color picked in Settings (Pro). Device-local, and kept when
   /// Pro is lost so it returns with it.
   AppTheme readTheme() => AppTheme.fromName(_prefs.getString(themeKey));
 

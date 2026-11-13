@@ -1,12 +1,12 @@
-/// Water arithmetic: glasses and millilitres, the daily total's bounds and
-/// its display text. Pure Dart. Water is stored in millilitres; the unit only
+/// Water arithmetic: glasses and milliliters, the daily total's bounds and
+/// its display text. Pure Dart. Water is stored in milliliters; the unit only
 /// changes what is shown and the size of one tap.
 library;
 
 import 'metrics.dart';
 import 'nutrition_math.dart';
 
-/// Millilitres in one glass.
+/// Milliliters in one glass.
 const double glassMl = 250;
 
 /// The most water one day can hold. Far above anything real, so a stuck
@@ -26,7 +26,7 @@ enum WaterUnit {
 }
 
 /// The water settings: whether the Home row shows, the display unit and an
-/// optional daily goal in millilitres.
+/// optional daily goal in milliliters.
 class WaterSettings {
   const WaterSettings({
     this.enabled = true,
@@ -95,7 +95,7 @@ String waterProgressText(double ml, WaterSettings settings) {
       '${formatWater(goal, settings.unit)}';
 }
 
-/// The goal typed in [unit], in millilitres.
+/// The goal typed in [unit], in milliliters.
 double waterGoalToMl(double value, WaterUnit unit) => switch (unit) {
   WaterUnit.glasses => value * glassMl,
   WaterUnit.ml => value,

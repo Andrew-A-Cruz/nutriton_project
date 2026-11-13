@@ -23,7 +23,7 @@ void main() {
     expect(AppTheme.standard.dark, 0xFF0A84FF);
   });
 
-  /// WCAG contrast ratio of an opaque colour against white.
+  /// WCAG contrast ratio of an opaque color against white.
   double contrastOnWhite(int argb) {
     double channel(int v) {
       final c = v / 255;

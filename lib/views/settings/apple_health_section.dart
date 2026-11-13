@@ -108,10 +108,10 @@ class _AppleHealthSectionState extends ConsumerState<AppleHealthSection> {
       header: const Text('APPLE HEALTH'),
       footer: Text(
         _denied ??
-            'Write nutrition sends each day\'s energy, protein, carbs, fat '
+            'Write Nutrition sends each day\'s energy, protein, carbs, fat '
                 'and, when recorded, fiber, sugar and sodium, for the last '
-                '$healthBackfillDays days and onwards. Read body weight fills '
-                'days where you have not entered a weight. Show steps puts '
+                '$healthBackfillDays days and onwards. Read Body Weight fills '
+                'days where you have not entered a weight. Show Steps puts '
                 'the day\'s steps on Today; they are read from Health each '
                 'time and are not saved in Logbite or its backups.',
         style: _denied == null
@@ -120,7 +120,7 @@ class _AppleHealthSectionState extends ConsumerState<AppleHealthSection> {
       ),
       children: [
         CupertinoListTile(
-          title: const Text('Write nutrition'),
+          title: const Text('Write Nutrition'),
           trailing: ProGate(
             child: CupertinoSwitch(
               key: const Key('health-write-switch'),
@@ -130,7 +130,7 @@ class _AppleHealthSectionState extends ConsumerState<AppleHealthSection> {
           ),
         ),
         CupertinoListTile(
-          title: const Text('Read body weight'),
+          title: const Text('Read Body Weight'),
           trailing: ProGate(
             child: CupertinoSwitch(
               key: const Key('health-read-switch'),
@@ -140,7 +140,7 @@ class _AppleHealthSectionState extends ConsumerState<AppleHealthSection> {
           ),
         ),
         CupertinoListTile(
-          title: const Text('Show steps'),
+          title: const Text('Show Steps'),
           trailing: ProGate(
             child: CupertinoSwitch(
               key: const Key('health-steps-switch'),
@@ -152,7 +152,7 @@ class _AppleHealthSectionState extends ConsumerState<AppleHealthSection> {
         if (steps && ref.watch(stepsEnabledProvider))
           formRow(
             fieldKey: const Key('steps-goal'),
-            label: 'Daily step goal',
+            label: 'Daily Step Goal',
             controller: _stepsGoal,
             error: _stepsGoalError,
             placeholder: 'No goal',

@@ -55,7 +55,7 @@ void main() {
     await tester.tap(find.byKey(const Key('settings-button')));
     await settle(tester);
     await scrollPreferencesTo(tester, find.text('APPEARANCE'));
-    await tester.ensureVisible(find.text('Accent colour'));
+    await tester.ensureVisible(find.text('Accent Color'));
     await settle(tester);
   }
 
@@ -63,8 +63,8 @@ void main() {
     tester.element(find.byType(CupertinoPageScaffold).first),
   ).primaryColor;
 
-  group('accent colour', () {
-    testWidgets('picking a colour applies and saves it at once', (
+  group('accent color', () {
+    testWidgets('picking a color applies and saves it at once', (
       tester,
     ) async {
       final prefs = await prefsWith();
@@ -80,7 +80,7 @@ void main() {
       await unmount(tester);
     });
 
-    testWidgets('the saved colour is used at launch', (tester) async {
+    testWidgets('the saved color is used at launch', (tester) async {
       await pumpApp(tester, await prefsWith(extra: {'theme': 'green'}));
       expect(accent(tester), isSameColorAs(Color(AppTheme.green.light)));
       await unmount(tester);
@@ -174,8 +174,8 @@ void main() {
       await pumpApp(tester, await prefsWith(), withIcons: false);
       await openAppearance(tester);
 
-      expect(find.text('Accent colour'), findsOneWidget);
-      expect(find.text('App icon'), findsNothing);
+      expect(find.text('Accent Color'), findsOneWidget);
+      expect(find.text('App Icon'), findsNothing);
       await unmount(tester);
     });
   });

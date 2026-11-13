@@ -95,7 +95,7 @@ To add or re-check a chain:
 
 The file format: `version`, then `chains[]` (`id`, `name`, `source`, `checkedAt`) each with `items[]` (`id`, `name`, `category`, `calories`, `protein`, `carbs`, `fat`, and `servingWeightG`, `fiber`, `sugar`, `sodium` where published). Values are per item as served; each size is its own item. A drink published by volume counts 1 ml as 1 g. An item with no `servingWeightG` is one the chain publishes without a weight (Dunkin', Sonic, fountain drinks); the app counts it in items and never shows a weight for it. Ids are permanent, because catalog foods point at them: a renamed product keeps its id. The script raises `version` whenever the output changes, which is what refreshes unedited restaurant foods on users' phones.
 
-Names only: no logos, brand colours or artwork.
+Names only: no logos, brand colors or artwork.
 
 ## Starter foods
 
